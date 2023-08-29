@@ -1,0 +1,26 @@
+[package]
+name = "weaver"
+version = "0.1.0"
+authors = ["Laurent Querel <l.querel@f5.com>"]
+edition = "2021"
+description = "OTel Weaver - A Schema-Driven Client SDK Generator for OpenTelemetry"
+keywords = ["opentelemetry", "client", "schema", "arrow", "generator"]
+categories = ["command-line-utilities"]
+license = "Apache-2.0"
+readme = "README.md"
+publish = false
+
+[workspace]
+members = [
+    "crates/*",
+]
+
+[workspace.dependencies]
+serde = { version = "1.0.188", features = ["derive"] }
+serde_yaml = "0.9.25"
+thiserror = "1.0.47"
+
+[[bin]]
+bench = false
+path = "src/main.rs"
+name = "weaver"
