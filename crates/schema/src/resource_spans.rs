@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::attribute::Attribute;
+use semconv::attribute::Attribute;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]

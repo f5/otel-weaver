@@ -12,7 +12,6 @@ pub mod resource;
 pub mod resource_metrics;
 pub mod resource_logs;
 pub mod resource_spans;
-pub mod attribute;
 pub mod spans_version;
 pub mod spans_change;
 pub mod metrics_version;
@@ -21,6 +20,9 @@ pub mod resource_version;
 pub mod resource_change;
 pub mod logs_version;
 pub mod logs_change;
+pub mod univariate_metric;
+pub mod multivariate_metrics;
+pub mod log;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -83,8 +85,14 @@ mod test {
     use crate::TelemetrySchema;
 
     #[test]
-    fn load_telemetry_schema() {
+    fn load_root_schema() {
         let schema = TelemetrySchema::load_from_file("data/root-schema-1.21.0.yaml");
+        assert!(schema.is_ok(), "{:#?}", schema.err().unwrap());
+    }
+
+    #[test]
+    fn load_app_telemetry_schema() {
+        let schema = TelemetrySchema::load_from_file("data/app-telemetry-schema.yaml");
         assert!(schema.is_ok(), "{:#?}", schema.err().unwrap());
         dbg!(schema);
     }

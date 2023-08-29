@@ -12,6 +12,9 @@ pub struct Attribute {
     pub tag: Option<String>,
     pub requirement_level: Option<RequirementLevel>,
     pub sampling_relevant: Option<bool>,
+
+    // extension for telemetry schema
+    pub value: Option<Value>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
