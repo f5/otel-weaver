@@ -23,6 +23,9 @@ pub mod logs_change;
 pub mod univariate_metric;
 pub mod multivariate_metrics;
 pub mod log;
+pub mod span;
+pub mod event;
+pub mod link;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -94,6 +97,5 @@ mod test {
     fn load_app_telemetry_schema() {
         let schema = TelemetrySchema::load_from_file("data/app-telemetry-schema.yaml");
         assert!(schema.is_ok(), "{:#?}", schema.err().unwrap());
-        dbg!(schema);
     }
 }

@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
 use semconv::attribute::Attribute;
-use crate::univariate_metric::UnivariateMetric;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
