@@ -10,7 +10,13 @@ semantic_conventions:
   - url: https://github.com/open-telemetry/semantic-conventions/blob/main/model/server.yaml
   - url: https://github.com/open-telemetry/semantic-conventions/blob/main/model/network.yaml
 
-# Schema definition, i.e. declaration of metrics, logs and spans produced by the application
+# The section below outlines the telemetry schema for a service or application.
+# This schema details all the metrics, logs, and spans specifically generated
+# by that service or application.
+#
+# Note: Frameworks or libraries linked with the application that produce OTel
+# telemetry data might also have their own telemetry schema, detailing the
+# metrics, logs, and spans they generate locally.
 schema:
   # Attributes inherited by all resource types
   resource:
@@ -20,8 +26,10 @@ schema:
       - ref: service.version
         value: "{{SERVICE_VERSION}}"
 
-  # Instrumentation library section
-  # TBD
+  # Instrumentation library
+  instrumentation_library:
+    name: "my-service"
+    version: "1.0.0"
 
   # Metrics declaration
   resource_metrics:

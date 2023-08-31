@@ -6,10 +6,7 @@ use crate::resource_spans::ResourceSpans;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct SchemaSpec {
-    pub resource: Option<Resource>,
-    pub instrumentation_library: Option<InstrumentationLibrary>,
-    pub resource_metrics: Option<ResourceMetrics>,
-    pub resource_logs: Option<ResourceLogs>,
-    pub resource_spans: Option<ResourceSpans>,
+pub struct InstrumentationLibrary {
+    pub name: Option<String>,
+    pub version: Option<String>,
 }

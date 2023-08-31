@@ -26,6 +26,7 @@ pub mod log;
 pub mod span;
 pub mod event;
 pub mod link;
+pub mod instrumentation_library;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
