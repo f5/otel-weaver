@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 use serde::{Deserialize, Serialize};
 use crate::schema_spec::SchemaSpec;
 use crate::version_spec::VersionSpec;
@@ -30,15 +30,15 @@ pub mod instrumentation_library;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("schema not found (path: {path:?}, error: {error:?})")]
+    #[error("schema not found (path_or_url: {path_or_url:?}, error: {error:?})")]
     SchemaNotFound {
-        path: PathBuf,
+        path_or_url: String,
         error: String,
     },
 
-    #[error("invalid schema (path: {path:?}, line: {line:?}, column: {column:?}, error: {error:?})")]
+    #[error("invalid schema (path_or_url: {path_or_url:?}, line: {line:?}, column: {column:?}, error: {error:?})")]
     InvalidSchema {
-        path: PathBuf,
+        path_or_url: String,
         line: Option<usize>,
         column: Option<usize>,
         error: String,
@@ -70,12 +70,32 @@ impl TelemetrySchema {
 
         // Load and deserialize the telemetry schema
         let schema_file = File::open(path).map_err(|e| Error::SchemaNotFound {
-            path: path_buf.clone(),
+            path_or_url: path_buf.as_path().display().to_string(),
             error: e.to_string()
         })?;
         let schema: TelemetrySchema = serde_yaml::from_reader(BufReader::new(schema_file))
             .map_err(|e| Error::InvalidSchema {
-                path: path_buf,
+                path_or_url: path_buf.as_path().display().to_string(),
+                line: e.location().map(|loc| loc.line()),
+                column: e.location().map(|loc| loc.column()),
+                error: e.to_string(),
+            })?;
+        Ok(schema)
+    }
+
+    pub fn load_from_url(schema_url: &str) -> Result<TelemetrySchema, Error> {
+        // Create a content reader from the schema URL
+        let reader = ureq::get(schema_url)
+            .call().map_err(|e| Error::SchemaNotFound {
+                path_or_url: schema_url.to_string(),
+                error: e.to_string()
+            })?
+            .into_reader();
+
+        // Deserialize the telemetry schema from the content reader
+        let schema: TelemetrySchema = serde_yaml::from_reader(reader)
+            .map_err(|e| Error::InvalidSchema {
+                path_or_url: schema_url.to_string(),
                 line: e.location().map(|loc| loc.line()),
                 column: e.location().map(|loc| loc.column()),
                 error: e.to_string(),
@@ -96,7 +116,7 @@ mod test {
 
     #[test]
     fn load_app_telemetry_schema() {
-        let schema = TelemetrySchema::load_from_file("data/app-telemetry-schema.yaml");
+        let schema = TelemetrySchema::load_from_file("../../data/app-telemetry-schema.yaml");
         assert!(schema.is_ok(), "{:#?}", schema.err().unwrap());
     }
 }

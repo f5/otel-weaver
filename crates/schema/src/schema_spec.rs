@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::instrumentation_library::InstrumentationLibrary;
 use crate::resource::Resource;
 use crate::resource_logs::ResourceLogs;
 use crate::resource_metrics::ResourceMetrics;
