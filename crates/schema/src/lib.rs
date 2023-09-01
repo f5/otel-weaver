@@ -48,14 +48,14 @@ pub enum Error {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct TelemetrySchema {
-    file_format: String,
-    parent_schema_url: Option<String>,
-    schema_url: String,
+    pub file_format: String,
+    pub parent_schema_url: Option<String>,
+    pub schema_url: String,
     #[serde(default)]
-    semantic_conventions: Vec<SemConvImport>,
-    schema: Option<SchemaSpec>,
+    pub semantic_conventions: Vec<SemConvImport>,
+    pub schema: Option<SchemaSpec>,
     #[serde(default)]
-    versions: HashMap<String, VersionSpec>,
+    pub versions: HashMap<String, VersionSpec>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
