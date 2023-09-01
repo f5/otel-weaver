@@ -6,9 +6,9 @@ schema_url: https://mycompany.com/schemas/1.0.0
 
 # Semantic Convention Imports
 semantic_conventions:
-  - url: https://github.com/open-telemetry/semantic-conventions/blob/main/model/http-common.yaml
-  - url: https://github.com/open-telemetry/semantic-conventions/blob/main/model/server.yaml
-  - url: https://github.com/open-telemetry/semantic-conventions/blob/main/model/network.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/http-common.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/server.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/network.yaml
 
 # The section below outlines the telemetry schema for a service or application.
 # This schema details all the metrics, logs, and spans specifically generated

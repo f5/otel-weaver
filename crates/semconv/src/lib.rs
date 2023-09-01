@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::BufReader;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
@@ -11,15 +11,15 @@ pub mod attribute;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("semantic convention catalog not found (path: {path:?}, error: {error:?})")]
+    #[error("Semantic convention catalog {path_or_url:?} not found\n{error:?}")]
     CatalogNotFound {
-        path: PathBuf,
+        path_or_url: String,
         error: String,
     },
 
-    #[error("invalid semantic convention catalog (path: {path:?}, line: {line:?}, column: {column:?}, error: {error:?})")]
+    #[error("Invalid semantic convention catalog {path_or_url:?}\n{error:?}")]
     InvalidCatalog {
-        path: PathBuf,
+        path_or_url: String,
         line: Option<usize>,
         column: Option<usize>,
         error: String,
@@ -38,12 +38,32 @@ impl Catalog {
 
         // Load and deserialize the semantic convention catalog
         let catalog_file = File::open(path).map_err(|e| Error::CatalogNotFound {
-            path: path_buf.clone(),
+            path_or_url: path_buf.as_path().display().to_string(),
             error: e.to_string(),
         })?;
         let catalog: Catalog = serde_yaml::from_reader(BufReader::new(catalog_file))
             .map_err(|e| Error::InvalidCatalog {
-                path: path_buf,
+                path_or_url: path_buf.as_path().display().to_string(),
+                line: e.location().map(|loc| loc.line()),
+                column: e.location().map(|loc| loc.column()),
+                error: e.to_string(),
+            })?;
+        Ok(catalog)
+    }
+
+    pub fn load_from_url(semconv_url: &str) -> Result<Catalog, Error> {
+        // Create a content reader from the semantic convention URL
+        let reader = ureq::get(semconv_url)
+            .call().map_err(|e| Error::CatalogNotFound {
+            path_or_url: semconv_url.to_string(),
+            error: e.to_string(),
+        })?
+            .into_reader();
+
+        // Deserialize the telemetry schema from the content reader
+        let catalog: Catalog = serde_yaml::from_reader(reader)
+            .map_err(|e| Error::InvalidCatalog {
+                path_or_url: semconv_url.to_string(),
                 line: e.location().map(|loc| loc.line()),
                 column: e.location().map(|loc| loc.column()),
                 error: e.to_string(),

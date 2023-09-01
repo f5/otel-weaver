@@ -30,13 +30,13 @@ pub mod instrumentation_library;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("schema not found (path_or_url: {path_or_url:?}, error: {error:?})")]
+    #[error("Schema {path_or_url:?} not found\n{error:?}")]
     SchemaNotFound {
         path_or_url: String,
         error: String,
     },
 
-    #[error("invalid schema (path_or_url: {path_or_url:?}, line: {line:?}, column: {column:?}, error: {error:?})")]
+    #[error("Invalid schema {path_or_url:?}\n{error:?}")]
     InvalidSchema {
         path_or_url: String,
         line: Option<usize>,
@@ -61,7 +61,7 @@ pub struct TelemetrySchema {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct SemConvImport {
-    url: String,
+    pub url: String,
 }
 
 impl TelemetrySchema {

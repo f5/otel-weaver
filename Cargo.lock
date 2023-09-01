@@ -127,6 +127,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
+name = "logger"
+version = "0.1.0"
+dependencies = [
+ "paris",
+]
+
+[[package]]
 name = "miniz_oxide"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -140,6 +147,12 @@ name = "once_cell"
 version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
+
+[[package]]
+name = "paris"
+version = "1.5.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8fecab3723493c7851f292cb060f3ee1c42f19b8d749345d0d7eaf3fd19aa62d"
 
 [[package]]
 name = "percent-encoding"
@@ -169,6 +182,7 @@ dependencies = [
 name = "resolver"
 version = "0.1.0"
 dependencies = [
+ "logger",
  "schema",
  "semconv",
  "thiserror",
@@ -255,6 +269,7 @@ dependencies = [
  "serde",
  "serde_yaml",
  "thiserror",
+ "ureq",
 ]
 
 [[package]]
@@ -459,6 +474,10 @@ checksum = "ca6ad05a4870b2bf5fe995117d3728437bd27d7cd5f06f13c17443ef369775a1"
 [[package]]
 name = "weaver"
 version = "0.1.0"
+dependencies = [
+ "logger",
+ "resolver",
+]
 
 [[package]]
 name = "web-sys"

@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+logger = { version = "0.1.0", path = "../logger" }
 semconv = { version = "0.1.0", path = "../semconv" }
 schema = { version = "0.1.0", path = "../schema" }
 
 thiserror.workspace = true
+
