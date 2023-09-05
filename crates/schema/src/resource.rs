@@ -1,8 +1,14 @@
-use serde::{Deserialize, Serialize};
-use semconv::attribute::Attribute;
+//! A common resource specification.
 
+use semconv::attribute::Attribute;
+use serde::{Deserialize, Serialize};
+
+/// A common resource specification.
+/// All the attributes mentioned in this specification will be inherited by all
+/// the other specialized resource specifications.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Resource {
-    pub attributes: Vec<Attribute>
+    /// The common attributes of the resource.
+    pub attributes: Vec<Attribute>,
 }
