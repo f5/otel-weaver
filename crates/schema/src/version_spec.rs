@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! The specification of the changes to apply to the schema for different versions.
 
 use crate::logs_version::LogsVersion;

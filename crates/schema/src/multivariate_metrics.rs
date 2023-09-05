@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! Multivariate metrics.
 
 use serde::{Deserialize, Serialize};

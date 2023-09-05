@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! A univariate metric specification.
 
 use semconv::attribute::Attribute;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! A generic logger that can be used to log messages to the console.
 
 #![deny(missing_docs)]

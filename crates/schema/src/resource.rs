@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! A common resource specification.
 
 use semconv::attribute::Attribute;

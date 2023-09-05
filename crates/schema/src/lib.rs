@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! A Rust library for loading and validating telemetry schemas.
 
 #![deny(missing_docs)]

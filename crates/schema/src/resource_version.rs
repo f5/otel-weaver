@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! Resource version.
 
 use crate::resource_change::ResourceChange;

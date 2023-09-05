@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! A resource spans specification.
 
 use crate::span::Span;

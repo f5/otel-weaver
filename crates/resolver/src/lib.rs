@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! A resolver that can be used to resolve telemetry schemas.
 
 #![deny(missing_docs)]
@@ -67,13 +69,13 @@ impl SchemaResolver {
         };
 
         // Load all the semantic convention catalogs.
+        let mut sem_conv_catalog = semconv::SemConvCatalog::default();
         log.loading(&format!(
             "Loading {} semantic convention catalogs",
             schema.semantic_conventions.len()
         ));
         for sem_conv_import in schema.semantic_conventions.iter() {
-            let _sem_conv_catalog =
-                semconv::Catalog::load_from_url(&sem_conv_import.url).map_err(|e| {
+            sem_conv_catalog.load_from_url(&sem_conv_import.url).map_err(|e| {
                     log.error(&e.to_string());
                     Error::SemConvError(e)
                 })?;

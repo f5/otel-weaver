@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! Metrics version.
 
 use crate::metrics_change::MetricsChange;

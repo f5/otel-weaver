@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! Changes to apply to the spans specification for a specific version.
 
 use crate::spans_change::SpansChange;

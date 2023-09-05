@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! Changes to apply to the resources for a specific version.
 
 use serde::{Deserialize, Serialize};

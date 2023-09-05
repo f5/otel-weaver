@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! A group specification.
 
 use crate::attribute::Attribute;

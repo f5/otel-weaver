@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! Changes to apply to the logs for a specific version.
 
 use serde::{Deserialize, Serialize};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! Attribute specification.
 
 use serde::{Deserialize, Serialize};

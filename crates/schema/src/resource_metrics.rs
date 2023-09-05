@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! A resource metrics specification.
 
 use crate::multivariate_metrics::MultivariateMetrics;

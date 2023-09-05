@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! A schema specification.
 
 use crate::instrumentation_library::InstrumentationLibrary;

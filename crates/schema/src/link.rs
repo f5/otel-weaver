@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //! Event specification.
 
 use semconv::attribute::Attribute;
