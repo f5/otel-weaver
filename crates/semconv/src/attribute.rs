@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 /// An attribute specification.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Attribute {
     /// The reference to the attribute.
@@ -33,7 +33,7 @@ pub struct Attribute {
 }
 
 /// The different types of attributes.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
 pub enum AttributeType {
@@ -50,7 +50,7 @@ pub enum AttributeType {
 }
 
 /// The different types of basic attributes.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum BasicAttributeType {
     /// A boolean attribute.
@@ -67,7 +67,7 @@ pub enum BasicAttributeType {
 }
 
 /// A custom type member.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct CustomTypeMember {
     /// The id of the member.
@@ -79,7 +79,7 @@ pub struct CustomTypeMember {
 }
 
 /// The different types of values.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
 pub enum Value {
@@ -92,7 +92,7 @@ pub enum Value {
 }
 
 /// The different types of examples.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
 pub enum Examples {
@@ -111,7 +111,7 @@ pub enum Examples {
 }
 
 /// The different requirement levels.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
 pub enum RequirementLevel {
@@ -132,7 +132,7 @@ pub enum RequirementLevel {
 }
 
 /// The different types of basic requirement levels.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum BasicRequirementLevel {
     /// A required requirement level.

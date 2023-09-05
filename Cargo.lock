@@ -250,6 +250,7 @@ dependencies = [
  "serde_yaml",
  "thiserror",
  "ureq",
+ "version",
 ]
 
 [[package]]
@@ -270,6 +271,15 @@ dependencies = [
  "serde_yaml",
  "thiserror",
  "ureq",
+]
+
+[[package]]
+name = "semver"
+version = "1.0.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0293b4b29daaf487284529cc2f5675b8e57c61f70167ba415a463651fd6a918"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -415,6 +425,16 @@ dependencies = [
  "form_urlencoded",
  "idna",
  "percent-encoding",
+]
+
+[[package]]
+name = "version"
+version = "0.1.0"
+dependencies = [
+ "semver",
+ "serde",
+ "serde_yaml",
+ "thiserror",
 ]
 
 [[package]]

@@ -6,34 +6,25 @@
 #![deny(clippy::print_stdout)]
 
 use crate::schema_spec::SchemaSpec;
-use crate::version_spec::VersionSpec;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use version::VersionSpec;
 
 pub mod event;
 pub mod instrumentation_library;
 pub mod link;
 pub mod log;
-pub mod logs_change;
-pub mod logs_version;
-pub mod metrics_change;
-pub mod metrics_version;
 pub mod multivariate_metrics;
 pub mod resource;
-pub mod resource_change;
 pub mod resource_logs;
 pub mod resource_metrics;
 pub mod resource_spans;
-pub mod resource_version;
 pub mod schema_spec;
 pub mod span;
-pub mod spans_change;
-pub mod spans_version;
 pub mod univariate_metric;
-pub mod version_spec;
 
 /// An error that can occur while loading a telemetry schema.
 #[derive(thiserror::Error, Debug)]
