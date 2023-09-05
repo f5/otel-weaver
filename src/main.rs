@@ -1,6 +1,6 @@
-use std::process::exit;
 use logger::Logger;
 use resolver::SchemaResolver;
+use std::process::exit;
 
 fn main() {
     let mut log = Logger::new();
