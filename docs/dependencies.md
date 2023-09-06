@@ -13,8 +13,8 @@ flowchart TB
     main --> logger 
     main --> resolver
     
-    click resolver "https://gitswarm.f5net.com/otel/weaver/-/tree/main/crates/resolver"
-    click logger "../crates/logger"
+    click resolver href "https://gitswarm.f5net.com/otel/weaver/-/tree/main/crates/resolver"
+    click logger href "../crates/logger"
     click semconv "../crates/semconv"
     click schema "../crates/schema"
     click version "../crates/version"
