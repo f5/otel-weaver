@@ -11,13 +11,13 @@ use semconv::attribute::Attribute;
 #[serde(deny_unknown_fields)]
 pub struct MultivariateMetrics {
     /// The name of the multivariate metric.
-    id: String,
+    pub id: String,
     /// The attributes of the multivariate metric.
     #[serde(default)]
-    attributes: Vec<Attribute>,
+    pub attributes: Vec<Attribute>,
     /// The metrics of the multivariate metric.
     #[serde(default)]
-    metrics: Vec<Metric>,
+    pub metrics: Vec<Metric>,
 }
 
 /// A metric specification.

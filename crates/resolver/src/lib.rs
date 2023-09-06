@@ -8,7 +8,9 @@
 use std::path::Path;
 
 use logger::Logger;
+use schema::multivariate_metrics::{Metric, MultivariateMetrics};
 use schema::TelemetrySchema;
+use schema::univariate_metric::UnivariateMetric;
 use semconv::attribute::Attribute;
 use version::{VersionAttributeChanges, VersionChanges};
 
@@ -62,19 +64,24 @@ impl SchemaResolver {
         ));
 
         let parent_schema = Self::load_parent_schema(&schema, log)?;
-        let sem_conv_catalog = Self::create_semantic_convention_catalog(&schema, log)?;
+        let mut sem_conv_catalog = Self::create_semantic_convention_catalog(&schema, log)?;
+        sem_conv_catalog.resolve().map_err(|e| Error::SemConvError(e))?;
 
         // Merges the versions of the parent schema into the current schema.
         if let Some(parent_schema) = parent_schema {
-            schema.versions.extend(parent_schema.versions);
+            if let Some(versions) = schema.versions.as_mut() {
+                if let Some(parent_versions) = parent_schema.versions {
+                    versions.extend(parent_versions);
+                }
+            }
         }
 
         // Generates version changes
-        let version_changes = if let Some(latest_version) = schema.versions.latest_version() {
-            schema.versions.version_changes_for(latest_version)
+        let version_changes = schema.versions.as_ref().map(|versions | if let Some(latest_version) = versions.latest_version() {
+            versions.version_changes_for(latest_version)
         } else {
             VersionChanges::default()
-        };
+        }).unwrap_or_default();
 
         // Resolve the references to the semantic conventions.
         log.loading("Solving semantic convention references");
@@ -82,12 +89,33 @@ impl SchemaResolver {
             // Resolve common attributes
             if let Some(metrics) = schema.resource_metrics.as_mut() {
                 Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                for metric in metrics.univariate_metrics.iter_mut() {
+                    if let UnivariateMetric::Ref {r#ref, attributes} = metric {
+                        Self::resolve_attributes(attributes, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                    }
+                }
+                for metrics in metrics.multivariate_metrics.iter_mut() {
+                    Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                }
             }
+
             if let Some(logs) = schema.resource_logs.as_mut() {
                 Self::resolve_attributes(logs.attributes.as_mut(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
+                for log in logs.logs.iter_mut() {
+                    Self::resolve_attributes(log.attributes.as_mut(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
+                }
             }
             if let Some(spans) = schema.resource_spans.as_mut() {
                 Self::resolve_attributes(spans.attributes.as_mut(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
+                for span in spans.spans.iter_mut() {
+                    Self::resolve_attributes(span.attributes.as_mut(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
+                    for event in span.events.iter_mut() {
+                        Self::resolve_attributes(event.attributes.as_mut(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
+                    }
+                    for link in span.links.iter_mut() {
+                        Self::resolve_attributes(link.attributes.as_mut(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
+                    }
+                }
             }
             // Merge common attributes with the attributes of the corresponding resource_metrics,
             // resource_logs and resource_spans.
@@ -101,6 +129,9 @@ impl SchemaResolver {
             "Resolved schema '{}'",
             schema_path.as_ref().display()
         ));
+
+        // Remove version information from the schema.
+        schema.versions.take();
 
         Ok(schema)
     }
@@ -156,7 +187,7 @@ impl SchemaResolver {
             if let Some(r#ref) = attribute.r#ref.as_ref() {
                 let normalized_ref = version_changes.get_attribute_name(r#ref);
                 if let Some(resolved_attribute) = sem_conv_catalog.get_attribute(&normalized_ref) {
-                    *attribute = resolved_attribute;
+                    *attribute = resolved_attribute.clone();
                 } else {
                     return Err(Error::FailToResolveAttribute {
                         r#ref: r#ref.clone(),

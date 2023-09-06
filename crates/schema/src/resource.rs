@@ -12,5 +12,6 @@ use serde::{Deserialize, Serialize};
 #[serde(deny_unknown_fields)]
 pub struct Resource {
     /// The common attributes of the resource.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub attributes: Vec<Attribute>,
 }

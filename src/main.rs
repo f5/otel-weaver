@@ -4,10 +4,24 @@ use std::process::exit;
 
 fn main() {
     let mut log = Logger::new();
-    let schema = SchemaResolver::resolve_schema_file("data/app-telemetry-schema.yaml", &mut log);
-    if schema.is_err() {
-        log.error(&format!("{}", schema.err().unwrap()));
-        exit(1)
+    let schema_name = "data/app-telemetry-schema.yaml";
+    let schema = SchemaResolver::resolve_schema_file(schema_name, &mut log);
+    match schema {
+        Ok(schema) => {
+            log.success(&format!("Loaded schema {}", schema_name));
+            match serde_yaml::to_string(&schema) {
+                Ok(yaml) => {
+                    log.log(&yaml);
+                }
+                Err(e) => {
+                    log.error(&format!("{}", e));
+                    exit(1)
+                }
+            }
+        }
+        Err(e) => {
+            log.error(&format!("{}", e));
+            exit(1)
+        }
     }
-    dbg!(schema);
 }

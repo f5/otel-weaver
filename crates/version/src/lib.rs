@@ -402,28 +402,28 @@ impl<'a> VersionAttributeChanges for crate::SpansVersionAttributeChanges<'a> {
 
 impl VersionChanges {
     /// Returns the attribute changes to apply to the resources.
-    pub fn resource_attribute_changes<'a>(&'a self) -> impl VersionAttributeChanges + 'a {
+    pub fn resource_attribute_changes(&self) -> impl VersionAttributeChanges + '_ {
         ResourcesVersionAttributeChanges {
             version_changes: self,
         }
     }
 
     /// Returns the attribute changes to apply to the metrics.
-    pub fn metric_attribute_changes<'a>(&'a self) -> impl VersionAttributeChanges + 'a {
+    pub fn metric_attribute_changes(&self) -> impl VersionAttributeChanges + '_ {
         MetricsVersionAttributeChanges {
             version_changes: self,
         }
     }
 
     /// Returns the attribute changes to apply to the logs.
-    pub fn log_attribute_changes<'a>(&'a self) -> impl VersionAttributeChanges + 'a {
+    pub fn log_attribute_changes(&self) -> impl VersionAttributeChanges + '_ {
         LogsVersionAttributeChanges {
             version_changes: self,
         }
     }
 
     /// Returns the attribute changes to apply to the spans.
-    pub fn span_attribute_changes<'a>(&'a self) -> impl VersionAttributeChanges + 'a {
+    pub fn span_attribute_changes(&self) -> impl VersionAttributeChanges + '_ {
         SpansVersionAttributeChanges {
             version_changes: self,
         }

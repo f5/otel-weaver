@@ -13,5 +13,6 @@ pub struct Event {
     pub id: String,
     /// The attributes of the event.
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub attributes: Vec<Attribute>,
 }

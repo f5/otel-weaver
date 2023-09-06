@@ -15,6 +15,7 @@ pub struct Log {
     pub body: BodyType,
     /// The attributes of the log record.
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub attributes: Vec<Attribute>,
 }
 

@@ -29,3 +29,6 @@ name = "weaver"
 [dependencies]
 logger = { version = "0.1.0", path = "crates/logger" }
 resolver = { version = "0.1.0", path = "crates/resolver" }
+
+serde.workspace = true
+serde_yaml.workspace = true

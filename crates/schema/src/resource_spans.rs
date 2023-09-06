@@ -12,8 +12,10 @@ use serde::{Deserialize, Serialize};
 pub struct ResourceSpans {
     /// The attributes of the resource spans.
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub attributes: Vec<Attribute>,
     /// The spans of the resource spans.
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub spans: Vec<Span>,
 }

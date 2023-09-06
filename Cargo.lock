@@ -498,6 +498,8 @@ version = "0.1.0"
 dependencies = [
  "logger",
  "resolver",
+ "serde",
+ "serde_yaml",
 ]
 
 [[package]]

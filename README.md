@@ -44,3 +44,11 @@ _A Schema-Driven Client SDK Generator for OpenTelemetry_
 
 ## Other links
 - [Internal crates interdependencies](docs/dependencies.md)
+
+## ToDo
+- [ ] Add support for `all` in telemetry schema versions section.
+- [ ] Add support for `span_events` in telemetry schema versions section.
+- [ ] Add support for `apply_to_spans` in telemetry schema versions section.
+- [ ] Add support for `apply_to_metrics` in telemetry schema metrics versions section.
+- [ ] Add support for `split` in telemetry schema metrics versions section.
+- [ ] Report unused semantic convention import

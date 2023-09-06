@@ -16,6 +16,7 @@ pub enum UnivariateMetric {
         r#ref: String,
         /// The attributes of the metric.
         #[serde(default)]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         attributes: Vec<Attribute>,
     },
     /// A local metric.
@@ -24,6 +25,7 @@ pub enum UnivariateMetric {
         id: String,
         /// The attributes of the metric.
         #[serde(default)]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         attributes: Vec<Attribute>,
     },
 }

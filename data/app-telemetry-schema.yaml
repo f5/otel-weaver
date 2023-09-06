@@ -6,7 +6,10 @@ schema_url: https://mycompany.com/schemas/1.0.0
 
 # Semantic Convention Imports
 semantic_conventions:
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/url.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/http-common.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/client.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/exception.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/server.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/network.yaml
 
@@ -96,7 +99,7 @@ schema:
           - ref: client.port
           - ref: client.socket.address
           - ref: client.socket.port
-          - ref: url.schema
+          - ref: url.scheme
         events:
           - id: error
             attributes:

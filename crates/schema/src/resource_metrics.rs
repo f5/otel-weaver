@@ -13,11 +13,14 @@ use serde::{Deserialize, Serialize};
 pub struct ResourceMetrics {
     /// The attributes of the resource metrics.
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub attributes: Vec<Attribute>,
     /// The univariate metrics of the resource metrics.
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub univariate_metrics: Vec<UnivariateMetric>,
     /// The multivariate metrics of the resource metrics.
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub multivariate_metrics: Vec<MultivariateMetrics>,
 }

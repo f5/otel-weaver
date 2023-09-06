@@ -123,7 +123,6 @@ impl SemConvCatalog {
                                 // The fully qualified attribute id is the concatenation
                                 // of the group id and the attribute id.
                                 let fq_attr_id = format!("{}.{}", group_id, id);
-                                println!("fq_attr_id={}", fq_attr_id);
                                 let prev_val = self.attributes.insert(fq_attr_id.clone(), attr.clone());
                                 if prev_val.is_some() {
                                     return Err(Error::DuplicateAttributeId {
@@ -152,7 +151,7 @@ impl SemConvCatalog {
                         }
                     }
                     _ => {
-                        println!("TODO: resolve other group types")
+                        println!("TODO: resolve other group types {:?}", group.r#type);
                     }
                 }
             }
@@ -184,8 +183,8 @@ impl SemConvCatalog {
 
     /// Returns an attribute definition from its reference or `None` if the
     /// reference does not exist.
-    pub fn get_attribute(&self, attr_ref: &str) -> Option<attribute::Attribute> {
-        None
+    pub fn get_attribute(&self, attr_ref: &str) -> Option<&attribute::Attribute> {
+        self.attributes.get(attr_ref)
     }
 }
 

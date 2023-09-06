@@ -7,11 +7,10 @@
 
 use crate::schema_spec::SchemaSpec;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use version::{Versions, VersionSpec};
+use version::{Versions};
 
 pub mod event;
 pub mod instrumentation_library;
@@ -59,17 +58,20 @@ pub struct TelemetrySchema {
     /// The version of the telemetry schema specification.
     pub file_format: String,
     /// The URL of the parent schema (optional).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_schema_url: Option<String>,
     /// The URL of the current schema.
     pub schema_url: String,
     /// The semantic conventions that are imported by the current schema (optional).
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub semantic_conventions: Vec<SemConvImport>,
     /// The schema specification for the current schema.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub schema: Option<SchemaSpec>,
     /// The versions and corresponding changes that can be applied to the current schema.
-    #[serde(default)]
-    pub versions: Versions,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub versions: Option<Versions>,
 }
 
 /// A semantic convention import.

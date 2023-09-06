@@ -15,11 +15,14 @@ pub struct Span {
     pub id: String,
     /// The attributes of the span.
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub attributes: Vec<Attribute>,
     /// The events of the span.
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub events: Vec<Event>,
     /// The links of the span.
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub links: Vec<Link>,
 }
