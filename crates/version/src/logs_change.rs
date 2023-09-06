@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Changes to apply to the logs for a specific version.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields)]
 pub struct LogsChange {
     /// A collection of rename operations to apply to the log attributes.
@@ -14,7 +14,7 @@ pub struct LogsChange {
 }
 
 /// A collection of rename operations to apply to the log attributes.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields)]
 pub struct RenameAttributes {
     /// A collection of rename operations to apply to the log attributes.

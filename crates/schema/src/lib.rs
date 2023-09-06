@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use version::VersionSpec;
+use version::{Versions, VersionSpec};
 
 pub mod event;
 pub mod instrumentation_library;
@@ -69,7 +69,7 @@ pub struct TelemetrySchema {
     pub schema: Option<SchemaSpec>,
     /// The versions and corresponding changes that can be applied to the current schema.
     #[serde(default)]
-    pub versions: HashMap<String, VersionSpec>,
+    pub versions: Versions,
 }
 
 /// A semantic convention import.
