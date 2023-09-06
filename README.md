@@ -41,3 +41,6 @@ _A Schema-Driven Client SDK Generator for OpenTelemetry_
   - [Schema validation](docs/contribution.md#schema-validation-plugin)
   - [Schema export](docs/contribution.md#schema-export-plugin)
   - [Variable resolver](docs/contribution.md#variable-resolver-plugin)
+
+## Other links
+- [Internal crates interdependencies](docs/dependencies.md)
