@@ -9,6 +9,18 @@ use std::collections::HashMap;
 #[derive(Serialize, Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields)]
 pub struct MetricsChange {
+    /// A collection of rename operations to apply to the metric attributes.
+    #[serde(default)]
+    pub rename_attributes: RenameAttributes,
     /// A collection of rename operations to apply to the metric names.
+    #[serde(default)]
     pub rename_metrics: HashMap<String, String>,
+}
+
+/// A collection of rename operations to apply to the metric attributes.
+#[derive(Serialize, Deserialize, Debug, Default)]
+#[serde(deny_unknown_fields)]
+pub struct RenameAttributes {
+    /// A collection of rename operations to apply to the metric attributes.
+    pub attribute_map: HashMap<String, String>,
 }

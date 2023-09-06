@@ -186,6 +186,7 @@ dependencies = [
  "schema",
  "semconv",
  "thiserror",
+ "version",
 ]
 
 [[package]]

@@ -5,11 +5,12 @@
 #![deny(missing_docs)]
 #![deny(clippy::print_stdout)]
 
-use logger::Logger;
 use std::path::Path;
 
+use logger::Logger;
 use schema::TelemetrySchema;
 use semconv::attribute::Attribute;
+use version::{VersionAttributeChanges, VersionChanges};
 
 /// A resolver that can be used to resolve telemetry schemas.
 /// All references to semantic conventions will be resolved.
@@ -35,7 +36,7 @@ pub enum Error {
     FailToResolveAttribute {
         /// The reference to the attribute.
         r#ref: String,
-    }
+    },
 }
 
 impl SchemaResolver {
@@ -63,24 +64,36 @@ impl SchemaResolver {
         let parent_schema = Self::load_parent_schema(&schema, log)?;
         let sem_conv_catalog = Self::create_semantic_convention_catalog(&schema, log)?;
 
+        // Merges the versions of the parent schema into the current schema.
+        if let Some(parent_schema) = parent_schema {
+            schema.versions.extend(parent_schema.versions);
+        }
+
+        // Generates version changes
+        let version_changes = if let Some(latest_version) = schema.versions.latest_version() {
+            schema.versions.version_changes_for(latest_version)
+        } else {
+            VersionChanges::default()
+        };
+
         // Resolve the references to the semantic conventions.
         log.loading("Solving semantic convention references");
         if let Some(schema) = schema.schema.as_mut() {
             // Resolve common attributes
             if let Some(metrics) = schema.resource_metrics.as_mut() {
-                Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog)?;
+                Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
             }
             if let Some(logs) = schema.resource_logs.as_mut() {
-                Self::resolve_attributes(logs.attributes.as_mut(), &sem_conv_catalog)?;
+                Self::resolve_attributes(logs.attributes.as_mut(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
             }
             if let Some(spans) = schema.resource_spans.as_mut() {
-                Self::resolve_attributes(spans.attributes.as_mut(), &sem_conv_catalog)?;
+                Self::resolve_attributes(spans.attributes.as_mut(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
             }
             // Merge common attributes with the attributes of the corresponding resource_metrics,
             // resource_logs and resource_spans.
             if let Some(logs) = schema.resource_logs.as_mut() {
                 for log in logs.logs.iter_mut() {
-                    Self::resolve_attributes(log.attributes.as_mut(), &sem_conv_catalog)?;
+                    Self::resolve_attributes(log.attributes.as_mut(), &sem_conv_catalog, version_changes.resource_attribute_changes())?;
                 }
             }
         }
@@ -135,10 +148,14 @@ impl SchemaResolver {
         Ok(sem_conv_catalog)
     }
 
-    fn resolve_attributes(attributes: &mut Vec<Attribute>, sem_conv_catalog: &semconv::SemConvCatalog) -> Result<(), Error> {
+    fn resolve_attributes(
+        attributes: &mut Vec<Attribute>,
+        sem_conv_catalog: &semconv::SemConvCatalog,
+        version_changes: impl VersionAttributeChanges) -> Result<(), Error> {
         for attribute in attributes.iter_mut() {
             if let Some(r#ref) = attribute.r#ref.as_ref() {
-                if let Some(resolved_attribute) = sem_conv_catalog.get_attribute(r#ref) {
+                let normalized_ref = version_changes.get_attribute_name(r#ref);
+                if let Some(resolved_attribute) = sem_conv_catalog.get_attribute(&normalized_ref) {
                     *attribute = resolved_attribute;
                 } else {
                     return Err(Error::FailToResolveAttribute {
@@ -153,8 +170,9 @@ impl SchemaResolver {
 
 #[cfg(test)]
 mod test {
-    use crate::SchemaResolver;
     use logger::Logger;
+
+    use crate::SchemaResolver;
 
     #[test]
     fn resolve_schema() {
