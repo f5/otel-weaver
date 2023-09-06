@@ -13,5 +13,7 @@ flowchart TB
     main --> logger 
     main --> resolver
     
-    Note right of version: handle telemetry schema versions.
+    note right of version
+        Handle telemetry schema versions
+    note
 ```
