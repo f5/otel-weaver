@@ -80,7 +80,6 @@ pub struct VersionSpec {
 /// The changes to apply to rename attributes and metrics for
 /// a specific version.
 pub struct VersionChanges {
-    version: semver::Version,
     resource_old_to_new_attributes: HashMap<String, String>,
     metrics_old_to_new_names: HashMap<String, String>,
     logs_old_to_new_attributes: HashMap<String, String>,
@@ -201,13 +200,12 @@ impl Versions {
             }
         }
 
-        return VersionChanges {
-            version: version.clone(),
+        VersionChanges {
             resource_old_to_new_attributes,
             metrics_old_to_new_names,
             logs_old_to_new_attributes,
             spans_old_to_new_attributes,
-        };
+        }
     }
 
     /// Update the current `Versions` to include the transformations of the parent `Versions`.
@@ -235,7 +233,7 @@ impl VersionSpec {
             let mut resource_change = ResourceChange::default();
             for change in resources.changes {
                 'next_parent_renaming: for (old, new) in change.rename_attributes.attribute_map {
-                    for local_change in self.resources.get_or_insert_with(|| ResourceVersion::default()).changes.iter() {
+                    for local_change in self.resources.get_or_insert_with(ResourceVersion::default).changes.iter() {
                         if local_change.rename_attributes.attribute_map.contains_key(&old) {
                             // renaming already present in local changes, skip it
                             continue 'next_parent_renaming;
@@ -245,8 +243,12 @@ impl VersionSpec {
                     resource_change.rename_attributes.attribute_map.insert(old, new);
                 }
             }
-            if resource_change.rename_attributes.attribute_map.len() > 0 {
-                self.resources.get_or_insert_with(|| ResourceVersion::default()).changes.push(resource_change);
+            if !resource_change.rename_attributes.attribute_map.is_empty() {
+                if self.resources.get_or_insert_with(ResourceVersion::default).changes.is_empty() {
+                    self.resources.get_or_insert_with(ResourceVersion::default).changes.push(resource_change);
+                } else {
+                    self.resources.get_or_insert_with(ResourceVersion::default).changes[0].rename_attributes.attribute_map.extend(resource_change.rename_attributes.attribute_map);
+                }
             }
         }
 
@@ -255,7 +257,7 @@ impl VersionSpec {
             let mut metrics_change = MetricsChange::default();
             for change in metrics.changes {
                 'next_parent_renaming: for (old, new) in change.rename_metrics {
-                    for local_change in self.metrics.get_or_insert_with(|| MetricsVersion::default()).changes.iter() {
+                    for local_change in self.metrics.get_or_insert_with(MetricsVersion::default).changes.iter() {
                         if local_change.rename_metrics.contains_key(&old) {
                             // renaming already present in local changes, skip it
                             continue 'next_parent_renaming;
@@ -265,8 +267,12 @@ impl VersionSpec {
                     metrics_change.rename_metrics.insert(old, new);
                 }
             }
-            if metrics_change.rename_metrics.len() > 0 {
-                self.metrics.get_or_insert_with(|| MetricsVersion::default()).changes.push(metrics_change);
+            if !metrics_change.rename_metrics.is_empty() {
+                if self.metrics.get_or_insert_with(MetricsVersion::default).changes.is_empty() {
+                    self.metrics.get_or_insert_with(MetricsVersion::default).changes.push(metrics_change);
+                } else {
+                    self.metrics.get_or_insert_with(MetricsVersion::default).changes[0].rename_metrics.extend(metrics_change.rename_metrics);
+                }
             }
         }
 
@@ -275,7 +281,7 @@ impl VersionSpec {
             let mut logs_change = LogsChange::default();
             for change in logs.changes {
                 'next_parent_renaming: for (old, new) in change.rename_attributes.attribute_map {
-                    for local_change in self.logs.get_or_insert_with(|| LogsVersion::default()).changes.iter() {
+                    for local_change in self.logs.get_or_insert_with(LogsVersion::default).changes.iter() {
                         if local_change.rename_attributes.attribute_map.contains_key(&old) {
                             // renaming already present in local changes, skip it
                             continue 'next_parent_renaming;
@@ -285,8 +291,12 @@ impl VersionSpec {
                     logs_change.rename_attributes.attribute_map.insert(old, new);
                 }
             }
-            if logs_change.rename_attributes.attribute_map.len() > 0 {
-                self.logs.get_or_insert_with(|| LogsVersion::default()).changes.push(logs_change);
+            if !logs_change.rename_attributes.attribute_map.is_empty() {
+                if self.logs.get_or_insert_with(LogsVersion::default).changes.is_empty() {
+                    self.logs.get_or_insert_with(LogsVersion::default).changes.push(logs_change);
+                } else {
+                    self.logs.get_or_insert_with(LogsVersion::default).changes[0].rename_attributes.attribute_map.extend(logs_change.rename_attributes.attribute_map);
+                }
             }
         }
 
@@ -295,7 +305,7 @@ impl VersionSpec {
             let mut spans_change = SpansChange::default();
             for change in spans.changes {
                 'next_parent_renaming: for (old, new) in change.rename_attributes.attribute_map {
-                    for local_change in self.spans.get_or_insert_with(|| SpansVersion::default()).changes.iter() {
+                    for local_change in self.spans.get_or_insert_with(SpansVersion::default).changes.iter() {
                         if local_change.rename_attributes.attribute_map.contains_key(&old) {
                             // renaming already present in local changes, skip it
                             continue 'next_parent_renaming;
@@ -305,8 +315,12 @@ impl VersionSpec {
                     spans_change.rename_attributes.attribute_map.insert(old, new);
                 }
             }
-            if spans_change.rename_attributes.attribute_map.len() > 0 {
-                self.spans.get_or_insert_with(|| SpansVersion::default()).changes.push(spans_change);
+            if !spans_change.rename_attributes.attribute_map.is_empty() {
+                if self.spans.get_or_insert_with(SpansVersion::default).changes.is_empty() {
+                    self.spans.get_or_insert_with(SpansVersion::default).changes.push(spans_change);
+                } else {
+                    self.spans.get_or_insert_with(SpansVersion::default).changes[0].rename_attributes.attribute_map.extend(spans_change.rename_attributes.attribute_map);
+                }
             }
         }
     }
@@ -399,6 +413,8 @@ mod tests {
         assert_eq!("cloud.resource_id", changes.get_span_attribute_name("faas.id"));
         assert_eq!("db.name", changes.get_span_attribute_name("db.hbase.namespace"));
         assert_eq!("db.name", changes.get_span_attribute_name("db.cassandra.keyspace"));
+        assert_eq!("metric_1", changes.get_metric_name("m1"));
+        assert_eq!("metric_2", changes.get_metric_name("m2"));
     }
 
     #[test]
@@ -409,9 +425,7 @@ mod tests {
         // Update `app_version` to extend `parent_versions`
         app_versions.extend(parent_versions);
 
-        dbg!(&app_versions);
-
-        // Transformations defined in `app_versions.yaml` masking or
+        // Transformations defined in `app_versions.yaml` overriding or
         // complementing `parent_versions.yaml`
         let v1_22 = app_versions.versions
             .get(&semver::Version::parse("1.22.0").unwrap()).unwrap();
@@ -426,10 +440,30 @@ mod tests {
             .changes[0]
             .rename_attributes.attribute_map.get("db.cassandra.keyspace");
         assert_eq!(observed_value, Some(&"database.name".to_string()));
-        let observed_value = v1_8.resources.as_ref().unwrap()
+        let observed_value = v1_8.spans.as_ref().unwrap()
             .changes[0]
-            .rename_attributes.attribute_map.get("db.cassandra.db");
+            .rename_attributes.attribute_map.get("db.cassandra.keyspace");
         assert_eq!(observed_value, Some(&"database.name".to_string()));
+        let observed_value = v1_8.spans.as_ref().unwrap()
+            .changes[0]
+            .rename_attributes.attribute_map.get("db.hbase.namespace");
+        assert_eq!(observed_value, Some(&"db.name".to_string()));
+        let observed_value = v1_8.logs.as_ref().unwrap()
+            .changes[0]
+            .rename_attributes.attribute_map.get("db.cassandra.keyspace");
+        assert_eq!(observed_value, Some(&"database.name".to_string()));
+        let observed_value = v1_8.logs.as_ref().unwrap()
+            .changes[0]
+            .rename_attributes.attribute_map.get("db.hbase.namespace");
+        assert_eq!(observed_value, Some(&"db.name".to_string()));
+        let observed_value = v1_8.metrics.as_ref().unwrap()
+            .changes[0]
+            .rename_metrics.get("m1");
+        assert_eq!(observed_value, Some(&"metric_1".to_string()));
+        let observed_value = v1_8.metrics.as_ref().unwrap()
+            .changes[0]
+            .rename_metrics.get("m2");
+        assert_eq!(observed_value, Some(&"metric2".to_string()));
 
         let v1_7_1 = app_versions.versions
             .get(&semver::Version::parse("1.7.1").unwrap()).unwrap();
@@ -451,6 +485,8 @@ mod tests {
             .rename_attributes.attribute_map.get("messaging.kafka.client_id");
         assert_eq!(observed_value, Some(&"messaging.client_id".to_string()));
 
-        // messaging.consumer_id: messaging.consumer.id
+        let changes = app_versions.version_changes_for(app_versions.latest_version().unwrap());
+        assert_eq!("metric_1", changes.get_metric_name("m1"));
+        assert_eq!("metric2", changes.get_metric_name("m2"));
     }
 }

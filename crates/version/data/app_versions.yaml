@@ -8,6 +8,11 @@ versions:
             attribute_map:
               messaging.kafka.client_id: messaging.client.id
   1.8.0:
+    logs:
+      changes:
+        - rename_attributes:
+            attribute_map:
+              db.cassandra.keyspace: database.name
     spans:
       changes:
         - rename_attributes:
@@ -18,6 +23,10 @@ versions:
         - rename_attributes:
             attribute_map:
               db.cassandra.db: database.name
+    metrics:
+      changes:
+        - rename_metrics:
+            m2: metric2
   1.7.1:
     spans:
       changes:

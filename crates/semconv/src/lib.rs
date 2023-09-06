@@ -9,7 +9,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use std::process::id;
 
 use serde::{Deserialize, Serialize};
 
@@ -160,7 +159,7 @@ impl SemConvCatalog {
         }
 
         // Resolve all the attributes with a reference.
-        for mut attr_to_resolve in attributes_to_resolve.into_iter() {
+        for attr_to_resolve in attributes_to_resolve.into_iter() {
             let resolved_attr = self.attributes.get(&attr_to_resolve.r#ref);
 
             if let Some(resolved_attr) = resolved_attr {
