@@ -13,7 +13,7 @@ flowchart TB
     main --> logger 
     main --> resolver
     
-    click resolver "../crates/resolver"
+    click resolver "crates/resolver"
     click logger "../crates/logger"
     click semconv "../crates/semconv"
     click schema "../crates/schema"
