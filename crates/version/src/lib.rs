@@ -4,6 +4,7 @@
 
 #![deny(missing_docs)]
 #![deny(clippy::print_stdout)]
+#![deny(clippy::print_stderr)]
 
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;

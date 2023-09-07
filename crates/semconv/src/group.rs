@@ -76,7 +76,7 @@ pub struct Constraint {
 }
 
 /// The type of the metric.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum Instrument {
     /// An up-down counter metric.

@@ -4,6 +4,7 @@
 
 #![deny(missing_docs)]
 #![deny(clippy::print_stdout)]
+#![deny(clippy::print_stderr)]
 
 use crate::schema_spec::SchemaSpec;
 use serde::{Deserialize, Serialize};

@@ -30,9 +30,7 @@ pub enum Metric {
         /// The reference to the metric.
         r#ref: String
     },
-    /// A metric defined locally.
-    Local {
-        /// The id of the metric.
-        id: String
-    },
+
+    /// A fully defined metric.
+    Metric(semconv::metric::Metric),
 }

@@ -3,7 +3,8 @@
 //! A generic logger that can be used to log messages to the console.
 
 #![deny(missing_docs)]
-#[deny(clippy::print_stdout)]
+#![deny(clippy::print_stdout)]
+#![deny(clippy::print_stderr)]
 
 /// A generic logger that can be used to log messages to the console.
 #[derive(Default)]

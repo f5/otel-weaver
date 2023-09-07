@@ -12,6 +12,7 @@ semantic_conventions:
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/exception.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/server.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/network.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/metrics/http.yaml
 
 # The section below outlines the telemetry schema for a service or application.
 # This schema details all the metrics, logs, and spans specifically generated
@@ -45,7 +46,7 @@ schema:
         requirement_level: required
     # Declaration of all the univariate metrics
     univariate_metrics:
-      - ref: metric.http.server.duration
+      - ref: http.server.request.duration
         attributes:
           - ref: server.address
           - ref: server.port
@@ -66,10 +67,10 @@ schema:
           - ref: network.protocol.version
           - ref: url.scheme
         metrics: # metrics sharing the same attributes
-          - ref: metric.http.server.duration
-          - ref: metric.http.server.active_requests
-          - ref: metric.http.server.request.size
-          - ref: metric.http.server.response.size
+          - ref: http.server.request.duration
+          - ref: http.server.active_requests
+          - ref: http.server.request.size
+          - ref: http.server.response.size
 
 
   # Logs declaration

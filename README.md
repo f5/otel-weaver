@@ -44,11 +44,17 @@ _A Schema-Driven Client SDK Generator for OpenTelemetry_
 
 ## Other links
 - [Internal crates interdependencies](docs/dependencies.md)
+- [OpenTelemetry Schema File Format v1.1.0](https://opentelemetry.io/docs/specs/otel/schemas/file_format_v1.1.0/)
+- OpenTelemetry Semantic Convention File Format?
 
 ## ToDo
+- [ ] Add support for group of attributes (in general and for metrics).
 - [ ] Add support for `all` in telemetry schema versions section.
 - [ ] Add support for `span_events` in telemetry schema versions section.
 - [ ] Add support for `apply_to_spans` in telemetry schema versions section.
 - [ ] Add support for `apply_to_metrics` in telemetry schema metrics versions section.
 - [ ] Add support for `split` in telemetry schema metrics versions section.
-- [ ] Report unused semantic convention import
+- [ ] Add support for group extends.
+- [ ] Add support for group constraints `any_of`, ...
+- [ ] Report unused semantic convention import.
+- [ ] Search engine for semantic convention catalog.

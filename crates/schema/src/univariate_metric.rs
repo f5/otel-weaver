@@ -4,6 +4,7 @@
 
 use semconv::attribute::Attribute;
 use serde::{Deserialize, Serialize};
+use semconv::metric::Metric;
 
 /// A univariate metric specification.
 #[derive(Serialize, Deserialize, Debug)]
@@ -19,13 +20,7 @@ pub enum UnivariateMetric {
         #[serde(skip_serializing_if = "Vec::is_empty")]
         attributes: Vec<Attribute>,
     },
-    /// A local metric.
-    Local {
-        /// The id of the metric.
-        id: String,
-        /// The attributes of the metric.
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Vec::is_empty")]
-        attributes: Vec<Attribute>,
-    },
+
+    /// A fully defined metric.
+    Metric(Metric),
 }

@@ -4,11 +4,12 @@
 
 #![deny(missing_docs)]
 #![deny(clippy::print_stdout)]
+#![deny(clippy::print_stderr)]
 
 use std::path::Path;
 
 use logger::Logger;
-use schema::multivariate_metrics::{Metric, MultivariateMetrics};
+use schema::multivariate_metrics::Metric;
 use schema::TelemetrySchema;
 use schema::univariate_metric::UnivariateMetric;
 use semconv::attribute::Attribute;
@@ -34,9 +35,16 @@ pub enum Error {
     SemConvError(semconv::Error),
 
     /// Failed to resolve an attribute.
-    #[error("Failed to resolve attribute '{r#ref}'")]
+    #[error("Failed to resolve the attribute '{r#ref}'")]
     FailToResolveAttribute {
         /// The reference to the attribute.
+        r#ref: String,
+    },
+
+    /// Failed to resolve a metric.
+    #[error("Failed to resolve the metric '{r#ref}'")]
+    FailToResolveMetric {
+        /// The reference to the metric.
         r#ref: String,
     },
 }
@@ -65,7 +73,7 @@ impl SchemaResolver {
 
         let parent_schema = Self::load_parent_schema(&schema, log)?;
         let mut sem_conv_catalog = Self::create_semantic_convention_catalog(&schema, log)?;
-        sem_conv_catalog.resolve().map_err(|e| Error::SemConvError(e))?;
+        sem_conv_catalog.resolve().map_err(Error::SemConvError)?;
 
         // Merges the versions of the parent schema into the current schema.
         if let Some(parent_schema) = parent_schema {
@@ -86,16 +94,34 @@ impl SchemaResolver {
         // Resolve the references to the semantic conventions.
         log.loading("Solving semantic convention references");
         if let Some(schema) = schema.schema.as_mut() {
-            // Resolve common attributes
+            // Resolve metrics and their attributes
             if let Some(metrics) = schema.resource_metrics.as_mut() {
                 Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
-                for metric in metrics.univariate_metrics.iter_mut() {
+                for mut metric in metrics.univariate_metrics.iter_mut() {
                     if let UnivariateMetric::Ref {r#ref, attributes} = metric {
                         Self::resolve_attributes(attributes, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                        if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
+                            *metric = UnivariateMetric::Metric(referenced_metric.clone());
+                        } else {
+                            return Err(Error::FailToResolveMetric {
+                                r#ref: r#ref.clone(),
+                            });
+                        }
                     }
                 }
                 for metrics in metrics.multivariate_metrics.iter_mut() {
                     Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                    for mut metric in metrics.metrics.iter_mut() {
+                        if let Metric::Ref {r#ref} = metric {
+                            if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
+                                *metric = Metric::Metric(referenced_metric.clone());
+                            } else {
+                                return Err(Error::FailToResolveMetric {
+                                    r#ref: r#ref.clone(),
+                                });
+                            }
+                        }
+                    }
                 }
             }
 
@@ -180,7 +206,7 @@ impl SchemaResolver {
     }
 
     fn resolve_attributes(
-        attributes: &mut Vec<Attribute>,
+        attributes: &mut [Attribute],
         sem_conv_catalog: &semconv::SemConvCatalog,
         version_changes: impl VersionAttributeChanges) -> Result<(), Error> {
         for attribute in attributes.iter_mut() {
