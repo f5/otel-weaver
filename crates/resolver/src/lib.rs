@@ -97,7 +97,7 @@ impl SchemaResolver {
             // Resolve metrics and their attributes
             if let Some(metrics) = schema.resource_metrics.as_mut() {
                 Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
-                for mut metric in metrics.univariate_metrics.iter_mut() {
+                for metric in metrics.univariate_metrics.iter_mut() {
                     if let UnivariateMetric::Ref {r#ref, attributes} = metric {
                         Self::resolve_attributes(attributes, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                         if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
@@ -111,7 +111,7 @@ impl SchemaResolver {
                 }
                 for metrics in metrics.multivariate_metrics.iter_mut() {
                     Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
-                    for mut metric in metrics.metrics.iter_mut() {
+                    for metric in metrics.metrics.iter_mut() {
                         if let Metric::Ref {r#ref} = metric {
                             if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
                                 *metric = Metric::Metric(referenced_metric.clone());

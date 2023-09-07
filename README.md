@@ -45,7 +45,7 @@ _A Schema-Driven Client SDK Generator for OpenTelemetry_
 ## Other links
 - [Internal crates interdependencies](docs/dependencies.md)
 - [OpenTelemetry Schema File Format v1.1.0](https://opentelemetry.io/docs/specs/otel/schemas/file_format_v1.1.0/)
-- OpenTelemetry Semantic Convention File Format?
+- [OpenTelemetry Semantic Convention File Format](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md)
 
 ## ToDo
 - [ ] Add support for group of attributes (in general and for metrics).

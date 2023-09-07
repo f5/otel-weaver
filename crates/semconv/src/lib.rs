@@ -2,8 +2,15 @@
 
 //! This crate defines the concept of semantic convention catalog.
 
-#![deny(missing_docs)]
-#![deny(clippy::print_stdout)]
+#![deny(
+    missing_docs,
+    clippy::print_stdout,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications,
+    unused_results,
+    unused_extern_crates,
+)]
 
 use std::collections::HashMap;
 use std::fs::File;
@@ -28,7 +35,7 @@ pub enum Error {
         /// The path or URL of the semantic convention asset.
         path_or_url: String,
         /// The error that occurred.
-        error: String
+        error: String,
     },
 
     /// The semantic convention asset is invalid.
@@ -96,7 +103,7 @@ pub struct SemConvCatalog {
     attributes: HashMap<String, attribute::Attribute>,
 
     /// A collection of resolved metrics indexed by id.
-    metrics: HashMap<String, metric::Metric>,
+    metrics: HashMap<String, Metric>,
 }
 
 /// A semantic convention specification.
@@ -226,7 +233,7 @@ impl SemConvCatalog {
                                 path_or_url: path_or_url.to_string(),
                                 group_id: group_id.clone(),
                                 error: "Metric without name".to_string(),
-                            })
+                            });
                         };
 
                         let prev_val = self.metrics.insert(metric_name.clone(), Metric {
@@ -258,10 +265,16 @@ impl SemConvCatalog {
 
             if let Some(resolved_attr) = resolved_attr {
                 // Merge the resolved attribute with the attribute to resolve.
-                let AttributeToResolve {mut attribute, ..} = attr_to_resolve;
+                let AttributeToResolve { mut attribute, .. } = attr_to_resolve;
                 attribute.r#ref = None;
                 attribute.id = Some(attr_to_resolve.r#ref.clone());
-                self.attributes.insert(attr_to_resolve.r#ref, attribute);
+                let prev_attr = self.attributes.insert(attr_to_resolve.r#ref.clone(), attribute);
+                if prev_attr.is_some() {
+                    return Err(Error::DuplicateAttributeId {
+                        path_or_url: "".to_string(),
+                        id: attr_to_resolve.r#ref.clone(),
+                    });
+                }
             } else {
                 return Err(Error::InvalidAttribute {
                     path_or_url: attr_to_resolve.path_or_url.clone(),
