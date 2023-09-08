@@ -115,7 +115,27 @@ impl SchemaResolver {
                     for metric in metrics.metrics.iter_mut() {
                         if let Metric::Ref {r#ref} = metric {
                             if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
-                                *metric = Metric::Metric(referenced_metric.clone());
+                                let mut error = None;
+                                *metric = Metric::Metric{
+                                    name: referenced_metric.name.clone(),
+                                    brief: referenced_metric.brief.clone(),
+                                    note: referenced_metric.note.clone(),
+                                    attributes: referenced_metric.attributes.iter().filter_map(|attr_ref| {
+                                        if let Some(attr) = sem_conv_catalog.get_attribute(attr_ref) {
+                                            Some(attr.clone())
+                                        } else {
+                                            error = Some(Error::FailToResolveAttribute {
+                                                r#ref: attr_ref.clone(),
+                                            });
+                                            None
+                                        }
+                                    }).collect(),
+                                    instrument: referenced_metric.instrument.clone(),
+                                    unit: referenced_metric.unit.clone(),
+                                };
+                                if let Some(error) = error {
+                                    return Err(error);
+                                }
                             } else {
                                 return Err(Error::FailToResolveMetric {
                                     r#ref: r#ref.clone(),

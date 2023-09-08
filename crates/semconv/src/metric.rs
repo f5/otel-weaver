@@ -4,7 +4,6 @@
 
 use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
-use crate::attribute::Attribute;
 use crate::group::Instrument;
 
 /// A metric specification.

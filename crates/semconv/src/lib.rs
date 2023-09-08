@@ -191,7 +191,6 @@ pub struct SemConvSpec {
 #[derive(Debug, Default)]
 pub struct ResolverConfig {
     error_when_attribute_ref_not_found: bool,
-    error_when_metric_ref_not_found: bool,
 }
 
 /// A wrapper for a resolver error that is considered as a warning
@@ -548,7 +547,6 @@ mod tests {
 
         let result = catalog.resolve(ResolverConfig {
             error_when_attribute_ref_not_found: false,
-            error_when_metric_ref_not_found: false,
         });
 
         dbg!(catalog);
