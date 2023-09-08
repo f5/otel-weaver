@@ -10,7 +10,7 @@ use crate::stability::Stability;
 
 /// Groups contain the list of semantic conventions and it is the root node of
 /// each yaml file.
-#[derive(Serialize, Deserialize, Debug, Validate)]
+#[derive(Serialize, Deserialize, Debug, Validate, Clone)]
 #[serde(deny_unknown_fields)]
 #[validate(schema(function = "validate_group"))]
 pub struct Group {
@@ -147,7 +147,7 @@ fn validate_group(group: &Group) -> Result<(), ValidationError> {
 }
 
 /// The different types of groups.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum ConvType {
     /// Attribute group (attribute_group type) defines a set of attributes that
@@ -179,7 +179,7 @@ impl Default for ConvType {
 }
 
 /// The span kind.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum SpanKind {
     /// A client span.
@@ -189,7 +189,7 @@ pub enum SpanKind {
 }
 
 /// Allow to define additional requirements on the semantic convention.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Constraint {
     /// any_of accepts a list of sequences. Each sequence contains a list of

@@ -13,6 +13,7 @@ use schema::multivariate_metrics::Metric;
 use schema::TelemetrySchema;
 use schema::univariate_metric::UnivariateMetric;
 use semconv::attribute::Attribute;
+use semconv::ResolverConfig;
 use version::{VersionAttributeChanges, VersionChanges};
 
 /// A resolver that can be used to resolve telemetry schemas.
@@ -73,7 +74,7 @@ impl SchemaResolver {
 
         let parent_schema = Self::load_parent_schema(&schema, log)?;
         let mut sem_conv_catalog = Self::create_semantic_convention_catalog(&schema, log)?;
-        sem_conv_catalog.resolve().map_err(Error::SemConvError)?;
+        let _ = sem_conv_catalog.resolve(ResolverConfig::default()).map_err(Error::SemConvError)?;
 
         // Merges the versions of the parent schema into the current schema.
         if let Some(parent_schema) = parent_schema {

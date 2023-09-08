@@ -5,6 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 use semconv::attribute::Attribute;
+use semconv::group::Instrument;
 
 /// A multivariate metric specification.
 #[derive(Serialize, Deserialize, Debug)]
@@ -32,5 +33,19 @@ pub enum Metric {
     },
 
     /// A fully defined metric.
-    Metric(semconv::metric::Metric),
+    Metric{
+        /// Metric name.
+        name: String,
+        /// Brief description of the metric.
+        brief: String,
+        /// Note on the metric.
+        note: String,
+        /// Attributes of the metric.
+        #[serde(default)]
+        attributes: Vec<Attribute>,
+        /// Type of the metric (e.g. gauge, histogram, ...).
+        instrument: Option<Instrument>,
+        /// Unit of the metric.
+        unit: Option<String>,
+    },
 }

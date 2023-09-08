@@ -7,24 +7,24 @@
 //! can be found [here](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md).
 
 #![deny(
-    missing_docs,
-    clippy::print_stdout,
-    unstable_features,
-    unused_import_braces,
-    unused_qualifications,
-    unused_results,
-    unused_extern_crates,
+missing_docs,
+clippy::print_stdout,
+unstable_features,
+unused_import_braces,
+unused_qualifications,
+unused_results,
+unused_extern_crates,
 )]
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use validator::Validate;
-use crate::attribute::Attribute;
 
+use crate::attribute::Attribute;
 use crate::group::Group;
 use crate::metric::Metric;
 
@@ -67,6 +67,17 @@ pub enum Error {
         id: String,
     },
 
+    /// The semantic convention asset contains a duplicate group id.
+    #[error("Duplicate group id `{id}` detected while loading {path_or_url:?} and already defined in {origin:?}")]
+    DuplicateGroupId {
+        /// The path or URL of the semantic convention asset.
+        path_or_url: String,
+        /// The duplicated group id.
+        id: String,
+        /// The asset where the group id was already defined.
+        origin: String,
+    },
+
     /// The semantic convention asset contains a duplicate metric name.
     #[error("Duplicate metric name `{name}` detected while loading {path_or_url:?}")]
     DuplicateMetricName {
@@ -106,23 +117,89 @@ pub struct SemConvCatalog {
     /// A collection of semantic convention specifications loaded in the catalog.
     specs: Vec<(String, SemConvSpec)>,
 
-    /// A collection of resolved attributes indexed by id.
-    attributes: HashMap<String, Attribute>,
+    /// Attributes indexed by their respective id independently of their
+    /// semantic convention group.
+    ///
+    /// This collection contains all the attributes defined in the catalog.
+    all_attributes: HashMap<String, Attribute>,
 
-    /// A collection of resolved metrics indexed by id.
-    metrics: HashMap<String, Metric>,
+    /// Metrics indexed by their respective id.
+    ///
+    /// This collection contains all the metrics defined in the catalog.
+    all_metrics: HashMap<String, Metric>,
+
+    /// Collection of attribute ids index by group id and defined in a
+    /// `resource` semantic convention group.
+    /// Attribute ids are references to of attributes defined in the
+    /// all_attributes field.
+    resource_group_attributes: HashMap<String, GroupIds>,
+
+    /// Collection of attribute ids index by group id and defined in a
+    /// `attribute_group` semantic convention group.
+    /// Attribute ids are references to of attributes defined in the
+    /// all_attributes field.
+    attr_grp_group_attributes: HashMap<String, GroupIds>,
+
+    /// Collection of attribute ids index by group id and defined in a
+    /// `span` semantic convention group.
+    /// Attribute ids are references to of attributes defined in the
+    /// all_attributes field.
+    span_group_attributes: HashMap<String, GroupIds>,
+
+    /// Collection of attribute ids index by group id and defined in a
+    /// `event` semantic convention group.
+    /// Attribute ids are references to of attributes defined in the
+    /// all_attributes field.
+    event_group_attributes: HashMap<String, GroupIds>,
+
+    /// Collection of attribute ids index by group id and defined in a
+    /// `metric` semantic convention group.
+    /// Attribute ids are references to of attributes defined in the
+    /// all_attributes field.
+    metric_group_attributes: HashMap<String, GroupIds>,
+
+    /// Collection of attribute ids index by group id and defined in a
+    /// `metric_group` semantic convention group.
+    /// Attribute ids are references to of attributes defined in the
+    /// all_attributes field.
+    metric_group_group_attributes: HashMap<String, GroupIds>,
+}
+
+/// Represents a collection of ids (attribute or metric ids).
+#[derive(Debug, Default)]
+struct GroupIds {
+    /// The semantic convention origin (path or URL) where the group id is
+    /// defined. This is used to report errors.
+    origin: String,
+    /// The collection of ids (attribute or metric ids).
+    ids: HashSet<String>,
 }
 
 /// A semantic convention specification.
 ///
 /// See [here](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md)
 /// the syntax of the semantic convention YAML file.
-#[derive(Serialize, Deserialize, Debug, Validate)]
+#[derive(Serialize, Deserialize, Debug, Validate, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct SemConvSpec {
     /// A collection of semantic convention groups.
     #[validate]
     pub groups: Vec<Group>,
+}
+
+/// The configuration of the resolver.
+#[derive(Debug, Default)]
+pub struct ResolverConfig {
+    error_when_attribute_ref_not_found: bool,
+    error_when_metric_ref_not_found: bool,
+}
+
+/// A wrapper for a resolver error that is considered as a warning
+/// by configuration.
+#[derive(Debug)]
+pub struct ResolverWarning {
+    /// The error that occurred.
+    pub error: Error,
 }
 
 struct AttributeToResolve {
@@ -164,105 +241,82 @@ impl SemConvCatalog {
     }
 
     /// Resolves all the references present in the semantic convention catalog.
-    pub fn resolve(&mut self) -> Result<(), Error> {
+    ///
+    /// The `config` parameter allows to customize the resolver behavior
+    /// when a reference is not found. By default, the resolver will emit an
+    /// error when a reference is not found. This behavior can be changed by
+    /// setting the `error_when_<...>_ref_not_found` to `false`, in which case
+    /// the resolver will record the error in a warning list and continue.
+    /// The warning list is returned as a list of warnings in the result.
+    pub fn resolve(&mut self, config: ResolverConfig) -> Result<Vec<ResolverWarning>, Error> {
+        let mut warnings = Vec::new();
         let mut attributes_to_resolve = Vec::new();
         let mut metrics_to_resolve = HashMap::new();
 
         // Add all the attributes with an id to the catalog.
-        for (path_or_url, spec) in self.specs.iter() {
+        for (path_or_url, spec) in self.specs.clone().into_iter() {
             for group in spec.groups.iter() {
-                let group_id = if group.prefix.is_empty() {
-                    group.id.clone()
-                } else {
-                    group.prefix.clone()
-                };
-
+                // Process attributes
                 match group.r#type {
-                    // Resolve attributes
-                    group::ConvType::AttributeGroup => {
-                        for attr in group.attributes.iter() {
-                            match attr {
-                                Attribute::Id {id, ..} => {
-                                    // The attribute has an id, so add it to the catalog
-                                    // if it does not exist yet, otherwise return an error.
-                                    // The fully qualified attribute id is the concatenation
-                                    // of the group id and the attribute id.
-                                    let fq_attr_id = format!("{}.{}", group_id, id);
-                                    let mut attr_clone = attr.clone();
-                                    if let Attribute::Id {id, ..} = &mut attr_clone {
-                                        *id = fq_attr_id.clone();
-                                    }
-                                    let prev_val = self.attributes.insert(fq_attr_id.clone(), attr_clone);
-                                    if prev_val.is_some() {
-                                        return Err(Error::DuplicateAttributeId {
-                                            path_or_url: path_or_url.to_string(),
-                                            id: fq_attr_id.clone(),
-                                        });
-                                    }
-                                }
-                                Attribute::Ref {r#ref, ..} => {
-                                    // The attribute has a reference, so add it to the
-                                    // list of attributes to resolve.
-                                    attributes_to_resolve.push(AttributeToResolve {
-                                        path_or_url: path_or_url.to_string(),
-                                        group_id: group_id.to_string(),
-                                        r#ref: r#ref.clone(),
-                                        attribute: attr.clone(),
-                                    });
-                                }
+                    group::ConvType::AttributeGroup | group::ConvType::Span
+                    | group::ConvType::Resource | group::ConvType::Metric
+                    | group::ConvType::Event | group::ConvType::MetricGroup => {
+                        let attributes_in_group = self.process_attributes(
+                            path_or_url.to_string(),
+                            group.id.clone(),
+                            group.prefix.clone(),
+                            group.attributes.clone(),
+                            &mut attributes_to_resolve,
+                        )?;
+
+                        let group_attributes = match group.r#type {
+                            group::ConvType::AttributeGroup => { Some(&mut self.attr_grp_group_attributes) }
+                            group::ConvType::Span => { Some(&mut self.span_group_attributes) }
+                            group::ConvType::Resource => { Some(&mut self.resource_group_attributes) }
+                            group::ConvType::Metric => { Some(&mut self.metric_group_attributes) }
+                            group::ConvType::Event => { Some(&mut self.event_group_attributes) }
+                            group::ConvType::MetricGroup => { Some(&mut self.metric_group_group_attributes) }
+                            _ => { None }
+                        };
+
+                        if let Some(group_attributes) = group_attributes {
+                            if !attributes_in_group.is_empty() {
+                                Self::detect_duplicated_group(
+                                    path_or_url.to_string(),
+                                    group.id.clone(),
+                                    group_attributes.insert(group.id.clone(), GroupIds {
+                                        origin: path_or_url.to_string(),
+                                        ids: attributes_in_group,
+                                    }))?;
                             }
                         }
                     }
-                    group::ConvType::Span | group::ConvType::Resource => {
-                        for attr in group.attributes.iter() {
-                            match attr {
-                                Attribute::Id { id, .. } => {
-                                    // The attribute has an id, so add it to the catalog
-                                    // if it does not exist yet, otherwise return an error.
-                                    // The fully qualified attribute id is the concatenation
-                                    // of the group id and the attribute id.
-                                    let fq_attr_id = format!("{}.{}", group_id, id);
-                                    let mut attr_clone = attr.clone();
-                                    if let Attribute::Id { id, .. } = &mut attr_clone {
-                                        *id = fq_attr_id.clone();
-                                    }
-                                    let prev_val = self.attributes.insert(fq_attr_id.clone(), attr_clone);
-                                    if prev_val.is_some() {
-                                        return Err(Error::DuplicateAttributeId {
-                                            path_or_url: path_or_url.to_string(),
-                                            id: fq_attr_id.clone(),
-                                        });
-                                    }
-                                }
-                                Attribute::Ref { r#ref, .. } => {
-                                    // The attribute has a reference, so add it to the
-                                    // list of attributes to resolve.
-                                    attributes_to_resolve.push(AttributeToResolve {
-                                        path_or_url: path_or_url.to_string(),
-                                        group_id: group_id.to_string(),
-                                        r#ref: r#ref.clone(),
-                                        attribute: attr.clone(),
-                                    });
-                                }
-                            }
-                        }
+                    _ => {
+                        eprintln!("Warning: group type `{:?}` not implemented yet", group.r#type);
                     }
+                }
+
+                // Process metrics
+                match group.r#type {
                     group::ConvType::Metric => {
                         let metric_name = if let Some(metric_name) = group.metric_name.as_ref() {
                             metric_name.clone()
                         } else {
                             return Err(Error::InvalidMetric {
                                 path_or_url: path_or_url.to_string(),
-                                group_id: group_id.clone(),
+                                group_id: group.id.clone(),
                                 error: "Metric without name".to_string(),
                             });
                         };
 
-                        let prev_val = self.metrics.insert(metric_name.clone(), Metric {
+                        let prev_val = self.all_metrics.insert(metric_name.clone(), Metric {
                             name: metric_name.clone(),
                             brief: group.brief.clone(),
                             note: group.note.clone(),
-                            attributes: vec![],
+                            attributes: group.attributes.iter().map(|attr| match attr {
+                                Attribute::Ref { r#ref, .. } => { r#ref.clone() }
+                                Attribute::Id { id, .. } => { id.clone() }
+                            }).collect(),
                             instrument: group.instrument.clone(),
                             unit: group.unit.clone(),
                         });
@@ -283,14 +337,11 @@ impl SemConvCatalog {
                             }
                         }
                     }
-                    group::ConvType::Event => {
-                        eprintln!("group type `event` not implemented yet`");
-                    }
                     group::ConvType::MetricGroup => {
-                        eprintln!("group type `metric_group` not implemented yet`");
+                        eprintln!("Warning: group type `metric_group` not implemented yet");
                     }
-                    group::ConvType::Scope => {
-                        eprintln!("group type `scope` not implemented yet`");
+                    _ => {
+                        // No metrics to process
                     }
                 }
             }
@@ -298,22 +349,29 @@ impl SemConvCatalog {
 
         // Resolve all the attributes with a reference.
         for attr_to_resolve in attributes_to_resolve.into_iter() {
-            let resolved_attr = self.attributes.get(&attr_to_resolve.r#ref);
+            let resolved_attr = self.all_attributes.get(&attr_to_resolve.r#ref);
 
             if resolved_attr.is_none() {
-                return Err(Error::InvalidAttribute {
+                let err = Error::InvalidAttribute {
                     path_or_url: attr_to_resolve.path_or_url.clone(),
                     group_id: attr_to_resolve.group_id.clone(),
                     error: format!("Attribute reference '{}' not found", attr_to_resolve.r#ref),
-                });
+                };
+                if config.error_when_attribute_ref_not_found {
+                    return Err(err);
+                } else {
+                    warnings.push(ResolverWarning {
+                        error: err,
+                    });
+                }
             }
         }
 
         // Resolve all the metrics with an `extends` field.
         for (metric_name, r#ref) in metrics_to_resolve {
-            let referenced_metric = self.metrics.get(&r#ref).cloned();
+            let referenced_metric = self.all_metrics.get(&r#ref).cloned();
             if let Some(referenced_metric) = referenced_metric {
-                let _ = self.metrics.get_mut(&metric_name).map(|metric| {
+                let _ = self.all_metrics.get_mut(&metric_name).map(|metric| {
                     metric.attributes.extend(referenced_metric.attributes.iter().cloned());
                 });
             }
@@ -321,19 +379,84 @@ impl SemConvCatalog {
 
         self.specs.clear();
 
-        Ok(())
+        Ok(warnings)
     }
 
     /// Returns an attribute definition from its reference or `None` if the
     /// reference does not exist.
     pub fn get_attribute(&self, attr_ref: &str) -> Option<&Attribute> {
-        self.attributes.get(attr_ref)
+        self.all_attributes.get(attr_ref)
     }
 
     /// Returns a metric definition from its name or `None` if the
     /// name does not exist.
     pub fn get_metric(&self, metric_name: &str) -> Option<&Metric> {
-        self.metrics.get(metric_name)
+        self.all_metrics.get(metric_name)
+    }
+
+    /// Returns an error if prev_group_ids is not `None`.
+    fn detect_duplicated_group(path_or_url: String, group_id: String, prev_group_ids: Option<GroupIds>) -> Result<(), Error> {
+        if let Some(group_ids) = prev_group_ids.as_ref() {
+            return Err(Error::DuplicateGroupId {
+                path_or_url,
+                id: group_id,
+                origin: group_ids.origin.clone(),
+            });
+        }
+        Ok(())
+    }
+
+    /// Processes a collection of attributes passed as a parameter (`attrs`),
+    /// adds attributes fully defined to the catalog, adds attributes with
+    /// a reference to the list of attributes to resolve and returns a
+    /// collection of attribute ids defined in the current group.
+    fn process_attributes(
+        &mut self,
+        path_or_url: String,
+        group_id: String,
+        prefix: String,
+        attrs: Vec<Attribute>,
+        attributes_to_resolve: &mut Vec<AttributeToResolve>,
+    ) -> Result<HashSet<String>, Error> {
+        let mut attributes_in_group = HashSet::new();
+        for mut attr in attrs.into_iter() {
+            match &attr {
+                Attribute::Id { id, .. } => {
+                    // The attribute has an id, so add it to the catalog
+                    // if it does not exist yet, otherwise return an error.
+                    // The fully qualified attribute id is the concatenation
+                    // of the prefix and the attribute id (separated by a dot).
+                    let fq_attr_id = if prefix.is_empty() {
+                        id.clone()
+                    } else {
+                        format!("{}.{}", prefix, id)
+                    };
+                    if let Attribute::Id { id, .. } = &mut attr {
+                        *id = fq_attr_id.clone();
+                    }
+                    let prev_val = self.all_attributes.insert(fq_attr_id.clone(), attr);
+                    if prev_val.is_some() {
+                        return Err(Error::DuplicateAttributeId {
+                            path_or_url: path_or_url.clone(),
+                            id: fq_attr_id.clone(),
+                        });
+                    }
+                    let _ = attributes_in_group.insert(fq_attr_id.clone());
+                }
+                Attribute::Ref { r#ref, .. } => {
+                    // The attribute has a reference, so add it to the
+                    // list of attributes to resolve.
+                    attributes_to_resolve.push(AttributeToResolve {
+                        path_or_url: path_or_url.clone(),
+                        group_id: group_id.clone(),
+                        r#ref: r#ref.clone(),
+                        attribute: attr.clone(),
+                    });
+                    let _ = attributes_in_group.insert(r#ref.clone());
+                }
+            }
+        }
+        Ok(attributes_in_group)
     }
 }
 
@@ -385,6 +508,7 @@ impl SemConvSpec {
 #[cfg(test)]
 mod tests {
     use std::{dbg, vec};
+
     use super::*;
 
     #[test]
@@ -422,9 +546,23 @@ mod tests {
             assert!(result.is_ok(), "{:#?}", result.err().unwrap());
         }
 
-        let result = catalog.resolve();
-        assert!(result.is_ok(), "{:#?}", result.err().unwrap());
+        let result = catalog.resolve(ResolverConfig {
+            error_when_attribute_ref_not_found: false,
+            error_when_metric_ref_not_found: false,
+        });
 
         dbg!(catalog);
+
+        match result {
+            Ok(warnings) => {
+                if !warnings.is_empty() {
+                    println!("warnings: {:#?}", warnings);
+                }
+                assert!(warnings.is_empty());
+            }
+            Err(e) => {
+                panic!("{:#?}", e);
+            }
+        }
     }
 }
