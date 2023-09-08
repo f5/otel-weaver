@@ -11,27 +11,47 @@ use crate::stability::Stability;
 #[serde(untagged)]
 pub enum Attribute {
     /// Reference to another attribute.
+    ///
+    /// ref MUST have an id of an existing attribute.
+    /// ref is useful for specifying that an existing attribute of another
+    /// semantic convention is part of the current semantic convention and
+    /// inherit its brief, note, and example values. However, if these fields
+    /// are present in the current attribute definition, they override the
+    /// inherited values.
     Ref {
-        /// The reference to the attribute.
+        /// Reference an existing attribute.
         r#ref: String,
-        /// The brief of the attribute.
+        /// A brief description of the attribute.
         #[serde(skip_serializing_if = "Option::is_none")]
         brief: Option<String>,
-        /// A collection of examples of the attribute.
+        /// Sequence of example values for the attribute or single example
+        /// value. They are required only for string and string array
+        /// attributes. Example values must be of the same type of the
+        /// attribute. If only a single example is provided, it can directly
+        /// be reported without encapsulating it into a sequence/dictionary.
         #[serde(skip_serializing_if = "Option::is_none")]
         examples: Option<Examples>,
-        /// An optional tag associated with the attribute.
+        /// Associates a tag ("sub-group") to the attribute. It carries no
+        /// particular semantic meaning but can be used e.g. for filtering
+        /// in the markdown generator.
         #[serde(skip_serializing_if = "Option::is_none")]
         tag: Option<String>,
-        /// The requirement level of the attribute.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        requirement_level: Option<RequirementLevel>,
-        /// A flag indicating whether the attribute is relevant for sampling.
+        /// Specifies if the attribute is mandatory. Can be "required",
+        /// "conditionally_required", "recommended" or "opt_in". When omitted,
+        /// the attribute is "recommended". When set to
+        /// "conditionally_required", the string provided as <condition> MUST
+        /// specify the conditions under which the attribute is required.
+        #[serde(default)]
+        requirement_level: RequirementLevel,
+        /// Specifies if the attribute is (especially) relevant for sampling
+        /// and thus should be set at span start. It defaults to false.
+        /// Note: this field is experimental.
         #[serde(skip_serializing_if = "Option::is_none")]
         sampling_relevant: Option<bool>,
-        /// The note of the attribute.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        note: Option<String>,
+        /// A more elaborate description of the attribute.
+        /// It defaults to an empty string.
+        #[serde(default)]
+        note: String,
         /// Specifies the stability of the attribute.
         /// Note that, if stability is missing but deprecated is present, it will
         /// automatically set the stability to deprecated. If deprecated is
@@ -46,32 +66,46 @@ pub enum Attribute {
         deprecated: Option<String>,
 
         /// The value of the attribute.
-        /// This is only used in a telemetry schema specification.
+        /// Note: This is only used in a telemetry schema specification.
         #[serde(skip_serializing_if = "Option::is_none")]
         value: Option<Value>,
     },
     /// Attribute definition.
     Id {
-        /// The id of the attribute.
+        /// String that uniquely identifies the attribute.
         id: String,
-        /// The type of the attribute.
+        /// Either a string literal denoting the type as a primitive or an
+        /// array type, a template type or an enum definition.
         r#type: AttributeType,
-        /// The brief of the attribute.
+        /// A brief description of the attribute.
         brief: String,
-        /// A collection of examples of the attribute.
+        /// Sequence of example values for the attribute or single example
+        /// value. They are required only for string and string array
+        /// attributes. Example values must be of the same type of the
+        /// attribute. If only a single example is provided, it can directly
+        /// be reported without encapsulating it into a sequence/dictionary.
         examples: Option<Examples>,
-        /// An optional tag associated with the attribute.
+        /// Associates a tag ("sub-group") to the attribute. It carries no
+        /// particular semantic meaning but can be used e.g. for filtering
+        /// in the markdown generator.
         #[serde(skip_serializing_if = "Option::is_none")]
         tag: Option<String>,
-        /// The requirement level of the attribute.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        requirement_level: Option<RequirementLevel>,
-        /// A flag indicating whether the attribute is relevant for sampling.
+        /// Specifies if the attribute is mandatory. Can be "required",
+        /// "conditionally_required", "recommended" or "opt_in". When omitted,
+        /// the attribute is "recommended". When set to
+        /// "conditionally_required", the string provided as <condition> MUST
+        /// specify the conditions under which the attribute is required.
+        #[serde(default)]
+        requirement_level: RequirementLevel,
+        /// Specifies if the attribute is (especially) relevant for sampling
+        /// and thus should be set at span start. It defaults to false.
+        /// Note: this field is experimental.
         #[serde(skip_serializing_if = "Option::is_none")]
         sampling_relevant: Option<bool>,
-        /// The note of the attribute.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        note: Option<String>,
+        /// A more elaborate description of the attribute.
+        /// It defaults to an empty string.
+        #[serde(default)]
+        note: String,
         /// Specifies the stability of the attribute.
         /// Note that, if stability is missing but deprecated is present, it will
         /// automatically set the stability to deprecated. If deprecated is
@@ -86,60 +120,111 @@ pub enum Attribute {
         deprecated: Option<String>,
 
         /// The value of the attribute.
-        /// This is only used in a telemetry schema specification.
+        /// Note: This is only used in a telemetry schema specification.
         #[serde(skip_serializing_if = "Option::is_none")]
         value: Option<Value>,
     },
 }
 
 /// The different types of attributes.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
 pub enum AttributeType {
-    /// A basic attribute type.
-    Basic(BasicAttributeType),
-    /// A custom attribute type.
-    Custom {
-        /// A flag indicating whether custom values are allowed.
-        #[serde(default)]
+    /// Primitive or array type.
+    PrimitiveOrArray(PrimitiveOrArrayType),
+    /// A template type.
+    Template(TemplateType),
+    /// An enum definition type.
+    Enum {
+        /// Set to false to not accept values other than the specified members.
+        /// It defaults to true.
+        #[serde(default="default_as_true")]
         allow_custom_values: bool,
-        /// The members of the custom type.
-        members: Vec<CustomTypeMember>,
+        /// List of enum entries.
+        members: Vec<EnumEntries>,
     },
 }
 
-/// The different types of basic attributes.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+/// Specifies the default value for allow_custom_values.
+fn default_as_true() -> bool {
+    true
+}
+
+/// Primitive or array types.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
-pub enum BasicAttributeType {
+pub enum PrimitiveOrArrayType {
     /// A boolean attribute.
     Boolean,
-    /// A integer attribute.
+    /// A integer attribute (signed 64 bit integer).
     Int,
-    /// A double attribute.
+    /// A double attribute (double precision floating point (IEEE 754-1985)).
     Double,
     /// A string attribute.
     String,
-    /// Aa array of strings attribute.
+    /// An array of strings attribute.
     #[serde(rename = "string[]")]
     Strings,
+    /// An array of integer attribute.
+    #[serde(rename = "int[]")]
+    Ints,
+    /// An array of double attribute.
+    #[serde(rename = "double[]")]
+    Doubles,
+    /// An array of boolean attribute.
+    #[serde(rename = "boolean[]")]
+    Booleans,
 }
 
-/// A custom type member.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+/// Template types.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum TemplateType {
+    /// A boolean attribute.
+    #[serde(rename = "template[boolean]")]
+    Boolean,
+    /// A integer attribute.
+    #[serde(rename = "template[int]")]
+    Int,
+    /// A double attribute.
+    #[serde(rename = "template[double]")]
+    Double,
+    /// A string attribute.
+    #[serde(rename = "template[string]")]
+    String,
+    /// An array of strings attribute.
+    #[serde(rename = "template[string[]]")]
+    Strings,
+    /// An array of integer attribute.
+    #[serde(rename = "template[int[]]")]
+    Ints,
+    /// An array of double attribute.
+    #[serde(rename = "template[double[]]")]
+    Doubles,
+    /// An array of boolean attribute.
+    #[serde(rename = "template[boolean[]]")]
+    Booleans,
+}
+
+/// Possible enum entries.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
-pub struct CustomTypeMember {
-    /// The id of the member.
+pub struct EnumEntries {
+    /// String that uniquely identifies the enum entry.
     pub id: String,
-    /// The value of the member.
+    /// String, int, or boolean; value of the enum entry.
     pub value: Value,
-    /// The brief of the member.
+    /// Brief description of the enum entry value.
+    /// It defaults to the value of id.
     pub brief: Option<String>,
+    /// Longer description.
+    /// It defaults to an empty string.
+    pub note: Option<String>,
 }
 
 /// The different types of values.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
 pub enum Value {
@@ -189,6 +274,14 @@ pub enum RequirementLevel {
         #[serde(rename = "recommended")]
         text: String,
     },
+}
+
+// Specifies the default requirement level as defined in the OTel
+// specification.
+impl Default for RequirementLevel {
+    fn default() -> Self {
+        RequirementLevel::Basic(BasicRequirementLevel::Recommended)
+    }
 }
 
 /// The different types of basic requirement levels.

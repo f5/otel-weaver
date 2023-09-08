@@ -2,9 +2,10 @@
 
 //! A group specification.
 
-use crate::attribute::Attribute;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
+
+use crate::attribute::{Attribute, AttributeType, PrimitiveOrArrayType};
 use crate::stability::Stability;
 
 /// Groups contain the list of semantic conventions and it is the root node of
@@ -47,7 +48,9 @@ pub struct Group {
     /// List of attributes that belong to the semantic convention.
     #[serde(default)]
     pub attributes: Vec<Attribute>,
-    /// Additional constraints. It defaults to an empty list.
+    /// Additional constraints.
+    /// Allow to define additional requirements on the semantic convention.
+    /// It defaults to an empty list.
     #[serde(default)]
     pub constraints: Vec<Constraint>,
     /// Specifies the kind of the span.
@@ -81,10 +84,8 @@ pub struct Group {
 fn validate_group(group: &Group) -> Result<(), ValidationError> {
     // If deprecated is present and stability differs from deprecated, this
     // will result in an error.
-    if group.deprecated.is_some() && group.stability.is_some() {
-        if group.stability != Some(Stability::Deprecated) {
-            return Err(ValidationError::new("This group contains a deprecated field but the stability is not set to deprecated."));
-        }
+    if group.deprecated.is_some() && group.stability.is_some() && group.stability != Some(Stability::Deprecated) {
+        return Err(ValidationError::new("This group contains a deprecated field but the stability is not set to deprecated."));
     }
 
     // Fields span_kind and events are only valid if type is span (the default).
@@ -98,10 +99,8 @@ fn validate_group(group: &Group) -> Result<(), ValidationError> {
     }
 
     // Field name is required if prefix is empty and if type is event.
-    if group.r#type == ConvType::Event {
-        if group.prefix.is_empty() && group.name.is_none() {
-            return Err(ValidationError::new("This group contains an event type but the prefix is empty and the name is not set."));
-        }
+    if group.r#type == ConvType::Event && group.prefix.is_empty() && group.name.is_none() {
+        return Err(ValidationError::new("This group contains an event type but the prefix is empty and the name is not set."));
     }
 
     // Fields metric_name, instrument and unit are required if type is metric.
@@ -117,7 +116,32 @@ fn validate_group(group: &Group) -> Result<(), ValidationError> {
         }
     }
 
-    println!("ToDo Attribute validation");
+    // Validates the attributes.
+    for attribute in &group.attributes {
+        // If deprecated is present and stability differs from deprecated, this
+        // will result in an error.
+        match attribute {
+            Attribute::Id { stability, deprecated, .. } | Attribute::Ref { stability, deprecated, .. } => {
+                if deprecated.is_some() && stability.is_some() && *stability != Some(Stability::Deprecated) {
+                    return Err(ValidationError::new("This attribute contains a deprecated field but the stability is not set to deprecated."));
+                }
+            }
+        }
+
+        // Examples are required only for string and string array attributes.
+        if let Attribute::Id { r#type, examples, .. } = attribute {
+            if examples.is_some() {
+                continue;
+            }
+
+            if *r#type == AttributeType::PrimitiveOrArray(PrimitiveOrArrayType::String) {
+                return Err(ValidationError::new("This attribute is a string but it does not contain any examples."));
+            }
+            if *r#type == AttributeType::PrimitiveOrArray(PrimitiveOrArrayType::Strings) {
+                return Err(ValidationError::new("This attribute is a string array but it does not contain any examples."));
+            }
+        }
+    }
 
     Ok(())
 }
@@ -164,14 +188,18 @@ pub enum SpanKind {
     Server,
 }
 
-/// A constraint.
+/// Allow to define additional requirements on the semantic convention.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Constraint {
-    /// A any_of constraint.
+    /// any_of accepts a list of sequences. Each sequence contains a list of
+    /// attribute ids that are required. any_of enforces that all attributes
+    /// of at least one of the sequences are set.
     #[serde(default)]
     pub any_of: Vec<String>,
-    /// An include constraint.
+    /// include accepts a semantic conventions id. It includes as part of this
+    /// semantic convention all constraints and required attributes that are
+    /// not already defined in the current semantic convention.
     pub include: Option<String>,
 }
 
