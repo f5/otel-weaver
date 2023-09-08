@@ -3,43 +3,93 @@
 //! Attribute specification.
 
 use serde::{Deserialize, Serialize};
+use crate::stability::Stability;
 
 /// An attribute specification.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct Attribute {
-    /// The reference to the attribute.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#ref: Option<String>,
-    /// The id of the attribute.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The type of the attribute.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<AttributeType>,
-    /// The brief of the attribute.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub brief: Option<String>,
-    /// A collection of examples of the attribute.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub examples: Option<Examples>,
-    /// The note of the attribute.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub note: Option<String>,
-    /// An optional tag associated with the attribute.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tag: Option<String>,
-    /// The requirement level of the attribute.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub requirement_level: Option<RequirementLevel>,
-    /// A flag indicating whether the attribute is relevant for sampling.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sampling_relevant: Option<bool>,
+#[serde(untagged)]
+pub enum Attribute {
+    /// Reference to another attribute.
+    Ref {
+        /// The reference to the attribute.
+        r#ref: String,
+        /// The brief of the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        brief: Option<String>,
+        /// A collection of examples of the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        examples: Option<Examples>,
+        /// An optional tag associated with the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tag: Option<String>,
+        /// The requirement level of the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        requirement_level: Option<RequirementLevel>,
+        /// A flag indicating whether the attribute is relevant for sampling.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        sampling_relevant: Option<bool>,
+        /// The note of the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        note: Option<String>,
+        /// Specifies the stability of the attribute.
+        /// Note that, if stability is missing but deprecated is present, it will
+        /// automatically set the stability to deprecated. If deprecated is
+        /// present and stability differs from deprecated, this will result in an
+        /// error.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        stability: Option<Stability>,
+        /// Specifies if the attribute is deprecated. The string
+        /// provided as <description> MUST specify why it's deprecated and/or what
+        /// to use instead. See also stability.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        deprecated: Option<String>,
 
-    /// The value of the attribute.
-    /// This is only used in a telemetry schema specification.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Value>,
+        /// The value of the attribute.
+        /// This is only used in a telemetry schema specification.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        value: Option<Value>,
+    },
+    /// Attribute definition.
+    Id {
+        /// The id of the attribute.
+        id: String,
+        /// The type of the attribute.
+        r#type: AttributeType,
+        /// The brief of the attribute.
+        brief: String,
+        /// A collection of examples of the attribute.
+        examples: Option<Examples>,
+        /// An optional tag associated with the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tag: Option<String>,
+        /// The requirement level of the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        requirement_level: Option<RequirementLevel>,
+        /// A flag indicating whether the attribute is relevant for sampling.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        sampling_relevant: Option<bool>,
+        /// The note of the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        note: Option<String>,
+        /// Specifies the stability of the attribute.
+        /// Note that, if stability is missing but deprecated is present, it will
+        /// automatically set the stability to deprecated. If deprecated is
+        /// present and stability differs from deprecated, this will result in an
+        /// error.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        stability: Option<Stability>,
+        /// Specifies if the attribute is deprecated. The string
+        /// provided as <description> MUST specify why it's deprecated and/or what
+        /// to use instead. See also stability.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        deprecated: Option<String>,
+
+        /// The value of the attribute.
+        /// This is only used in a telemetry schema specification.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        value: Option<Value>,
+    },
 }
 
 /// The different types of attributes.

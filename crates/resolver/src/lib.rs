@@ -210,7 +210,7 @@ impl SchemaResolver {
         sem_conv_catalog: &semconv::SemConvCatalog,
         version_changes: impl VersionAttributeChanges) -> Result<(), Error> {
         for attribute in attributes.iter_mut() {
-            if let Some(r#ref) = attribute.r#ref.as_ref() {
+            if let Attribute::Ref{r#ref, ..} = attribute {
                 let normalized_ref = version_changes.get_attribute_name(r#ref);
                 if let Some(resolved_attribute) = sem_conv_catalog.get_attribute(&normalized_ref) {
                     *attribute = resolved_attribute.clone();

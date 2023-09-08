@@ -23,6 +23,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use validator::Validate;
+use crate::attribute::Attribute;
 
 use crate::group::Group;
 use crate::metric::Metric;
@@ -30,6 +31,7 @@ use crate::metric::Metric;
 pub mod attribute;
 pub mod group;
 pub mod metric;
+mod stability;
 
 /// An error that can occur while loading a semantic convention catalog.
 #[derive(thiserror::Error, Debug)]
@@ -105,7 +107,7 @@ pub struct SemConvCatalog {
     specs: Vec<(String, SemConvSpec)>,
 
     /// A collection of resolved attributes indexed by id.
-    attributes: HashMap<String, attribute::Attribute>,
+    attributes: HashMap<String, Attribute>,
 
     /// A collection of resolved metrics indexed by id.
     metrics: HashMap<String, Metric>,
@@ -127,7 +129,7 @@ struct AttributeToResolve {
     path_or_url: String,
     group_id: String,
     r#ref: String,
-    attribute: attribute::Attribute,
+    attribute: Attribute,
 }
 
 impl SemConvCatalog {
@@ -179,75 +181,69 @@ impl SemConvCatalog {
                     // Resolve attributes
                     group::ConvType::AttributeGroup => {
                         for attr in group.attributes.iter() {
-                            if let Some(id) = attr.id.as_ref() {
-                                // The attribute has an id, so add it to the catalog
-                                // if it does not exist yet, otherwise return an error.
-                                // The fully qualified attribute id is the concatenation
-                                // of the group id and the attribute id.
-                                let fq_attr_id = format!("{}.{}", group_id, id);
-                                let mut attr_clone = attr.clone();
-                                attr_clone.id = Some(fq_attr_id.clone());
-                                let prev_val = self.attributes.insert(fq_attr_id.clone(), attr_clone);
-                                if prev_val.is_some() {
-                                    return Err(Error::DuplicateAttributeId {
+                            match attr {
+                                Attribute::Id {id, ..} => {
+                                    // The attribute has an id, so add it to the catalog
+                                    // if it does not exist yet, otherwise return an error.
+                                    // The fully qualified attribute id is the concatenation
+                                    // of the group id and the attribute id.
+                                    let fq_attr_id = format!("{}.{}", group_id, id);
+                                    let mut attr_clone = attr.clone();
+                                    if let Attribute::Id {id, ..} = &mut attr_clone {
+                                        *id = fq_attr_id.clone();
+                                    }
+                                    let prev_val = self.attributes.insert(fq_attr_id.clone(), attr_clone);
+                                    if prev_val.is_some() {
+                                        return Err(Error::DuplicateAttributeId {
+                                            path_or_url: path_or_url.to_string(),
+                                            id: fq_attr_id.clone(),
+                                        });
+                                    }
+                                }
+                                Attribute::Ref {r#ref, ..} => {
+                                    // The attribute has a reference, so add it to the
+                                    // list of attributes to resolve.
+                                    attributes_to_resolve.push(AttributeToResolve {
                                         path_or_url: path_or_url.to_string(),
-                                        id: fq_attr_id.clone(),
+                                        group_id: group_id.to_string(),
+                                        r#ref: r#ref.clone(),
+                                        attribute: attr.clone(),
                                     });
                                 }
-                            } else if let Some(r#ref) = attr.r#ref.as_ref() {
-                                // The attribute has a reference, so add it to the
-                                // list of attributes to resolve.
-                                attributes_to_resolve.push(AttributeToResolve {
-                                    path_or_url: path_or_url.to_string(),
-                                    group_id: group_id.to_string(),
-                                    r#ref: r#ref.clone(),
-                                    attribute: attr.clone(),
-                                });
-                            } else {
-                                // The attribute has neither an id nor a reference,
-                                // so return an error.
-                                return Err(Error::InvalidAttribute {
-                                    path_or_url: path_or_url.to_string(),
-                                    group_id: group_id.to_string(),
-                                    error: "Attribute without id or ref".to_string(),
-                                });
                             }
                         }
                     }
                     group::ConvType::Span | group::ConvType::Resource => {
                         for attr in group.attributes.iter() {
-                            if let Some(id) = attr.id.as_ref() {
-                                // The attribute has an id, so add it to the catalog
-                                // if it does not exist yet, otherwise return an error.
-                                // The fully qualified attribute id is the concatenation
-                                // of the group id and the attribute id.
-                                let fq_attr_id = format!("{}.{}", group_id, id);
-                                let mut attr_clone = attr.clone();
-                                attr_clone.id = Some(fq_attr_id.clone());
-                                let prev_val = self.attributes.insert(fq_attr_id.clone(), attr_clone);
-                                if prev_val.is_some() {
-                                    return Err(Error::DuplicateAttributeId {
+                            match attr {
+                                Attribute::Id { id, .. } => {
+                                    // The attribute has an id, so add it to the catalog
+                                    // if it does not exist yet, otherwise return an error.
+                                    // The fully qualified attribute id is the concatenation
+                                    // of the group id and the attribute id.
+                                    let fq_attr_id = format!("{}.{}", group_id, id);
+                                    let mut attr_clone = attr.clone();
+                                    if let Attribute::Id { id, .. } = &mut attr_clone {
+                                        *id = fq_attr_id.clone();
+                                    }
+                                    let prev_val = self.attributes.insert(fq_attr_id.clone(), attr_clone);
+                                    if prev_val.is_some() {
+                                        return Err(Error::DuplicateAttributeId {
+                                            path_or_url: path_or_url.to_string(),
+                                            id: fq_attr_id.clone(),
+                                        });
+                                    }
+                                }
+                                Attribute::Ref { r#ref, .. } => {
+                                    // The attribute has a reference, so add it to the
+                                    // list of attributes to resolve.
+                                    attributes_to_resolve.push(AttributeToResolve {
                                         path_or_url: path_or_url.to_string(),
-                                        id: fq_attr_id.clone(),
+                                        group_id: group_id.to_string(),
+                                        r#ref: r#ref.clone(),
+                                        attribute: attr.clone(),
                                     });
                                 }
-                            } else if let Some(r#ref) = attr.r#ref.as_ref() {
-                                // The attribute has a reference, so add it to the
-                                // list of attributes to resolve.
-                                attributes_to_resolve.push(AttributeToResolve {
-                                    path_or_url: path_or_url.to_string(),
-                                    group_id: group_id.to_string(),
-                                    r#ref: r#ref.clone(),
-                                    attribute: attr.clone(),
-                                });
-                            } else {
-                                // The attribute has neither an id nor a reference,
-                                // so return an error.
-                                return Err(Error::InvalidAttribute {
-                                    path_or_url: path_or_url.to_string(),
-                                    group_id: group_id.to_string(),
-                                    error: "Attribute without id or ref".to_string(),
-                                });
                             }
                         }
                     }
@@ -330,7 +326,7 @@ impl SemConvCatalog {
 
     /// Returns an attribute definition from its reference or `None` if the
     /// reference does not exist.
-    pub fn get_attribute(&self, attr_ref: &str) -> Option<&attribute::Attribute> {
+    pub fn get_attribute(&self, attr_ref: &str) -> Option<&Attribute> {
         self.attributes.get(attr_ref)
     }
 
@@ -388,6 +384,7 @@ impl SemConvSpec {
 
 #[cfg(test)]
 mod tests {
+    use std::{dbg, vec};
     use super::*;
 
     #[test]

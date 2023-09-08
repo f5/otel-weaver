@@ -5,6 +5,7 @@
 use crate::attribute::Attribute;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
+use crate::stability::Stability;
 
 /// Groups contain the list of semantic conventions and it is the root node of
 /// each yaml file.
@@ -36,10 +37,12 @@ pub struct Group {
     /// automatically set the stability to deprecated. If deprecated is
     /// present and stability differs from deprecated, this will result in an
     /// error.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub stability: Option<Stability>,
     /// Specifies if the semantic convention is deprecated. The string
     /// provided as <description> MUST specify why it's deprecated and/or what
     /// to use instead. See also stability.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub deprecated: Option<String>,
     /// List of attributes that belong to the semantic convention.
     #[serde(default)]
@@ -114,6 +117,8 @@ fn validate_group(group: &Group) -> Result<(), ValidationError> {
         }
     }
 
+    println!("ToDo Attribute validation");
+
     Ok(())
 }
 
@@ -147,18 +152,6 @@ impl Default for ConvType {
     fn default() -> Self {
         Self::Span
     }
-}
-
-/// The level of stability for a definition.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-#[serde(rename_all = "snake_case")]
-pub enum Stability {
-    /// A deprecated definition.
-    Deprecated,
-    /// An experimental definition.
-    Experimental,
-    /// A stable definition.
-    Stable,
 }
 
 /// The span kind.
