@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! This crate defines the concept of semantic convention catalog.
+//! This crate defines the concept of a 'semantic convention catalog', which is
+//! fueled by one or more semantic convention YAML files.
+//!
+//! The YAML language syntax used to define a semantic convention file
+//! can be found [here](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md).
 
 #![deny(
     missing_docs,
@@ -18,6 +22,7 @@ use std::io::BufReader;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
+use validator::Validate;
 
 use crate::group::Group;
 use crate::metric::Metric;
@@ -107,10 +112,14 @@ pub struct SemConvCatalog {
 }
 
 /// A semantic convention specification.
-#[derive(Serialize, Deserialize, Debug)]
+///
+/// See [here](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md)
+/// the syntax of the semantic convention YAML file.
+#[derive(Serialize, Deserialize, Debug, Validate)]
 #[serde(deny_unknown_fields)]
 pub struct SemConvSpec {
     /// A collection of semantic convention groups.
+    #[validate]
     pub groups: Vec<Group>,
 }
 
@@ -125,6 +134,14 @@ impl SemConvCatalog {
     /// Load and add a semantic convention file to the catalog.
     pub fn load_from_file<P: AsRef<Path> + Clone>(&mut self, path: P) -> Result<(), Error> {
         let spec = SemConvSpec::load_from_file(path.clone())?;
+        if let Err(e) = spec.validate() {
+            return Err(Error::InvalidCatalog {
+                path_or_url: path.as_ref().display().to_string(),
+                line: None,
+                column: None,
+                error: e.to_string(),
+            });
+        }
         self.specs.push((path.as_ref().display().to_string(), spec));
         Ok(())
     }
@@ -132,6 +149,14 @@ impl SemConvCatalog {
     /// Load and add a semantic convention URL to the catalog.
     pub fn load_from_url(&mut self, semconv_url: &str) -> Result<(), Error> {
         let spec = SemConvSpec::load_from_url(semconv_url)?;
+        if let Err(e) = spec.validate() {
+            return Err(Error::InvalidCatalog {
+                path_or_url: semconv_url.to_string(),
+                line: None,
+                column: None,
+                error: e.to_string(),
+            });
+        }
         self.specs.push((semconv_url.to_string(), spec));
         Ok(())
     }
@@ -144,11 +169,15 @@ impl SemConvCatalog {
         // Add all the attributes with an id to the catalog.
         for (path_or_url, spec) in self.specs.iter() {
             for group in spec.groups.iter() {
-                let group_id = group.prefix.clone().unwrap_or_else(|| group.id.clone());
+                let group_id = if group.prefix.is_empty() {
+                    group.id.clone()
+                } else {
+                    group.prefix.clone()
+                };
 
                 match group.r#type {
                     // Resolve attributes
-                    group::GroupType::AttributeGroup => {
+                    group::ConvType::AttributeGroup => {
                         for attr in group.attributes.iter() {
                             if let Some(id) = attr.id.as_ref() {
                                 // The attribute has an id, so add it to the catalog
@@ -185,7 +214,7 @@ impl SemConvCatalog {
                             }
                         }
                     }
-                    group::GroupType::Span => {
+                    group::ConvType::Span | group::ConvType::Resource => {
                         for attr in group.attributes.iter() {
                             if let Some(id) = attr.id.as_ref() {
                                 // The attribute has an id, so add it to the catalog
@@ -222,10 +251,7 @@ impl SemConvCatalog {
                             }
                         }
                     }
-                    group::GroupType::Event => {
-                        eprintln!("group type `event` not implemented yet`");
-                    }
-                    group::GroupType::Metric => {
+                    group::ConvType::Metric => {
                         let metric_name = if let Some(metric_name) = group.metric_name.as_ref() {
                             metric_name.clone()
                         } else {
@@ -252,8 +278,23 @@ impl SemConvCatalog {
                         }
 
                         if let Some(r#ref) = group.extends.as_ref() {
-                            metrics_to_resolve.insert(metric_name.clone(), r#ref.clone());
+                            let prev_val = metrics_to_resolve.insert(metric_name.clone(), r#ref.clone());
+                            if prev_val.is_some() {
+                                return Err(Error::DuplicateMetricName {
+                                    path_or_url: path_or_url.to_string(),
+                                    name: r#ref.clone(),
+                                });
+                            }
                         }
+                    }
+                    group::ConvType::Event => {
+                        eprintln!("group type `event` not implemented yet`");
+                    }
+                    group::ConvType::MetricGroup => {
+                        eprintln!("group type `metric_group` not implemented yet`");
+                    }
+                    group::ConvType::Scope => {
+                        eprintln!("group type `scope` not implemented yet`");
                     }
                 }
             }
@@ -263,19 +304,7 @@ impl SemConvCatalog {
         for attr_to_resolve in attributes_to_resolve.into_iter() {
             let resolved_attr = self.attributes.get(&attr_to_resolve.r#ref);
 
-            if let Some(resolved_attr) = resolved_attr {
-                // Merge the resolved attribute with the attribute to resolve.
-                let AttributeToResolve { mut attribute, .. } = attr_to_resolve;
-                attribute.r#ref = None;
-                attribute.id = Some(attr_to_resolve.r#ref.clone());
-                let prev_attr = self.attributes.insert(attr_to_resolve.r#ref.clone(), attribute);
-                if prev_attr.is_some() {
-                    return Err(Error::DuplicateAttributeId {
-                        path_or_url: "".to_string(),
-                        id: attr_to_resolve.r#ref.clone(),
-                    });
-                }
-            } else {
+            if resolved_attr.is_none() {
                 return Err(Error::InvalidAttribute {
                     path_or_url: attr_to_resolve.path_or_url.clone(),
                     group_id: attr_to_resolve.group_id.clone(),
@@ -288,7 +317,7 @@ impl SemConvCatalog {
         for (metric_name, r#ref) in metrics_to_resolve {
             let referenced_metric = self.metrics.get(&r#ref).cloned();
             if let Some(referenced_metric) = referenced_metric {
-                self.metrics.get_mut(&metric_name).map(|metric| {
+                let _ = self.metrics.get_mut(&metric_name).map(|metric| {
                     metric.attributes.extend(referenced_metric.attributes.iter().cloned());
                 });
             }
@@ -365,6 +394,7 @@ mod tests {
     fn load_semconv_catalog() {
         let yaml_files = vec![
             "data/client.yaml",
+            "data/cloud.yaml",
             "data/cloudevents.yaml",
             "data/database.yaml",
             "data/database-metrics.yaml",
@@ -385,6 +415,7 @@ mod tests {
             "data/source.yaml",
             "data/trace-exception.yaml",
             "data/url.yaml",
+            "data/user-agent.yaml",
             "data/vm-metrics-experimental.yaml",
         ];
 

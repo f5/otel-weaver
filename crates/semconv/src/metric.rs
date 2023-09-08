@@ -13,9 +13,9 @@ pub struct Metric {
     /// Metric name.
     pub name: String,
     /// Brief description of the metric.
-    pub brief: Option<String>,
+    pub brief: String,
     /// Note on the metric.
-    pub note: Option<String>,
+    pub note: String,
     /// Attributes of the metric.
     #[serde(default)]
     pub attributes: Vec<Attribute>,

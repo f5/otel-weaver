@@ -8,3 +8,4 @@ serde.workspace = true
 serde_yaml.workspace = true
 thiserror.workspace = true
 ureq.workspace = true
+validator = { version = "0.16.1", features = ["derive"] }
