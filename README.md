@@ -6,7 +6,8 @@ _A Schema-Driven Client SDK Generator for OpenTelemetry_
 ## Usage
 
 Resolve a schema and display the result on the standard output or write it to a file
-specified with the `--output` option.
+specified with the `--output` option. This command is mainly used to validate and debug
+a telemetry schema.
 
 ```bash
 weaver resolve telemetry-schema.yaml --output telemetry-schema-resolved.yaml
