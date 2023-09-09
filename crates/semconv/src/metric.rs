@@ -4,6 +4,7 @@
 
 use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
+use crate::attribute::Attribute;
 use crate::group::Instrument;
 
 /// A metric specification.
@@ -18,7 +19,7 @@ pub struct Metric {
     pub note: String,
     /// Set of attribute ids attached to the metric.
     #[serde(default)]
-    pub attributes: HashSet<String>,
+    pub attributes: Vec<Attribute>,
     /// Type of the metric (e.g. gauge, histogram, ...).
     pub instrument: Option<Instrument>,
     /// Unit of the metric.

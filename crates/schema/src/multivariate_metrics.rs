@@ -33,7 +33,7 @@ pub enum Metric {
     },
 
     /// A fully defined metric.
-    Metric{
+    Metric {
         /// Metric name.
         name: String,
         /// Brief description of the metric.

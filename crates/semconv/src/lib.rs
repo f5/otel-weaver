@@ -312,10 +312,7 @@ impl SemConvCatalog {
                             name: metric_name.clone(),
                             brief: group.brief.clone(),
                             note: group.note.clone(),
-                            attributes: group.attributes.iter().map(|attr| match attr {
-                                Attribute::Ref { r#ref, .. } => { r#ref.clone() }
-                                Attribute::Id { id, .. } => { id.clone() }
-                            }).collect(),
+                            attributes: group.attributes.clone(),
                             instrument: group.instrument.clone(),
                             unit: group.unit.clone(),
                         });

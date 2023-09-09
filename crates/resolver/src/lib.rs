@@ -6,6 +6,7 @@
 #![deny(clippy::print_stdout)]
 #![deny(clippy::print_stderr)]
 
+use std::collections::HashSet;
 use std::path::Path;
 
 use logger::Logger;
@@ -86,7 +87,7 @@ impl SchemaResolver {
         }
 
         // Generates version changes
-        let version_changes = schema.versions.as_ref().map(|versions | if let Some(latest_version) = versions.latest_version() {
+        let version_changes = schema.versions.as_ref().map(|versions| if let Some(latest_version) = versions.latest_version() {
             versions.version_changes_for(latest_version)
         } else {
             VersionChanges::default()
@@ -99,10 +100,20 @@ impl SchemaResolver {
             if let Some(metrics) = schema.resource_metrics.as_mut() {
                 Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                 for metric in metrics.univariate_metrics.iter_mut() {
-                    if let UnivariateMetric::Ref {r#ref, attributes} = metric {
+                    if let UnivariateMetric::Ref { r#ref, attributes } = metric {
                         Self::resolve_attributes(attributes, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                         if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
-                            *metric = UnivariateMetric::Metric(referenced_metric.clone());
+                            let mut inherited_attrs = referenced_metric.attributes.clone();
+                            Self::resolve_attributes(&mut inherited_attrs, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                            let merged_attrs = Self::merge_attributes(attributes, &inherited_attrs);
+                            *metric = UnivariateMetric::Metric {
+                                name: referenced_metric.name.clone(),
+                                brief: referenced_metric.brief.clone(),
+                                note: referenced_metric.note.clone(),
+                                attributes: merged_attrs,
+                                instrument: referenced_metric.instrument.clone(),
+                                unit: referenced_metric.unit.clone(),
+                            };
                         } else {
                             return Err(Error::FailToResolveMetric {
                                 r#ref: r#ref.clone(),
@@ -113,29 +124,20 @@ impl SchemaResolver {
                 for metrics in metrics.multivariate_metrics.iter_mut() {
                     Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                     for metric in metrics.metrics.iter_mut() {
-                        if let Metric::Ref {r#ref} = metric {
+                        if let Metric::Ref { r#ref } = metric {
                             if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
-                                let mut error = None;
-                                *metric = Metric::Metric{
+                                let mut inherited_attrs = referenced_metric.attributes.clone();
+                                if !inherited_attrs.is_empty() {
+                                    log.warn(&format!("Attributes inherited from the '{}' metric will be disregarded. Instead, the common attributes specified for the multivariate '{}' metric will be utilized.", r#ref, metrics.id));
+                                }
+                                *metric = Metric::Metric {
                                     name: referenced_metric.name.clone(),
                                     brief: referenced_metric.brief.clone(),
                                     note: referenced_metric.note.clone(),
-                                    attributes: referenced_metric.attributes.iter().filter_map(|attr_ref| {
-                                        if let Some(attr) = sem_conv_catalog.get_attribute(attr_ref) {
-                                            Some(attr.clone())
-                                        } else {
-                                            error = Some(Error::FailToResolveAttribute {
-                                                r#ref: attr_ref.clone(),
-                                            });
-                                            None
-                                        }
-                                    }).collect(),
+                                    attributes: metrics.attributes.clone(),
                                     instrument: referenced_metric.instrument.clone(),
                                     unit: referenced_metric.unit.clone(),
                                 };
-                                if let Some(error) = error {
-                                    return Err(error);
-                                }
                             } else {
                                 return Err(Error::FailToResolveMetric {
                                     r#ref: r#ref.clone(),
@@ -231,7 +233,7 @@ impl SchemaResolver {
         sem_conv_catalog: &semconv::SemConvCatalog,
         version_changes: impl VersionAttributeChanges) -> Result<(), Error> {
         for attribute in attributes.iter_mut() {
-            if let Attribute::Ref{r#ref, ..} = attribute {
+            if let Attribute::Ref { r#ref, .. } = attribute {
                 let normalized_ref = version_changes.get_attribute_name(r#ref);
                 if let Some(resolved_attribute) = sem_conv_catalog.get_attribute(&normalized_ref) {
                     *attribute = resolved_attribute.clone();
@@ -243,6 +245,33 @@ impl SchemaResolver {
             }
         }
         Ok(())
+    }
+
+    /// Merges the given main attributes with the inherited attributes.
+    /// Main attributes have precedence over inherited attributes.
+    fn merge_attributes(main_attrs: &[Attribute], inherited_attrs: &[Attribute]) -> Vec<Attribute> {
+        let mut merged_attrs = main_attrs.to_vec();
+        let main_attr_ids = main_attrs.iter().map(|attr| match attr {
+            Attribute::Ref { r#ref, .. } => r#ref.clone(),
+            Attribute::Id { id, .. } => id.clone(),
+        }).collect::<HashSet<_>>();
+
+        for inherited_attr in inherited_attrs.iter() {
+            match inherited_attr {
+                Attribute::Ref { r#ref, .. } => {
+                    if main_attr_ids.contains(r#ref) {
+                        continue;
+                    }
+                }
+                Attribute::Id { id, .. } => {
+                    if main_attr_ids.contains(id) {
+                        continue;
+                    }
+                }
+            }
+            merged_attrs.push(inherited_attr.clone());
+        }
+        merged_attrs
     }
 }
 

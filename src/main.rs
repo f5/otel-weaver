@@ -4,7 +4,7 @@ use std::process::exit;
 
 fn main() {
     let mut log = Logger::new();
-    let schema_name = "data/app-telemetry-schema.yaml";
+    let schema_name = "data/app-telemetry-schema-1.yaml";
     let schema = SchemaResolver::resolve_schema_file(schema_name, &mut log);
     match schema {
         Ok(schema) => {
