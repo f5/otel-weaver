@@ -27,6 +27,7 @@ path = "src/main.rs"
 name = "weaver"
 
 [dependencies]
+clap = { version = "4.4.2", features = ["derive"] }
 logger = { version = "0.1.0", path = "crates/logger" }
 resolver = { version = "0.1.0", path = "crates/resolver" }
 

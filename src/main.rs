@@ -1,27 +1,32 @@
+use clap::Parser;
+
 use logger::Logger;
-use resolver::SchemaResolver;
-use std::process::exit;
+
+use crate::cli::{Cli, Commands};
+use crate::gen_client_api::command_gen_client_api;
+use crate::gen_client_sdk::command_gen_client_sdk;
+use crate::resolve::command_resolve;
+
+mod cli;
+mod resolve;
+mod gen_client_api;
+mod gen_client_sdk;
 
 fn main() {
-    let mut log = Logger::new();
-    let schema_name = "data/app-telemetry-schema-1.yaml";
-    let schema = SchemaResolver::resolve_schema_file(schema_name, &mut log);
-    match schema {
-        Ok(schema) => {
-            log.success(&format!("Loaded schema {}", schema_name));
-            match serde_yaml::to_string(&schema) {
-                Ok(yaml) => {
-                    log.log(&yaml);
-                }
-                Err(e) => {
-                    log.error(&format!("{}", e));
-                    exit(1)
-                }
-            }
+    let cli = Cli::parse();
+    let mut log = Logger::new(cli.debug);
+
+    match &cli.command {
+        Some(Commands::Resolve(params)) => {
+            command_resolve(&mut log, params);
         }
-        Err(e) => {
-            log.error(&format!("{}", e));
-            exit(1)
+        Some(Commands::GenClientSdk {schema}) => {
+            command_gen_client_sdk(&mut log, schema);
         }
+        Some(Commands::GenClientApi {schema}) => {
+            command_gen_client_api(&mut log, schema);
+        }
+        None => {}
     }
+
 }

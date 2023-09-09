@@ -126,7 +126,7 @@ impl SchemaResolver {
                     for metric in metrics.metrics.iter_mut() {
                         if let Metric::Ref { r#ref } = metric {
                             if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
-                                let mut inherited_attrs = referenced_metric.attributes.clone();
+                                let inherited_attrs = referenced_metric.attributes.clone();
                                 if !inherited_attrs.is_empty() {
                                     log.warn(&format!("Attributes inherited from the '{}' metric will be disregarded. Instead, the common attributes specified for the multivariate '{}' metric will be utilized.", r#ref, metrics.id));
                                 }

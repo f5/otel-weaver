@@ -5,7 +5,6 @@
 use semconv::attribute::Attribute;
 use serde::{Deserialize, Serialize};
 use semconv::group::Instrument;
-use semconv::metric::Metric;
 
 /// A univariate metric specification.
 #[derive(Serialize, Deserialize, Debug)]

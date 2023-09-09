@@ -10,12 +10,24 @@
 #[derive(Default)]
 pub struct Logger<'a> {
     logger: paris::Logger<'a>,
+    debug_level: u8,
 }
 
 impl<'a> Logger<'a> {
     /// Creates a new logger.
-    pub fn new() -> Self {
-        Default::default()
+    pub fn new(debug_level: u8) -> Self {
+        Logger {
+            logger: paris::Logger::new(),
+            debug_level,
+        }
+    }
+
+    /// Logs an trace message (only with debug enabled).
+    pub fn trace(&mut self, message: &str) -> &mut Self {
+        if self.debug_level > 0 {
+            self.logger.log(message);
+        }
+        self
     }
 
     /// Logs an info message.
