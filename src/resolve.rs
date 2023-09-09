@@ -9,8 +9,9 @@ use clap::Parser;
 use logger::Logger;
 use resolver::SchemaResolver;
 
+/// Parameters for the `resolve` command
 #[derive(Parser)]
-pub struct Resolve {
+pub struct ResolveParams {
     /// Schema file to resolve
     #[arg(short, long, value_name = "FILE")]
     schema: PathBuf,
@@ -22,7 +23,7 @@ pub struct Resolve {
 }
 
 /// Resolve a schema file and print the result
-pub fn command_resolve(log: &mut Logger, params: &Resolve) {
+pub fn command_resolve(log: &mut Logger, params: &ResolveParams) {
     let schema = params.schema.clone();
     let schema_name = params.schema.to_str().expect("Invalid schema name");
     let schema = SchemaResolver::resolve_schema_file(schema, log);

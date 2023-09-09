@@ -4,7 +4,9 @@
 
 use std::path::PathBuf;
 use clap::{Parser, Subcommand};
-use crate::resolve::Resolve;
+use crate::gen_client_sdk::GenClientSdkParams;
+use crate::languages::LanguagesParams;
+use crate::resolve::ResolveParams;
 
 /// Command line arguments.
 #[derive(Parser)]
@@ -23,17 +25,15 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     /// Resolve a schema file and print the result
-    Resolve(Resolve),
+    Resolve(ResolveParams),
     /// Generate a client SDK (application)
-    GenClientSdk {
-        /// Schema file used to generate the client SDK
-        #[arg(short, long, value_name = "FILE")]
-        schema: PathBuf,
-    },
+    GenClientSdk(GenClientSdkParams),
     /// Generate a client API (third party)
     GenClientApi {
         /// Schema file used to generate the client API
         #[arg(short, long, value_name = "FILE")]
         schema: PathBuf,
     },
+    /// List of supported languages
+    Languages(LanguagesParams),
 }

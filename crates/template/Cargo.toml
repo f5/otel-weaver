@@ -1,0 +1,9 @@
+[package]
+name = "template"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tera = "1.19.1"
+
+thiserror.workspace = true

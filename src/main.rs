@@ -11,6 +11,7 @@ mod cli;
 mod resolve;
 mod gen_client_api;
 mod gen_client_sdk;
+mod languages;
 
 fn main() {
     let cli = Cli::parse();
@@ -20,11 +21,14 @@ fn main() {
         Some(Commands::Resolve(params)) => {
             command_resolve(&mut log, params);
         }
-        Some(Commands::GenClientSdk {schema}) => {
-            command_gen_client_sdk(&mut log, schema);
+        Some(Commands::GenClientSdk(params)) => {
+            command_gen_client_sdk(&mut log, params);
         }
         Some(Commands::GenClientApi {schema}) => {
             command_gen_client_api(&mut log, schema);
+        }
+        Some(Commands::Languages(params)) => {
+            languages::command_languages(&mut log, params);
         }
         None => {}
     }
