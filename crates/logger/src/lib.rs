@@ -44,7 +44,6 @@ impl<'a> Logger<'a> {
 
     /// Logs an error message.
     pub fn error(&mut self, message: &str) -> &mut Self {
-        self.logger.newline(1);
         self.logger.error(message);
         self
     }

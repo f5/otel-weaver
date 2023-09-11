@@ -941,6 +941,8 @@ dependencies = [
 name = "template"
 version = "0.1.0"
 dependencies = [
+ "logger",
+ "resolver",
  "tera",
  "thiserror",
 ]

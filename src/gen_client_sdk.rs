@@ -5,7 +5,7 @@
 use std::path::PathBuf;
 use clap::Parser;
 use logger::Logger;
-use template::GeneratorConfig;
+use template::{Error, GeneratorConfig};
 use template::sdkgen::ClientSdkGenerator;
 
 /// Parameters for the `gen-client-sdk` command
@@ -23,9 +23,18 @@ pub struct GenClientSdkParams {
 /// Generate a client SDK (application)
 pub fn command_gen_client_sdk(log: &mut Logger, params: &GenClientSdkParams) {
     log.loading(&format!("Generating client SDK for language {}", params.language));
-    if let Err(e) = ClientSdkGenerator::try_new(&params.language, GeneratorConfig::default()) {
+    let generator = match ClientSdkGenerator::try_new(&params.language, GeneratorConfig::default()) {
+        Ok(gen) => gen,
+        Err(e) => {
+            log.error(&format!("{}", e));
+            std::process::exit(1);
+        }
+    };
+
+    generator.generate(log, params.schema.clone()).map_err(|e| {
         log.error(&format!("{}", e));
-        return;
-    }
+        std::process::exit(1);
+    }).unwrap();
+
     log.success("Generated client SDK");
 }

@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+logger = { version = "0.1.0", path = "../logger" }
+resolver = { version = "0.1.0", path = "../resolver" }
+
 tera = "1.19.1"
 
 thiserror.workspace = true

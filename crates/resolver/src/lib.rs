@@ -9,9 +9,10 @@
 use std::collections::HashSet;
 use std::path::Path;
 
+pub use schema::TelemetrySchema;
+
 use logger::Logger;
 use schema::multivariate_metrics::Metric;
-use schema::TelemetrySchema;
 use schema::univariate_metric::UnivariateMetric;
 use semconv::attribute::Attribute;
 use semconv::ResolverConfig;

@@ -8,6 +8,32 @@ pub enum Error {
     /// Language not found.
     #[error("Language `{0}` is not supported. Use the command `languages` to list supported languages.")]
     LanguageNotSupported(String),
+
+    /// Invalid template directory.
+    #[error("Invalid template directory: {0}")]
+    InvalidTemplateDirectory(PathBuf),
+
+    /// Invalid template file.
+    #[error("Invalid template file: {0}")]
+    InvalidTemplateFile(PathBuf),
+
+    /// Invalid template.
+    #[error("{error}")]
+    InvalidTemplate {
+        /// Template directory.
+        template: PathBuf,
+        /// Error message.
+        error: String,
+    },
+
+    /// Invalid telemetry schema.
+    #[error("Invalid telemetry schema {schema}: {error}")]
+    InvalidTelemetrySchema {
+        /// Schema file.
+        schema: PathBuf,
+        /// Error message.
+        error: String,
+    },
 }
 
 /// General configuration for the generator.

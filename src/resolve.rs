@@ -7,7 +7,7 @@ use std::process::exit;
 use clap::Parser;
 
 use logger::Logger;
-use resolver::SchemaResolver;
+use resolver::{Error, SchemaResolver, TelemetrySchema};
 
 /// Parameters for the `resolve` command
 #[derive(Parser)]
@@ -25,7 +25,13 @@ pub struct ResolveParams {
 /// Resolve a schema file and print the result
 pub fn command_resolve(log: &mut Logger, params: &ResolveParams) {
     let schema = params.schema.clone();
-    let schema_name = params.schema.to_str().expect("Invalid schema name");
+    let schema_name = match params.schema.to_str() {
+        Some(name) => name,
+        None => {
+            log.error("Invalid schema name");
+            exit(1)
+        }
+    };
     let schema = SchemaResolver::resolve_schema_file(schema, log);
 
     match schema {
