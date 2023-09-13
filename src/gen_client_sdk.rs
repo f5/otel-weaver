@@ -3,9 +3,11 @@
 //! Generate a client API (third party)
 
 use std::path::PathBuf;
+
 use clap::Parser;
+
 use logger::Logger;
-use template::{Error, GeneratorConfig};
+use template::GeneratorConfig;
 use template::sdkgen::ClientSdkGenerator;
 
 /// Parameters for the `gen-client-sdk` command
@@ -18,6 +20,10 @@ pub struct GenClientSdkParams {
     /// Language to generate the client SDK for
     #[arg(short, long)]
     language: String,
+
+    /// Output directory where the client API will be generated
+    #[arg(short, long, value_name = "DIR")]
+    output_dir: PathBuf,
 }
 
 /// Generate a client SDK (application)
@@ -31,7 +37,11 @@ pub fn command_gen_client_sdk(log: &mut Logger, params: &GenClientSdkParams) {
         }
     };
 
-    generator.generate(log, params.schema.clone()).map_err(|e| {
+    generator.generate(
+        log,
+        params.schema.clone(),
+        params.output_dir.clone(),
+    ).map_err(|e| {
         log.error(&format!("{}", e));
         std::process::exit(1);
     }).unwrap();

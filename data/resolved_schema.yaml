@@ -1,229 +1,142 @@
 file_format: 1.2.0
+parent_schema_url: https://opentelemetry.io/schemas/1.21.0
 schema_url: https://mycompany.com/schemas/1.0.0
+semantic_conventions:
+- url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/url.yaml
+- url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/http-common.yaml
+- url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/client.yaml
+- url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/exception.yaml
+- url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/server.yaml
+- url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/network.yaml
+- url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/metrics/http.yaml
 schema:
   resource:
     attributes:
-      - ref: service.name
-        value: my-service
-      - ref: service.version
-        value: '{{SERVICE_VERSION}}'
+    - ref: service.name
+      requirement_level: recommended
+      note: ''
+      value: my-service
+    - ref: service.version
+      requirement_level: recommended
+      note: ''
+      value: '{{SERVICE_VERSION}}'
   instrumentation_library:
     name: my-service
     version: 1.0.0
-  resource_metrics:
-    attributes:
-      - id: environment
-        type: string
-        brief: The environment in which the service is running
-        tag: sensitive-information
-        requirement_level: required
-    univariate_metrics:
-      - name: http.server.request.duration
-        brief: Measures the duration of inbound HTTP requests.
-        note: null
-        attributes: [ ]
-        instrument: histogram
-        unit: s
-    multivariate_metrics:
-      - id: http
-        attributes:
-          - id: server.address
-            brief: |
-              Name of the local HTTP server that received the request.
-            note: |
-              Determined by using the first of the following that applies
-              
-              - The [primary server name](/docs/http/http-spans.md#http-server-definitions) of the matched virtual host. MUST only
-                include host identifier.
-              - Host identifier of the [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource)
-                if it's sent in absolute-form.
-              - Host identifier of the `Host` header
-              
-              SHOULD NOT be set if only IP address is available and capturing name would require a reverse DNS lookup.
-            requirement_level: opt_in
-          - id: server.port
-            brief: |
-              Port of the local HTTP server that received the request.
-            note: |
-              Determined by using the first of the following that applies
-              
-              - Port identifier of the [primary server host](/docs/http/http-spans.md#http-server-definitions) of the matched virtual host.
-              - Port identifier of the [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource)
-                if it's sent in absolute-form.
-              - Port identifier of the `Host` header
-            requirement_level: opt_in
-          - id: http.request.method
-          - id: http.response.status_code
-          - id: network.protocol.name
-          - id: network.protocol.version
-          - id: url.scheme
-            examples:
-              - http
-              - https
-            requirement_level: required
-        metrics:
-          - name: http.server.request.duration
-            brief: Measures the duration of inbound HTTP requests.
-            note: null
-            attributes: [ ]
-            instrument: histogram
-            unit: s
-          - name: http.server.active_requests
-            brief: Measures the number of concurrent HTTP requests that are currently in-flight.
-            note: null
-            attributes: [ ]
-            instrument: updowncounter
-            unit: '{request}'
-          - name: http.server.request.size
-            brief: Measures the size of HTTP request messages.
-            note: Size as measured over the wire (compressed size if messages are compressed).
-            attributes: [ ]
-            instrument: histogram
-            unit: By
-          - name: http.server.response.size
-            brief: Measures the size of HTTP response messages.
-            note: Size as measured over the wire (compressed size if messages are compressed).
-            attributes: [ ]
-            instrument: histogram
-            unit: By
-  resource_logs:
-    logs:
-      - id: http
-        body: string
-        attributes:
-          - id: server.address
-            brief: |
-              Name of the local HTTP server that received the request.
-            note: |
-              Determined by using the first of the following that applies
-              
-              - The [primary server name](/docs/http/http-spans.md#http-server-definitions) of the matched virtual host. MUST only
-                include host identifier.
-              - Host identifier of the [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource)
-                if it's sent in absolute-form.
-              - Host identifier of the `Host` header
-              
-              SHOULD NOT be set if only IP address is available and capturing name would require a reverse DNS lookup.
-            requirement_level: opt_in
-          - id: server.port
-            brief: |
-              Port of the local HTTP server that received the request.
-            note: |
-              Determined by using the first of the following that applies
-              
-              - Port identifier of the [primary server host](/docs/http/http-spans.md#http-server-definitions) of the matched virtual host.
-              - Port identifier of the [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource)
-                if it's sent in absolute-form.
-              - Port identifier of the `Host` header
-            requirement_level: opt_in
-          - id: http.request.method
-          - id: http.response.status_code
-          - id: network.protocol.name
-          - id: network.protocol.version
-          - id: url.scheme
-            examples:
-              - http
-              - https
-            requirement_level: required
   resource_spans:
     spans:
-      - id: http.request
+    - id: http.request
+      attributes:
+      - id: server.address
+        type: string
+        brief: Server address - domain name if available without reverse DNS lookup, otherwise IP address or Unix domain socket name.
+        examples:
+        - example.com
+        requirement_level: recommended
+        note: |
+          When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent
+          the server address behind any intermediaries (e.g. proxies) if it's available.
+      - id: server.port
+        type: int
+        brief: Server port number
+        examples:
+        - 80
+        - 8080
+        - 443
+        requirement_level: recommended
+        note: |
+          When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries (e.g. proxies) if it's available.
+      - id: server.socket.address
+        type: string
+        brief: Server address of the socket connection - IP address or Unix domain socket name.
+        examples:
+        - 10.5.3.2
+        requirement_level:
+          recommended: If different than `server.address`.
+        note: |
+          When observed from the client side, this SHOULD represent the immediate server peer address.
+          When observed from the server side, this SHOULD represent the physical server address.
+      - id: server.socket.port
+        type: int
+        brief: Server port number of the socket connection.
+        examples:
+        - 16456
+        requirement_level:
+          recommended: If different than `server.port`.
+        note: |
+          When observed from the client side, this SHOULD represent the immediate server peer port.
+          When observed from the server side, this SHOULD represent the physical server port.
+      - id: client.address
+        type: string
+        brief: Client address - IP address or Unix domain socket name.
+        examples:
+        - /tmp/my.sock
+        - 10.1.2.80
+        requirement_level: recommended
+        note: |
+          When observed from the server side, and when communicating through an intermediary, `client.address` SHOULD represent the client address behind any intermediaries (e.g. proxies) if it's available.
+      - id: client.port
+        type: int
+        brief: Client port number.
+        examples:
+        - 65123
+        requirement_level: recommended
+        note: |
+          When observed from the server side, and when communicating through an intermediary, `client.port` SHOULD represent the client port behind any intermediaries (e.g. proxies) if it's available.
+      - id: client.socket.address
+        type: string
+        brief: Client address of the socket connection - IP address or Unix domain socket name.
+        examples:
+        - /tmp/my.sock
+        - 127.0.0.1
+        requirement_level:
+          recommended: If different than `client.address`.
+        note: |
+          When observed from the server side, this SHOULD represent the immediate client peer address.
+          When observed from the client side, this SHOULD represent the physical client address.
+      - id: client.socket.port
+        type: int
+        brief: Client port number of the socket connection.
+        examples:
+        - 35555
+        requirement_level:
+          recommended: If different than `client.port`.
+        note: |
+          When observed from the server side, this SHOULD represent the immediate client peer port.
+          When observed from the client side, this SHOULD represent the physical client port.
+      - id: url.scheme
+        type: string
+        brief: The [URI scheme](https://www.rfc-editor.org/rfc/rfc3986#section-3.1) component identifying the used protocol.
+        examples:
+        - https
+        - ftp
+        - telnet
+        requirement_level: recommended
+        note: ''
+      events:
+      - id: error
         attributes:
-          - id: server.address
-            brief: |
-              Name of the local HTTP server that received the request.
-            note: |
-              Determined by using the first of the following that applies
-              
-              - The [primary server name](/docs/http/http-spans.md#http-server-definitions) of the matched virtual host. MUST only
-                include host identifier.
-              - Host identifier of the [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource)
-                if it's sent in absolute-form.
-              - Host identifier of the `Host` header
-              
-              SHOULD NOT be set if only IP address is available and capturing name would require a reverse DNS lookup.
-            requirement_level: opt_in
-          - id: server.port
-            brief: |
-              Port of the local HTTP server that received the request.
-            note: |
-              Determined by using the first of the following that applies
-              
-              - Port identifier of the [primary server host](/docs/http/http-spans.md#http-server-definitions) of the matched virtual host.
-              - Port identifier of the [request target](https://www.rfc-editor.org/rfc/rfc9110.html#target.resource)
-                if it's sent in absolute-form.
-              - Port identifier of the `Host` header
-            requirement_level: opt_in
-          - id: server.socket.address
-          - id: server.socket.port
-            type: int
-            brief: Server port number of the socket connection.
-            examples:
-              - 16456
-            note: |
-              When observed from the client side, this SHOULD represent the immediate server peer port.
-              When observed from the server side, this SHOULD represent the physical server port.
-            requirement_level:
-              recommended: If different than `server.port`.
-          - id: client.address
-            type: string
-            brief: Client address - IP address or Unix domain socket name.
-            examples:
-              - /tmp/my.sock
-              - 10.1.2.80
-            note: |
-              When observed from the server side, and when communicating through an intermediary, `client.address` SHOULD represent the client address behind any intermediaries (e.g. proxies) if it's available.
-          - id: client.port
-            type: int
-            brief: Client port number.
-            examples:
-              - 65123
-            note: |
-              When observed from the server side, and when communicating through an intermediary, `client.port` SHOULD represent the client port behind any intermediaries (e.g. proxies) if it's available.
-          - id: client.socket.address
-            type: string
-            brief: Client address of the socket connection - IP address or Unix domain socket name.
-            examples:
-              - /tmp/my.sock
-              - 127.0.0.1
-            note: |
-              When observed from the server side, this SHOULD represent the immediate client peer address.
-              When observed from the client side, this SHOULD represent the physical client address.
-            requirement_level:
-              recommended: If different than `client.address`.
-          - id: client.socket.port
-            type: int
-            brief: Client port number of the socket connection.
-            examples:
-              - 35555
-            note: |
-              When observed from the server side, this SHOULD represent the immediate client peer port.
-              When observed from the client side, this SHOULD represent the physical client port.
-            requirement_level:
-              recommended: If different than `client.port`.
-          - id: url.scheme
-            examples:
-              - http
-              - https
-            requirement_level: required
-        events:
-          - id: error
-            attributes:
-              - id: exception.type
-                type: string
-                brief: |
-                  The type of the exception (its fully-qualified class name, if applicable). The dynamic type of the exception should be preferred over the static type in languages that support it.
-                examples:
-                  - java.net.ConnectException
-                  - OSError
-              - id: exception.message
-                type: string
-                brief: The exception message.
-                examples:
-                  - Division by zero
-                  - Can't convert 'int' object to str implicitly
-              - id: exception.stacktrace
-                type: string
-                brief: |
-                  A stacktrace as a string in the natural representation for the language runtime. The representation is to be determined and documented by each language SIG.
-                examples: 'Exception in thread "main" java.lang.RuntimeException: Test exception\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\n at com.example.GenerateTrace.main(GenerateTrace.java:5)'
+        - id: exception.type
+          type: string
+          brief: |
+            The type of the exception (its fully-qualified class name, if applicable). The dynamic type of the exception should be preferred over the static type in languages that support it.
+          examples:
+          - java.net.ConnectException
+          - OSError
+          requirement_level: recommended
+          note: ''
+        - id: exception.message
+          type: string
+          brief: The exception message.
+          examples:
+          - Division by zero
+          - Can't convert 'int' object to str implicitly
+          requirement_level: recommended
+          note: ''
+        - id: exception.stacktrace
+          type: string
+          brief: |
+            A stacktrace as a string in the natural representation for the language runtime. The representation is to be determined and documented by each language SIG.
+          examples: 'Exception in thread "main" java.lang.RuntimeException: Test exception\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\n at com.example.GenerateTrace.main(GenerateTrace.java:5)'
+          requirement_level: recommended
+          note: ''

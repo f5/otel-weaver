@@ -8,5 +8,7 @@ logger = { version = "0.1.0", path = "../logger" }
 resolver = { version = "0.1.0", path = "../resolver" }
 
 tera = "1.19.1"
+textwrap = "0.16.0"
+walkdir = "2.3.2"
 
 thiserror.workspace = true

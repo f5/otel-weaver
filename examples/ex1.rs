@@ -2,17 +2,23 @@
 
 //! Example 1
 
-use crate::meter::{HttpMultivariateMetricProvider, HttpUnivariateMetricProvider};
+use crate::otel::tracer::{ErrorOptionalAttributes, Status};
 
-mod tracer;
+mod otel;
 mod meter;
 mod logger;
 
 
 fn main() {
-    let mp = HttpUnivariateMetricProvider::default();
-    mp.server_request_duration("localhost", 8080, "GET", 200, "http", 100, None);
 
-    let mmp = HttpMultivariateMetricProvider::default();
-    mmp.report("localhost", 8080, "GET", 200, "http", 100, 100, 100, 100, None);
+    let span = otel::tracer::Tracer::start_http_request("test");
+    span.url_scheme_attr("https");
+    span.client_port_attr(443);
+    span.error_event(Some(ErrorOptionalAttributes {
+        exception_type: None,
+        exception_message: None,
+        exception_stacktrace: None,
+    }));
+    span.status(Status::Ok);
+    span.end();
 }

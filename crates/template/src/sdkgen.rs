@@ -5,15 +5,16 @@
 use std::error::Error;
 use std::fmt::Debug;
 use std::path::PathBuf;
-use std::process;
+use std::{fs, process};
 
 use tera::{Context, Tera};
+use walkdir::WalkDir;
 
 use logger::Logger;
 use resolver::SchemaResolver;
 
-use crate::{GeneratorConfig};
-use crate::Error::{InvalidTelemetrySchema, InvalidTemplate, InvalidTemplateDirectory, InvalidTemplateFile, LanguageNotSupported};
+use crate::{filters, GeneratorConfig};
+use crate::Error::{InvalidTelemetrySchema, InvalidTemplate, InvalidTemplateDirectory, InvalidTemplateFile, LanguageNotSupported, WriteGeneratedCodeFailed};
 
 /// Client SDK generator
 pub struct ClientSdkGenerator {
@@ -41,11 +42,11 @@ impl ClientSdkGenerator {
                 return Err(InvalidTemplateDirectory(lang_path));
             }
             Some(dir) => {
-                format!("{}/**/*", dir)
+                format!("{}/**/*.tera", dir)
             }
         };
 
-        let tera = match Tera::new(&lang_dir_tree) {
+        let mut tera = match Tera::new(&lang_dir_tree) {
             Ok(tera) => tera,
             Err(e) => {
                 return Err(InvalidTemplate {
@@ -54,6 +55,13 @@ impl ClientSdkGenerator {
                 });
             }
         };
+        tera.register_filter("snake_case", filters::snake_case);
+        tera.register_filter("PascalCase", filters::pascal_case);
+        tera.register_filter("required", filters::required);
+        tera.register_filter("not_required", filters::not_required);
+        tera.register_filter("convert", filters::convert);
+        tera.register_filter("comment", filters::comment);
+        tera.register_filter("comment_examples", filters::comment_examples);
 
         Ok(Self {
             lang_path,
@@ -62,7 +70,11 @@ impl ClientSdkGenerator {
     }
 
     /// Generate a client SDK for the given schema
-    pub fn generate(&self, log: &mut Logger, schema_path: PathBuf) -> Result<(), crate::Error> {
+    pub fn generate(&self,
+                    log: &mut Logger,
+                    schema_path: PathBuf,
+                    output_dir: PathBuf,
+    ) -> Result<(), crate::Error> {
         let schema = SchemaResolver::resolve_schema_file(schema_path.clone(), log).map_err(|e| {
             InvalidTelemetrySchema {
                 schema: schema_path.clone(),
@@ -77,36 +89,55 @@ impl ClientSdkGenerator {
             }
         })?;
 
-        /// List recursively all files in the template directory
-        let lang_dir = match std::fs::read_dir(&self.lang_path) {
-            Ok(dir) => dir,
-            Err(e) => {
-                return Err(InvalidTemplateDirectory(self.lang_path.clone()));
-            }
-        };
+        /// Process recursively all files in the template directory
+        // let absolute_lang_path = fs::canonicalize(&self.lang_path)
+        //     .map_err(|e| InvalidTemplateDirectory(self.lang_path.clone()))?;
 
-        for entry in lang_dir {
+        for entry in WalkDir::new(&self.lang_path) {
             if let Ok(entry) = entry {
-                if entry.file_type().is_ok() {
-                    let tmpl_file_path = entry.path();
-                    let tmpl_file = tmpl_file_path.file_name()
-                        .ok_or(InvalidTemplateFile(entry.path()))?
-                        .to_str().ok_or(InvalidTemplateFile(entry.path()))?;
-
-                    log.loading(&format!("Generating file {}", tmpl_file));
-                    let output = self.tera.render(tmpl_file, &context).unwrap_or_else(|err| {
-                        log.newline(1);
-                        log.error(&format!("{}", err));
-                        let mut cause = err.source();
-                        while let Some(e) = cause {
-                            log.error(&format!("Caused by: {}", e));
-                            cause = e.source();
-                        }
-                        process::exit(1);
-                    });
-                    log.success(&format!("Generated file {:?}", tmpl_file));
-                    println!("Result: {}", output);
+                if entry.file_type().is_dir() {
+                    continue;
                 }
+                let tmpl_file_path = entry.path();
+                let relative_path = tmpl_file_path.strip_prefix(&self.lang_path).unwrap();
+                let tmpl_file = relative_path.to_str()
+                    .ok_or(InvalidTemplateFile(entry.path().to_path_buf()))?;
+
+                log.loading(&format!("Generating file {}", tmpl_file));
+                let output = self.tera.render(tmpl_file, &context).unwrap_or_else(|err| {
+                    log.newline(1);
+                    log.error(&format!("{}", err));
+                    let mut cause = err.source();
+                    while let Some(e) = cause {
+                        log.error(&format!("Caused by: {}", e));
+                        cause = e.source();
+                    }
+                    process::exit(1);
+                });
+
+                // Remove the `tera` extension from the relative path
+                let mut relative_path = relative_path.to_path_buf();
+                relative_path.set_extension("");
+
+                // Create all intermediary directories if they don't exist
+                let output_file_path = output_dir.join(relative_path);
+                if let Some(parent_dir) = output_file_path.parent() {
+                    if let Err(e) = fs::create_dir_all(parent_dir) {
+                        return Err(WriteGeneratedCodeFailed {
+                            template: output_file_path.clone(),
+                            error: format!("{}", e),
+                        })
+                    }
+                }
+
+                // Write the generated code to the output directory
+                fs::write(output_file_path.clone(), output).map_err(|e| {
+                    WriteGeneratedCodeFailed{
+                        template: output_file_path.clone(),
+                        error: format!("{}", e),
+                    }
+                })?;
+                log.success(&format!("Generated file {:?}", output_file_path));
             } else {
                 return Err(InvalidTemplateDirectory(self.lang_path.clone()));
             }

@@ -38,58 +38,6 @@ schema:
     version: "1.0.0"
     # schema url?
 
-  # Metrics declaration
-  resource_metrics:
-    # Common attributes shared across univariate and multivariate metrics
-    attributes:
-      - id: environment
-        type: string
-        brief: The environment in which the service is running
-        tag: sensitive-information
-        requirement_level: required
-    # Declaration of all the univariate metrics
-    univariate_metrics:
-      - ref: http.server.request.duration
-        attributes:
-          - ref: server.address
-          - ref: server.port
-          - ref: http.request.method
-          - ref: http.response.status_code
-          - ref: network.protocol.name
-          - ref: network.protocol.version
-          - ref: url.scheme
-    # Declaration of all the multivariate metrics
-    multivariate_metrics:
-      - id: http  # name of a multivariate metrics group
-        attributes:
-          - ref: server.address
-          - ref: server.port
-          - ref: http.request.method
-          - ref: http.response.status_code
-          - ref: network.protocol.name
-          - ref: network.protocol.version
-          - ref: url.scheme
-        metrics: # metrics sharing the same attributes
-          - ref: http.server.request.duration
-          - ref: http.server.active_requests
-          - ref: http.server.request.size
-          - ref: http.server.response.size
-
-
-  # Logs declaration
-  resource_logs:
-    logs:
-      - id: http  # name of a specific meter
-        body: string
-        attributes:
-          - ref: server.address
-          - ref: server.port
-          - ref: http.request.method
-          - ref: http.response.status_code
-          - ref: network.protocol.name
-          - ref: network.protocol.version
-          - ref: url.scheme
-
   # Spans declaration
   resource_spans:
     spans:

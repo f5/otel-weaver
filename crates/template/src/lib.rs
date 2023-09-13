@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 pub mod sdkgen;
+mod filters;
 
 /// An error that can occur while generating a client SDK.
 #[derive(thiserror::Error, Debug)]
@@ -31,6 +32,15 @@ pub enum Error {
     InvalidTelemetrySchema {
         /// Schema file.
         schema: PathBuf,
+        /// Error message.
+        error: String,
+    },
+
+    /// Write generated code failed.
+    #[error("Writing of the generated code {template} failed: {error}")]
+    WriteGeneratedCodeFailed {
+        /// Template path.
+        template: PathBuf,
         /// Error message.
         error: String,
     },
