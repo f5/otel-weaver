@@ -4,20 +4,6 @@
 
 use std::error::Error;
 
-{# Tera global variables #}
-{%-
-set otel_types = [
-    "int", "double", "boolean", "string",
-    "int[]", "double[]", "boolean[]", "string[]",
-]
--%}
-{%-
-set rust_types = [
-"i64", "f64", "bool", "&str",
-"[i64]", "[f64]", "[bool]", "[String]",
-]
--%}
-
 pub enum Status {
     Unset,
     Error,
@@ -31,7 +17,7 @@ impl Tracer {
     pub fn start_{{span.id | snake_case}}(
         name: &str,
         {% for attribute in span.attributes | required -%}
-        {{attribute.id | snake_case}}: {{ attribute.type | convert(from=otel_types, to=rust_types) }},
+        {{attribute.id | snake_case}}: {{ attribute.type | type_mapping }},
         {%- endfor %}
     ) -> {{span.id | PascalCase}}Span {
         {{span.id | PascalCase}}Span::default()
@@ -55,7 +41,7 @@ pub struct {{event.id | PascalCase}}RequiredAttributes {
 {{ attribute.brief | comment(prefix="    /// ")}}
 {{ attribute.note | comment(prefix="    /// ")}}
 {{ attribute.examples | comment_examples(prefix="    /// ")}}
-    pub {{attribute.id | snake_case}}: {{ attribute.type | convert(from=otel_types, to=rust_types) }},
+    pub {{attribute.id | snake_case}}: {{ attribute.type | type_mapping }},
     {% endfor %}
 }
 {%- endif -%}
@@ -68,7 +54,7 @@ pub struct {{event.id | PascalCase}}OptionalAttributes {
 {{ attribute.brief | comment(prefix="    /// ") }}
 {{ attribute.note | comment(prefix="    /// ") }}
 {{ attribute.examples | comment_examples(prefix="    /// ") }}
-    pub {{attribute.id | snake_case}}: Option<{{ attribute.type | convert(from=otel_types, to=rust_types) }}>,
+    pub {{attribute.id | snake_case}}: Option<{{ attribute.type | type_mapping }}>,
     {% endfor %}
 }
 {%- endif -%}
@@ -81,7 +67,7 @@ impl {{span.id | PascalCase}}Span {
 {{ attr.brief | comment(prefix="    /// ") }}
 {{ attr.note | comment(prefix="    /// ") }}
 {{ attr.examples | comment_examples(prefix="    /// ") }}
-    pub fn {{attr.id | snake_case}}_attr(&self, value: {{ attr.type | convert(from=otel_types, to=rust_types) }}) {}
+    pub fn {{attr.id | snake_case}}_attr(&self, value: {{ attr.type | type_mapping }}) {}
     {% endfor %}
 
     {% for event in span.events -%}

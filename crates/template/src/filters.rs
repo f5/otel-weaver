@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 
-use tera::{Result, try_get_value, Value};
+use tera::{Filter, Result, try_get_value, Value};
 use textwrap::{Options, wrap};
 
 /// Filter to convert a string to snake_case.
@@ -77,36 +77,20 @@ pub fn not_required(value: &Value, _: &HashMap<String, Value>) -> Result<Value> 
     Ok(Value::Array(required_values))
 }
 
-/// Converts a value from one to another.
-/// The `from` and `to` parameters are arrays of strings.
-/// The `value` parameter is a string.
-/// The `from` and `to` arrays must be the same size.
-/// The `value` parameter is converted from the `from` array to the `to` array.
-pub fn convert(value: &Value, ctx: &HashMap<String, Value>) -> Result<Value> {
-    let v = try_get_value!("convert", "value", String, value);
-    let from = ctx.get("from");
-    let to = ctx.get("to");
+/// Filter to map an OTel type to a language type.
+pub struct TypeMapping {
+    pub type_mapping: HashMap<String, String>,
+}
 
-    if let Some(Value::Array(from)) = from {
-        if let Some(Value::Array(to)) = to {
-            if from.len() != to.len() {
-                return Err(tera::Error::msg("Filter convert: `from` and `to` arrays are not the same size"));
-            }
-            for (i, from) in from.iter().enumerate() {
-                if let Value::String(from) = from {
-                    if v.eq(from) {
-                        if let Some(Value::String(to)) = to.get(i) {
-                            return Ok(Value::String(to.clone()));
-                        }
-                    }
-                }
-            }
-            Err(tera::Error::msg(format!("Filter convert: could not find a conversion for {}", v)))
-        } else {
-            return Ok(value.clone());
+impl Filter for TypeMapping {
+    /// Map an OTel type to a language type.
+    fn filter(&self, value: &Value, args: &HashMap<String, Value>) -> Result<Value> {
+        let otel_type = try_get_value!("type_mapping", "value", String, value);
+
+        match self.type_mapping.get(&otel_type) {
+            Some(language_type) => Ok(Value::String(language_type.clone())),
+            None => Err(tera::Error::msg(format!("Filter type_mapping: could not find a conversion for {}. To resolve this, create or extend the type_mapping in the config.yaml file.", otel_type)))
         }
-    } else {
-        return Ok(value.clone());
     }
 }
 
@@ -131,7 +115,7 @@ pub fn comment(value: &Value, ctx: &HashMap<String, Value>) -> Result<Value> {
 pub fn comment_examples(value: &Value, ctx: &HashMap<String, Value>) -> Result<Value> {
     let examples = match value {
         Value::Array(examples) => {
-            let mut examples = examples.iter().filter_map(|v| {
+            let examples = examples.iter().filter_map(|v| {
                 match v {
                     Value::String(example) => Some(format!("* {}", example)),
                     _ => None

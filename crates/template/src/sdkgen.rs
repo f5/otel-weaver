@@ -2,19 +2,21 @@
 
 //! Client SDK generator
 
-use std::error::Error;
-use std::fmt::Debug;
-use std::path::PathBuf;
 use std::{fs, process};
+use std::error::Error;
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 
+use glob::glob;
 use tera::{Context, Tera};
-use walkdir::WalkDir;
 
 use logger::Logger;
-use resolver::SchemaResolver;
+use resolver::{SchemaResolver, TelemetrySchema};
+use schema::univariate_metric::UnivariateMetric;
 
-use crate::{filters, GeneratorConfig};
-use crate::Error::{InvalidTelemetrySchema, InvalidTemplate, InvalidTemplateDirectory, InvalidTemplateFile, LanguageNotSupported, WriteGeneratedCodeFailed};
+use crate::{filters, functions, GeneratorConfig};
+use crate::config::{DynamicGlobalConfig, LanguageConfig};
+use crate::Error::{InternalError, InvalidTelemetrySchema, InvalidTemplate, InvalidTemplateDirectory, InvalidTemplateFile, LanguageNotSupported, TemplateFileNameUndefined, WriteGeneratedCodeFailed};
 
 /// Client SDK generator
 pub struct ClientSdkGenerator {
@@ -23,6 +25,9 @@ pub struct ClientSdkGenerator {
 
     /// Tera template engine
     tera: Tera,
+
+    /// Global configuration
+    config: Arc<Mutex<DynamicGlobalConfig>>,
 }
 
 impl ClientSdkGenerator {
@@ -55,17 +60,29 @@ impl ClientSdkGenerator {
                 });
             }
         };
+
+        let lang_config = LanguageConfig::try_new(&lang_path)?;
+
+        let config = Arc::new(Mutex::new(DynamicGlobalConfig::default()));
+
+        // Register custom filters
         tera.register_filter("snake_case", filters::snake_case);
         tera.register_filter("PascalCase", filters::pascal_case);
         tera.register_filter("required", filters::required);
         tera.register_filter("not_required", filters::not_required);
-        tera.register_filter("convert", filters::convert);
         tera.register_filter("comment", filters::comment);
         tera.register_filter("comment_examples", filters::comment_examples);
+        tera.register_filter("type_mapping", filters::TypeMapping {
+            type_mapping: lang_config.type_mapping,
+        });
+
+        // Register custom functions
+        tera.register_function("config", functions::FunctionConfig::new(config.clone()));
 
         Ok(Self {
             lang_path,
             tera,
+            config,
         })
     }
 
@@ -89,60 +106,277 @@ impl ClientSdkGenerator {
             }
         })?;
 
-        /// Process recursively all files in the template directory
-        // let absolute_lang_path = fs::canonicalize(&self.lang_path)
-        //     .map_err(|e| InvalidTemplateDirectory(self.lang_path.clone()))?;
+        // Process recursively all files in the template directory
+        let mut lang_path = self.lang_path.to_str().unwrap_or_default().to_string();
+        let paths = if lang_path.is_empty() {
+            glob("**/*.tera").map_err(|e| InternalError(e.to_string()))?
+        } else {
+            lang_path.push_str("/**/*.tera");
+            glob(lang_path.as_str()).map_err(|e| InternalError(e.to_string()))?
+        };
 
-        for entry in WalkDir::new(&self.lang_path) {
-            if let Ok(entry) = entry {
-                if entry.file_type().is_dir() {
+        for entry in paths {
+            if let Ok(tmpl_file_path) = entry {
+                if tmpl_file_path.is_dir() {
                     continue;
                 }
-                let tmpl_file_path = entry.path();
                 let relative_path = tmpl_file_path.strip_prefix(&self.lang_path).unwrap();
                 let tmpl_file = relative_path.to_str()
-                    .ok_or(InvalidTemplateFile(entry.path().to_path_buf()))?;
+                    .ok_or(InvalidTemplateFile(tmpl_file_path.clone()))?;
 
-                log.loading(&format!("Generating file {}", tmpl_file));
-                let output = self.tera.render(tmpl_file, &context).unwrap_or_else(|err| {
-                    log.newline(1);
-                    log.error(&format!("{}", err));
-                    let mut cause = err.source();
-                    while let Some(e) = cause {
-                        log.error(&format!("Caused by: {}", e));
-                        cause = e.source();
+                match tmpl_file_path.file_stem().map(|s| s.to_str()).flatten() {
+                    Some("univariate_metric") => {
+                        self.process_univariate_metrics(log, tmpl_file, &schema_path, &schema, &output_dir)?;
                     }
-                    process::exit(1);
-                });
+                    Some("multivariate_metric") => {
+                        self.process_multivariate_metrics(log, tmpl_file, &schema_path, &schema, &output_dir)?;
+                    }
+                    Some("log") => {
+                        self.process_logs(log, tmpl_file, &schema_path, &schema, &output_dir)?;
+                    }
+                    Some("span") => {
+                        self.process_spans(log, tmpl_file, &schema_path, &schema, &output_dir)?;
+                    }
+                    _ => {
+                        // Process other templates
+                        log.loading(&format!("Generating file {}", tmpl_file));
+                        let generated_code = self.generate_code(log, tmpl_file, context)?;
 
-                // Remove the `tera` extension from the relative path
-                let mut relative_path = relative_path.to_path_buf();
-                relative_path.set_extension("");
+                        // Remove the `tera` extension from the relative path
+                        let mut relative_path = relative_path.to_path_buf();
+                        relative_path.set_extension("");
 
-                // Create all intermediary directories if they don't exist
-                let output_file_path = output_dir.join(relative_path);
-                if let Some(parent_dir) = output_file_path.parent() {
-                    if let Err(e) = fs::create_dir_all(parent_dir) {
-                        return Err(WriteGeneratedCodeFailed {
-                            template: output_file_path.clone(),
-                            error: format!("{}", e),
-                        })
+                        let generated_file = Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                        log.success(&format!("Generated file {:?}", generated_file));
                     }
                 }
-
-                // Write the generated code to the output directory
-                fs::write(output_file_path.clone(), output).map_err(|e| {
-                    WriteGeneratedCodeFailed{
-                        template: output_file_path.clone(),
-                        error: format!("{}", e),
-                    }
-                })?;
-                log.success(&format!("Generated file {:?}", output_file_path));
             } else {
                 return Err(InvalidTemplateDirectory(self.lang_path.clone()));
             }
         }
 
+        Ok(())
+    }
+
+    /// Generate code.
+    fn generate_code(&self, log: &mut Logger, tmpl_file: &str, context: &Context) -> Result<String, crate::Error> {
+        let generated_code = self.tera.render(tmpl_file, &context).unwrap_or_else(|err| {
+            log.newline(1);
+            log.error(&format!("{}", err));
+            let mut cause = err.source();
+            while let Some(e) = cause {
+                log.error(&format!("Caused by: {}", e));
+                cause = e.source();
+            }
+            process::exit(1);
+        });
+
+        Ok(generated_code)
+    }
+
+    /// Save the generated code to the output directory.
+    fn save_generated_code(output_dir: &PathBuf, relative_path: PathBuf, generated_code: String) -> Result<PathBuf, crate::Error> {
+        // Create all intermediary directories if they don't exist
+        let output_file_path = output_dir.join(relative_path);
+        if let Some(parent_dir) = output_file_path.parent() {
+            if let Err(e) = fs::create_dir_all(parent_dir) {
+                return Err(WriteGeneratedCodeFailed {
+                    template: output_file_path.clone(),
+                    error: format!("{}", e),
+                });
+            }
+        }
+
+        // Write the generated code to the output directory
+        fs::write(output_file_path.clone(), generated_code).map_err(|e| {
+            WriteGeneratedCodeFailed {
+                template: output_file_path.clone(),
+                error: format!("{}", e),
+            }
+        })?;
+
+        Ok(output_file_path)
+    }
+
+    /// Process all univariate metrics in the schema.
+    fn process_univariate_metrics(&self, log: &mut Logger, tmpl_file: &str, schema_path: &PathBuf, schema: &TelemetrySchema, output_dir: &PathBuf) -> Result<(), crate::Error> {
+        if let Some(schema_spec) = &schema.schema {
+            if let Some(metrics) = schema_spec.resource_metrics.as_ref() {
+                for metric in metrics.univariate_metrics.iter() {
+                    if let UnivariateMetric::Metric { name, .. } = metric {
+                        let context = &Context::from_serialize(metric).map_err(|e| {
+                            InvalidTelemetrySchema {
+                                schema: schema_path.clone(),
+                                error: format!("{}", e),
+                            }
+                        })?;
+
+                        // Reset the config
+                        {
+                            self.config.lock().map_err(|e| InternalError(e.to_string()))?.reset();
+                        }
+
+                        log.loading(&format!("Generating code for univariate metric `{}`", name));
+                        let generated_code = self.generate_code(log, tmpl_file, context)?;
+
+                        // Retrieve the file name from the config
+                        let relative_path = {
+                            let mutex_guard = self.config.lock()
+                                .map_err(|e| InternalError(e.to_string()))?;
+                            match &mutex_guard.file_name {
+                                None => {
+                                    return Err(TemplateFileNameUndefined {
+                                        template: PathBuf::from(tmpl_file),
+                                    });
+                                }
+                                Some(file_name) => {
+                                    PathBuf::from(file_name.clone())
+                                }
+                            }
+                        };
+
+                        // Save the generated code to the output directory
+                        let generated_file = Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                        log.success(&format!("Generated file {:?}", generated_file));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Process all multivariate metrics in the schema.
+    fn process_multivariate_metrics(&self, log: &mut Logger, tmpl_file: &str, schema_path: &PathBuf, schema: &TelemetrySchema, output_dir: &PathBuf) -> Result<(), crate::Error> {
+        if let Some(schema_spec) = &schema.schema {
+            if let Some(metrics) = schema_spec.resource_metrics.as_ref() {
+                for metric in metrics.multivariate_metrics.iter() {
+                    let context = &Context::from_serialize(metric).map_err(|e| {
+                        InvalidTelemetrySchema {
+                            schema: schema_path.clone(),
+                            error: format!("{}", e),
+                        }
+                    })?;
+
+                    // Reset the config
+                    {
+                        self.config.lock().map_err(|e| InternalError(e.to_string()))?.reset();
+                    }
+
+                    log.loading(&format!("Generating code for multivariate metric `{}`", metric.id));
+                    let generated_code = self.generate_code(log, tmpl_file, context)?;
+
+                    // Retrieve the file name from the config
+                    let relative_path = {
+                        let mutex_guard = self.config.lock()
+                            .map_err(|e| InternalError(e.to_string()))?;
+                        match &mutex_guard.file_name {
+                            None => {
+                                return Err(TemplateFileNameUndefined {
+                                    template: PathBuf::from(tmpl_file),
+                                });
+                            }
+                            Some(file_name) => {
+                                PathBuf::from(file_name.clone())
+                            }
+                        }
+                    };
+
+                    // Save the generated code to the output directory
+                    let generated_file = Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                    log.success(&format!("Generated file {:?}", generated_file));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Process all logs in the schema.
+    fn process_logs(&self, log: &mut Logger, tmpl_file: &str, schema_path: &PathBuf, schema: &TelemetrySchema, output_dir: &PathBuf) -> Result<(), crate::Error> {
+        if let Some(schema_spec) = &schema.schema {
+            if let Some(logs) = schema_spec.resource_logs.as_ref() {
+                for log_record in logs.logs.iter() {
+                    let context = &Context::from_serialize(log_record).map_err(|e| {
+                        InvalidTelemetrySchema {
+                            schema: schema_path.clone(),
+                            error: format!("{}", e),
+                        }
+                    })?;
+
+                    // Reset the config
+                    {
+                        self.config.lock().map_err(|e| InternalError(e.to_string()))?.reset();
+                    }
+
+                    log.loading(&format!("Generating code for log `{}`", log_record.id));
+                    let generated_code = self.generate_code(log, tmpl_file, context)?;
+
+                    // Retrieve the file name from the config
+                    let relative_path = {
+                        let mutex_guard = self.config.lock()
+                            .map_err(|e| InternalError(e.to_string()))?;
+                        match &mutex_guard.file_name {
+                            None => {
+                                return Err(TemplateFileNameUndefined {
+                                    template: PathBuf::from(tmpl_file),
+                                });
+                            }
+                            Some(file_name) => {
+                                PathBuf::from(file_name.clone())
+                            }
+                        }
+                    };
+
+                    // Save the generated code to the output directory
+                    let generated_file = Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                    log.success(&format!("Generated file {:?}", generated_file));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Process all spans in the schema.
+    fn process_spans(&self, log: &mut Logger, tmpl_file: &str, schema_path: &PathBuf, schema: &TelemetrySchema, output_dir: &PathBuf) -> Result<(), crate::Error> {
+        if let Some(schema_spec) = &schema.schema {
+            if let Some(spans) = schema_spec.resource_spans.as_ref() {
+                for span in spans.spans.iter() {
+                    let context = &Context::from_serialize(span).map_err(|e| {
+                        InvalidTelemetrySchema {
+                            schema: schema_path.clone(),
+                            error: format!("{}", e),
+                        }
+                    })?;
+
+                    // Reset the config
+                    {
+                        self.config.lock().map_err(|e| InternalError(e.to_string()))?.reset();
+                    }
+
+                    log.loading(&format!("Generating code for span `{}`", span.id));
+                    let generated_code = self.generate_code(log, tmpl_file, context)?;
+
+                    // Retrieve the file name from the config
+                    let relative_path = {
+                        let mutex_guard = self.config.lock()
+                            .map_err(|e| InternalError(e.to_string()))?;
+                        match &mutex_guard.file_name {
+                            None => {
+                                return Err(TemplateFileNameUndefined {
+                                    template: PathBuf::from(tmpl_file),
+                                });
+                            }
+                            Some(file_name) => {
+                                PathBuf::from(file_name.clone())
+                            }
+                        }
+                    };
+
+                    // Save the generated code to the output directory
+                    let generated_file = Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                    log.success(&format!("Generated file {:?}", generated_file));
+                }
+            }
+        }
         Ok(())
     }
 }

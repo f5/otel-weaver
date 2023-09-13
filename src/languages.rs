@@ -17,7 +17,7 @@ pub struct LanguagesParams {
 
 /// List of supported languages
 pub fn command_languages(log: &mut Logger, params: &LanguagesParams) {
-    /// List all directories in the templates directory
+    // List all directories in the templates directory
     log.log("List of supported languages:");
     let template_dir = match std::fs::read_dir(&params.templates) {
         Ok(dir) => dir,

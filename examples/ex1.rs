@@ -21,4 +21,6 @@ fn main() {
     }));
     span.status(Status::Ok);
     span.end();
+
+    let span = otel::tracer::http_server::Tracer::start("test");
 }

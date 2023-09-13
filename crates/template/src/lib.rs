@@ -2,10 +2,21 @@ use std::path::PathBuf;
 
 pub mod sdkgen;
 mod filters;
+mod functions;
+mod config;
 
 /// An error that can occur while generating a client SDK.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    /// Invalid config file.
+    #[error("Invalid config file `{config_file}`: {error}")]
+    InvalidConfigFile {
+        /// Config file.
+        config_file: PathBuf,
+        /// Error message.
+        error: String,
+    },
+
     /// Language not found.
     #[error("Language `{0}` is not supported. Use the command `languages` to list supported languages.")]
     LanguageNotSupported(String),
@@ -43,6 +54,17 @@ pub enum Error {
         template: PathBuf,
         /// Error message.
         error: String,
+    },
+
+    /// Internal error.
+    #[error("Internal error: {0}")]
+    InternalError(String),
+
+    /// Template file name undefined.
+    #[error("File name undefined in the template `{template}`. To resolve this, use the function `config(file_name = <file_name, filter, or expression>)` to set the file name.")]
+    TemplateFileNameUndefined {
+        /// Template path.
+        template: PathBuf,
     },
 }
 

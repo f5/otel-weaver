@@ -4,11 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-logger = { version = "0.1.0", path = "../logger" }
-resolver = { version = "0.1.0", path = "../resolver" }
+logger = { path = "../logger" }
+resolver = { path = "../resolver" }
+schema = { path = "../schema" }
 
 tera = "1.19.1"
 textwrap = "0.16.0"
-walkdir = "2.3.2"
+glob = "0.3.1"
 
 thiserror.workspace = true
+serde.workspace = true
+serde_yaml.workspace = true

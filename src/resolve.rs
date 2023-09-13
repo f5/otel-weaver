@@ -7,7 +7,7 @@ use std::process::exit;
 use clap::Parser;
 
 use logger::Logger;
-use resolver::{Error, SchemaResolver, TelemetrySchema};
+use resolver::{SchemaResolver};
 
 /// Parameters for the `resolve` command
 #[derive(Parser)]

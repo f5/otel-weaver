@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: Apache-2.0
+
+//! Generated code for span `{{ id }}`.
+
+use std::error::Error;
+
+{# Define the file name for the generated code #}
+{%- set file_name = id | snake_case -%}
+{{- config(file_name="tracer/" ~ file_name ~ ".rs") -}}
+
+/// Starts a new named `{{ id }}` span.
+pub fn start(
+             name: &str,
+             {% for attribute in attributes | required -%}
+             {{id | snake_case}}: {{ type | type_mapping }},
+             {%- endfor %}
+) -> {{id | PascalCase}}Span {
+    {{id | PascalCase}}Span::default()
+}
+
+#[derive(Default)]
+pub struct {{id | PascalCase}}Span {}
+
