@@ -14,7 +14,7 @@ use logger::Logger;
 use resolver::{SchemaResolver, TelemetrySchema};
 use schema::univariate_metric::UnivariateMetric;
 
-use crate::{filters, functions, GeneratorConfig};
+use crate::{filters, functions, GeneratorConfig, testers};
 use crate::config::{DynamicGlobalConfig, LanguageConfig};
 use crate::Error::{InternalError, InvalidTelemetrySchema, InvalidTemplate, InvalidTemplateDirectory, InvalidTemplateFile, LanguageNotSupported, TemplateFileNameUndefined, WriteGeneratedCodeFailed};
 
@@ -66,8 +66,11 @@ impl ClientSdkGenerator {
         let config = Arc::new(Mutex::new(DynamicGlobalConfig::default()));
 
         // Register custom filters
-        tera.register_filter("snake_case", filters::snake_case);
-        tera.register_filter("PascalCase", filters::pascal_case);
+        tera.register_filter("file_name", filters::CaseConverter::new(lang_config.file_name, "file_name"));
+        tera.register_filter("function_name", filters::CaseConverter::new(lang_config.function_name, "function_name"));
+        tera.register_filter("arg_name", filters::CaseConverter::new(lang_config.arg_name, "arg_name"));
+        tera.register_filter("struct_name", filters::CaseConverter::new(lang_config.struct_name, "struct_name"));
+        tera.register_filter("field_name", filters::CaseConverter::new(lang_config.field_name, "field_name"));
         tera.register_filter("required", filters::required);
         tera.register_filter("not_required", filters::not_required);
         tera.register_filter("comment", filters::comment);
@@ -78,6 +81,10 @@ impl ClientSdkGenerator {
 
         // Register custom functions
         tera.register_function("config", functions::FunctionConfig::new(config.clone()));
+
+        /// Register custom testers
+        tera.register_tester("required", testers::is_required);
+        tera.register_tester("not_required", testers::is_not_required);
 
         Ok(Self {
             lang_path,

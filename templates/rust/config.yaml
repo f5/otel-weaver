@@ -1,3 +1,9 @@
+file_name: snake_case
+function_name: snake_case
+arg_name: snake_case
+struct_name: PascalCase
+field_name: snake_case
+
 type_mapping:
   int: i64
   double: f64

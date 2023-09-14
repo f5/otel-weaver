@@ -4,6 +4,7 @@ pub mod sdkgen;
 mod filters;
 mod functions;
 mod config;
+mod testers;
 
 /// An error that can occur while generating a client SDK.
 #[derive(thiserror::Error, Debug)]

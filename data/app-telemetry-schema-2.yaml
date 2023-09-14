@@ -38,6 +38,20 @@ schema:
     version: "1.0.0"
     # schema url?
 
+  # Logs declaration
+  resource_logs:
+    logs:
+      - id: http  # name of a specific meter
+        body: string
+        attributes:
+          - ref: server.address
+          - ref: server.port
+          # - ref: http.request.method
+          - ref: http.response.status_code
+          - ref: network.protocol.name
+          - ref: network.protocol.version
+          - ref: url.scheme
+
   # Spans declaration
   resource_spans:
     spans:

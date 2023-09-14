@@ -1,0 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0
+
+//! Generated OTel Client Loggers API.
+
+{% if schema.resource_logs is defined %}
+{% for log in schema.resource_logs.logs %}
+pub mod {{ log.id | file_name }};
+{% endfor  %}
+{% endif %}

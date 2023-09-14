@@ -1,0 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0
+
+//! Generated OTel Client Tracers API.
+
+{% if schema.resource_spans is defined %}
+{% for span in schema.resource_spans.spans %}
+pub mod {{ span.id | file_name }};
+{% endfor  %}
+{%  endif %}

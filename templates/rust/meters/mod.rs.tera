@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+
+//! Generated OTel Client Loggers API.
+
+{% if schema.resource_metrics is defined %}
+{% for metric in schema.resource_metrics.univariate_metrics %}
+pub mod {{ metric.id | file_name }};
+{% endfor  %}
+
+{% for metric in schema.resource_metrics.multivariate_metrics %}
+pub mod {{ metric.id | file_name }};
+{% endfor  %}
+{% endif %}

@@ -2,4 +2,6 @@
 
 //! Generated OTel Client API.
 
-pub mod tracer;
+pub mod meters;
+pub mod loggers;
+pub mod tracers;

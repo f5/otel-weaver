@@ -2,31 +2,37 @@
 
 //! Custom Tera filters
 
+use std::borrow::Cow;
 use std::collections::HashMap;
 
 use tera::{Filter, Result, try_get_value, Value};
 use textwrap::{Options, wrap};
 
-/// Filter to convert a string to snake_case.
-/// dots notation is replaced by underscores.
-pub fn snake_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    let v = try_get_value!("snake_case", "value", String, value);
-    let method_name = v.replace(".", "_").to_lowercase();
+use crate::config::CaseConvention;
 
-    Ok(Value::String(method_name))
+/// Case converter filter.
+pub struct CaseConverter {
+    filter_name: &'static str,
+    case: CaseConvention,
 }
 
-/// Filter to convert a string to PascalCase.
-/// dots notation is replaced by empty string.
-pub fn pascal_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    let v = try_get_value!("PascalCase", "value", String, value);
-    let parts = v.split(".").collect::<Vec<&str>>();
-    let struct_name = parts.iter()
-        .map(|s| uppercase_first_letter(&s.to_lowercase()))
-        .collect::<Vec<String>>()
-        .join("");
+impl CaseConverter {
+    /// Create a new case converter filter.
+    pub fn new(case: CaseConvention, filter_name: &'static str) -> Self {
+        CaseConverter {
+            filter_name,
+            case,
+        }
+    }
+}
 
-    Ok(Value::String(struct_name))
+/// Filter to convert a string to a specific case.
+impl Filter for CaseConverter {
+    /// Convert a string to a specific case.
+    fn filter(&self, value: &Value, args: &HashMap<String, Value>) -> Result<Value> {
+        let text = try_get_value!(self.filter_name, "value", String, value);
+        Ok(Value::String(self.case.convert(&text)))
+    }
 }
 
 /// Filter out attributes that are not required.
@@ -98,15 +104,48 @@ impl Filter for TypeMapping {
 /// The `value` parameter is a string.
 /// The `prefix` parameter is a string.
 pub fn comment(value: &Value, ctx: &HashMap<String, Value>) -> Result<Value> {
-    let text = try_get_value!("comment", "value", String, value);
+    fn wrap_comment(comment: &str, prefix: &str, lines: &mut Vec<String>) {
+        wrap(comment.trim_end(), Options::new(80))
+            .into_iter()
+            .map(|s| format!("{}{}",prefix, s.trim_end()))
+            .for_each(|s| lines.push(s));
+    }
+
     let prefix = match ctx.get("prefix") {
         Some(Value::String(prefix)) => prefix.clone(),
         _ => { "".to_string() }
     };
-    let text = text.trim_end();
 
-    let comments = wrap(text, Options::new(80).initial_indent(&prefix).subsequent_indent(&prefix));
-    Ok(Value::String(comments.join("\n")))
+    let mut lines = vec![];
+    match value {
+        Value::String(value) => wrap_comment(value, "", &mut lines),
+        Value::Array(values) => {
+            for value in values {
+                match value {
+                    Value::String(value) => wrap_comment(value, "", &mut lines),
+                    Value::Array(values) => {
+                        for value in values {
+                            match value {
+                                Value::String(value) => wrap_comment(value, "- ", &mut lines),
+                                _ => {}
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        _ => {}
+    }
+
+    let mut comments = String::new();
+    for (i, line) in lines.into_iter().enumerate() {
+        if i >0 {
+            comments.push_str(format!("\n{}", prefix).as_ref());
+        }
+        comments.push_str(line.as_ref());
+    }
+    Ok(Value::String(comments))
 }
 
 /// Creates a multiline examples comment from a list of strings or a string.
@@ -137,7 +176,7 @@ pub fn comment_examples(value: &Value, ctx: &HashMap<String, Value>) -> Result<V
 
     let mut comments = String::new();
     if !examples.is_empty() {
-        comments.push_str(format!("{}# Examples:\n", prefix).as_ref());
+        comments.push_str(format!("\n{}# Examples:\n", prefix).as_ref());
         for example in examples {
             let example = example.replace("\\n", "\n");
             for line in wrap(example.trim_end(), Options::new(80).initial_indent(&prefix).subsequent_indent(&prefix)) {
