@@ -1,0 +1,172 @@
+// SPDX-License-Identifier: Apache-2.0
+
+package tracer
+
+type Status int
+
+const (
+    Unset Status = iota
+    Error
+    Ok
+)
+
+{% if schema.resource_spans is defined %}
+{% for span in schema.resource_spans.spans %}
+
+{%- set required_attrs = span.attributes | required -%}
+{%- set not_required_attrs = span.attributes | not_required -%}
+{%- if required_attrs | length > 0 %}
+// Start{{ span.id | function_name }} starts a new named `{{ span.id }}` span with the given required attributes.
+func Start{{ span.id | function_name }}(
+    {%- for attr in required_attrs %}
+    {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,
+    {% endfor %}
+) *{{span.id | struct_name}}Span {
+    return &{{span.id | struct_name}}Span {
+        {{span.id | field_name}}Attrs: {{span.id | field_name}}Attrs {
+            {%- for attr in required_attrs %}
+            {{attr.id | field_name}}: {{attr.id | field_name}}.{{attr.type | type_mapping }},
+            {% endfor %}
+        },
+    }
+}
+
+// Start{{ span.id | function_name }}WithOptAttrs starts a new named `{{ span.id }}` span with the given required attributes
+// and the optional attributes.
+func Start{{ span.id | function_name }}WithOptAttrs(
+    {%- for attr in required_attrs %}
+    {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,
+    {% endfor %}
+    optionalAttrs {{span.id | struct_name}}OptAttrs,
+) *{{span.id | struct_name}}Span {
+    return &{{span.id | struct_name}}Span {
+        {{span.id | field_name}}Attrs: {{span.id | field_name}}Attrs {
+        {%- for attr in required_attrs %}
+            {{attr.id | field_name}}: {{attr.id | field_name}}.{{attr.type | type_mapping }},
+        {% endfor %}
+        },
+        {{span.id | field_name}}OptAttrs: &optionalAttrs,
+    }
+}
+{%- else %}
+// Start{{ span.id | function_name }} starts a new named `{{ span.id }}` span.
+func Start{{ span.id | function_name }}() *{{span.id | struct_name}}Span {
+    return &{{span.id | struct_name}}Span {
+    }
+}
+
+// Start{{ span.id | function_name }}WithOptAttrs starts a new named `{{ span.id }}` span with the given optional attributes.
+func Start{{ span.id | function_name }}WithOptAttrs(
+    optionalAttrs {{span.id | struct_name}}OptAttrs,
+) -> *{{span.id | struct_name}}Span {
+    return &{{span.id | struct_name}}Span {
+        {{span.id | field_name}}OptAttrs: optionalAttrs,
+    }
+}
+{%- endif %}
+
+// {{span.id | struct_name}}Span is a span for `{{ span.id }}`.
+type {{span.id | struct_name}}Span struct {
+    {%- if required_attrs | length > 0 %}
+    // Required span attributes for `{{ span.id }}`.
+    {{span.id | field_name}}Attrs {{span.id | struct_name}}Attrs
+    {%- endif -%}
+    {%- if not_required_attrs | length > 0 %}
+    // Optional span attributes for `{{ span.id }}`.
+    {{span.id | field_name}}OptAttrs *{{span.id | struct_name}}OptAttrs
+    {%- endif %}
+    {%- if span.events | length > 0 %}
+    // Events for `{{ span.id }}`.
+    events []{{ span.id | struct_name }}Event
+    {%- endif %}
+}
+
+{% if required_attrs | length > 0 -%}
+{%- for attr in required_attrs %}
+// {{attr.id | struct_name}}ReqAttr represents a required attribute for `{{ span.id }}`.
+// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
+type {{attr.id | struct_name}}ReqAttr struct { {{ attr.type | type_mapping }} }
+func {{attr.id | struct_name}}(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}ReqAttr { return {{attr.id | struct_name}}ReqAttr{v} }
+{%- endfor %}
+
+// {{span.id | struct_name}}Attrs represents the required span attributes for `{{ span.id }}`.
+type {{span.id | struct_name}}Attrs struct {
+    {%- for attr in required_attrs %}
+    // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    // ") }}
+    {{attr.id | field_name}} {{ attr.type | type_mapping }}
+    {%- endfor %}
+}
+{%- endif %}
+
+{% if not_required_attrs | length > 0 -%}
+// {{span.id | struct_name}}OptAttrs represents the optional span attributes for `{{ span.id }}`.
+type {{span.id | struct_name}}OptAttrs struct {
+    {%- for attr in not_required_attrs %}
+    // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    // ") }}
+    {{attr.id | field_name}} {{ attr.type | type_mapping }}
+    {%- endfor %}
+}
+{%- endif %}
+
+{% if span.events | length > 0 -%}
+// {{ span.id | struct_name }}Event is interface implemented by all events for `{{ span.id }}`.
+type {{ span.id | struct_name }}Event interface {
+    // enum is a marker method for the interface.
+    enum()
+}
+
+{% for event in span.events -%}
+// {{ event.id | struct_name}}Event represents the event for `{{ event.id }}`.
+type {{ event.id | struct_name}}Event struct {
+{%- for attr in event.attributes %}
+    // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    // ") }}
+{%- if attr is required %}
+    // This attribute is required.
+    {{attr.id | field_name}} {{ attr.type | type_mapping }}
+{% else %}
+    // This attribute is optional.
+    {{attr.id | field_name}} {{ attr.type | type_mapping }}
+{% endif -%}
+{% endfor %}
+}
+
+// enum is a marker method for the interface.
+func (s {{ event.id | struct_name}}Event) enum() {}
+{%- endfor %}
+{%- endif %}
+
+{% for attr in not_required_attrs %}
+// Attr{{attr.id | function_name}} sets the optional attribute `{{ attr.id }}` for the span.
+// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
+func (s *{{span.id | struct_name}}Span) Attr{{attr.id | function_name}}(value {{ attr.type | type_mapping }}) *{{span.id | struct_name}}Span {
+    s.{{span.id | field_name}}OptAttrs.{{attr.id | field_name}} = value
+    return s
+}
+{% endfor %}
+
+{% if span.events | length > 0 -%}
+// Event adds an event to the span.
+func (s *{{span.id | struct_name}}Span) Event(event {{ span.id | struct_name }}Event) *{{span.id | struct_name}}Span {
+    s.events = append(s.events, event)
+    return s
+}
+{%- endif %}
+
+// Status sets the status for the span.
+func (s *{{span.id | struct_name}}Span) Status(status Status) *{{span.id | struct_name}}Span { return s }
+
+// Error sets the error for the span.
+func (s *{{span.id | struct_name}}Span) Error(err error) *{{span.id | struct_name}}Span { return s }
+
+// End ends the span.
+func (s *{{span.id | struct_name}}Span) End() {}
+
+{%- if not_required_attrs | length > 0 %}
+
+// EndWithOptAttrs ends the span with the optional attributes.
+func (s *{{span.id | struct_name}}Span) EndWithOptAttrs(optionalAttrs {{span.id | struct_name}}OptAttrs) {
+    s.{{span.id | field_name}}OptAttrs = &optionalAttrs
+}
+{%- endif %}
+{% endfor  %}
+{%  endif %}

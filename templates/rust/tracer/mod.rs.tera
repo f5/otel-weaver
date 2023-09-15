@@ -39,7 +39,7 @@ pub fn start_{{ span.id | function_name }}_with_opt_attrs(
 }
 {%- else %}
 /// Starts a new named `{{ span.id }}` span.
-pub fn start_{{ span.id | function_name }}(name: &str) -> {{span.id | struct_name}}Span {
+pub fn start_{{ span.id | function_name }}() -> {{span.id | struct_name}}Span {
     {{span.id | struct_name}}Span {
         {{span.id | field_name}}_opt_attrs: {{span.id | struct_name}}OptAttrs::default(),
     }
@@ -47,7 +47,6 @@ pub fn start_{{ span.id | function_name }}(name: &str) -> {{span.id | struct_nam
 
 /// Starts a new named `{{ span.id }}` span with the given optional attributes.
 pub fn start_{{ span.id | function_name }}_with_opt_attrs(
-    name: &str,
     optional_attrs: {{span.id | struct_name}}OptAttrs,
 ) -> {{span.id | struct_name}}Span {
     {{span.id | struct_name}}Span {
@@ -56,6 +55,7 @@ pub fn start_{{ span.id | function_name }}_with_opt_attrs(
 }
 {%- endif %}
 
+/// {{span.id | struct_name}}Span is a span for `{{ span.id }}`.
 pub struct {{span.id | struct_name}}Span {
     {%- if required_attrs | length > 0 %}
     /// Required span attributes for `{{ span.id }}`.
@@ -65,7 +65,7 @@ pub struct {{span.id | struct_name}}Span {
     /// Optional span attributes for `{{ span.id }}`.
     {{span.id | field_name}}_opt_attrs: {{span.id | struct_name}}OptAttrs,
     {%- endif %}
-    {%- if span.events | length > 0 -%}
+    {%- if span.events | length > 0 %}
     /// Events for `{{ span.id }}`.
     events: Vec<{{ span.id | struct_name }}Event>,
     {%- endif %}
@@ -76,7 +76,7 @@ pub struct {{span.id | struct_name}}Span {
 pub struct {{span.id | struct_name}}Attrs {
     {%- for attr in required_attrs %}
     /// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    /// ") }}
-    pub {{attr.id | arg_name}}: {{ attr.type | type_mapping }},
+    pub {{attr.id | field_name}}: {{ attr.type | type_mapping }},
     {%- endfor %}
 }
 {%- endif %}
@@ -87,7 +87,7 @@ pub struct {{span.id | struct_name}}Attrs {
 pub struct {{span.id | struct_name}}OptAttrs {
     {%- for attr in not_required_attrs %}
     /// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    /// ") }}
-    pub {{attr.id | arg_name}}: Option<{{ attr.type | type_mapping }}>,
+    pub {{attr.id | field_name}}: Option<{{ attr.type | type_mapping }}>,
     {%- endfor %}
 }
 {%- endif %}

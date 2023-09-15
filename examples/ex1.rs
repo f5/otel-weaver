@@ -9,6 +9,7 @@ mod otel;
 
 fn main() {
     // Starts a new span with the required attributes.
+    // todo 2 start impl: 1) with, 2) without required attributes
     let mut span1 = otel::tracer::start_http_request(
         HttpRequestAttrs {
             url_host: "localhost".to_string(),
@@ -67,6 +68,7 @@ fn main() {
 
     // ========================================================================
     // Example of univariate metrics.
+    // todo otel::meter::new_jvm_thread_count
     let mut jvm_thread_count = otel::meter::jvm_thread_count_u64();
     jvm_thread_count.add(10, JvmThreadCountAttrs { thread_daemon: Some(true) });
 
@@ -82,6 +84,8 @@ fn main() {
 
     // ========================================================================
     // Example of multivariate metrics.
+    // todo otel::meter::new_http
+    // todo check concept of metric_group
     let mut http = otel::meter::http();
     http.report(
         HttpMetrics {

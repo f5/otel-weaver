@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+
+package logger
+
+{% if schema.resource_logs is defined %}
+{% for log in schema.resource_logs.logs %}
+// Logs `{{ log.id }}` record with the given attributes.
+func Log{{ log.id | function_name }}(attrs {{ log.id | struct_name }}Attrs) {}
+
+// Log attributes for `{{ log.id }}`.
+type {{ log.id | struct_name }}Attrs struct {
+    {%- for attr in log.attributes %}
+    // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    // ") }}
+    {{attr.id | field_name}} {{ attr.type | type_mapping }}
+    {%- endfor %}
+}
+
+{% endfor  %}
+{% endif %}

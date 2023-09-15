@@ -11,7 +11,7 @@ pub fn log_{{ log.id | function_name }}(attrs: {{ log.id | struct_name }}Attrs) 
 pub struct {{ log.id | struct_name }}Attrs {
     {%- for attr in log.attributes %}
     /// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    /// ") }}
-    pub {{attr.id | arg_name}}: {% if attr is required %}{{ attr.type | type_mapping }}{% else %}Option<{{ attr.type | type_mapping }}>{% endif %},
+    pub {{attr.id | field_name}}: {% if attr is required %}{{ attr.type | type_mapping }}{% else %}Option<{{ attr.type | type_mapping }}>{% endif %},
     {%- endfor %}
 }
 
