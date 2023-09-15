@@ -68,16 +68,15 @@ schema:
         attributes:
           - ref: server.address
           - ref: server.port
-          - ref: http.request.method
           - ref: http.response.status_code
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
         metrics: # metrics sharing the same attributes
-          - ref: http.server.request.duration
-          - ref: http.server.active_requests
-          - ref: http.server.request.size
-          - ref: http.server.response.size
+          - ref: jvm.thread.count
+            # Note: u64 or f64 must be defined at this level
+          - ref: jvm.class.loaded
+          - ref: jvm.cpu.recent_utilization
 
   # Logs declaration
   resource_logs:

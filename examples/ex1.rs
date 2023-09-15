@@ -2,14 +2,14 @@
 
 //! Example 1
 
-use crate::otel::meters::JvmThreadCountAttrs;
-use crate::otel::tracers::{HttpRequestAttrs, HttpRequestEvent, HttpRequestOptAttrs, Status};
+use crate::otel::meter::{http, HttpAttrs, HttpMetrics, JvmThreadCountAttrs};
+use crate::otel::tracer::{HttpRequestAttrs, HttpRequestEvent, HttpRequestOptAttrs, Status};
 
 mod otel;
 
 fn main() {
     // Starts a new span with the required attributes.
-    let mut span1 = otel::tracers::start_http_request(
+    let mut span1 = otel::tracer::start_http_request(
         HttpRequestAttrs {
             url_host: "localhost".to_string(),
         });
@@ -36,7 +36,7 @@ fn main() {
 
     // ========================================================================
     // Starts a new span with the required attributes.
-    let mut span2 = otel::tracers::start_http_request(
+    let mut span2 = otel::tracer::start_http_request(
         HttpRequestAttrs {
             url_host: "localhost".to_string(),
         });
@@ -55,7 +55,7 @@ fn main() {
 
     // ========================================================================
     // Logs an HTTP event.
-    otel::loggers::log_http(otel::loggers::HttpAttrs {
+    otel::logger::log_http(otel::logger::HttpAttrs {
         server_address: Some("localhost".to_string()),
         server_port: Some(443),
         http_response_status_code: Some(200),
@@ -67,11 +67,11 @@ fn main() {
 
     // ========================================================================
     // Example of univariate metrics.
-    let mut jvm_thread_count = otel::meters::jvm_thread_count_long_up_down_counter();
+    let mut jvm_thread_count = otel::meter::jvm_thread_count_u64();
     jvm_thread_count.add(10, JvmThreadCountAttrs { thread_daemon: Some(true) });
 
-    let mut http_server = otel::meters::http_server_request_duration_double_histogram();
-    http_server.record(10.0, otel::meters::HttpServerRequestDurationAttrs {
+    let mut http_server = otel::meter::http_server_request_duration_f64();
+    http_server.record(10.0, otel::meter::HttpServerRequestDurationAttrs {
         server_address: Some("localhost".to_string()),
         server_port: Some(443),
         http_response_status_code: Some(200),
@@ -79,4 +79,23 @@ fn main() {
         network_protocol_version: None,
         url_scheme: None,
     });
+
+    // ========================================================================
+    // Example of multivariate metrics.
+    let mut http = otel::meter::http();
+    http.report(
+        HttpMetrics {
+            jvm_thread_count: 10,
+            jvm_class_loaded: 50,
+            jvm_cpu_recent_utilization: 60,
+        },
+        HttpAttrs {
+            server_address: Some("localhost".into()),
+            server_port: Some(8080),
+            http_response_status_code: None,
+            network_protocol_name: None,
+            network_protocol_version: None,
+            url_scheme: None,
+        },
+    );
 }
