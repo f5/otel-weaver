@@ -3,6 +3,7 @@
 //! Custom Tera filters
 
 use std::borrow::Cow;
+use std::clone;
 use std::collections::HashMap;
 
 use tera::{Filter, Result, try_get_value, Value};
@@ -32,6 +33,19 @@ impl Filter for CaseConverter {
     fn filter(&self, value: &Value, args: &HashMap<String, Value>) -> Result<Value> {
         let text = try_get_value!(self.filter_name, "value", String, value);
         Ok(Value::String(self.case.convert(&text)))
+    }
+}
+
+/// Filter to normalize instrument name.
+pub fn instrument(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
+    if let Value::String(metric_type) = value {
+        match metric_type.as_str() {
+            "counter" | "gauge" | "histogram" => return Ok(Value::String(metric_type.clone())),
+            "updowncounter" => return Ok(Value::String("up_down_counter".to_string())),
+            _ => return Err(tera::Error::msg(format!("Filter instrument: unknown metric instrument {}", metric_type)))
+        }
+    } else {
+        return Err(tera::Error::msg(format!("Filter instrument: expected a string, got {:?}", value)));
     }
 }
 
@@ -148,46 +162,7 @@ pub fn comment(value: &Value, ctx: &HashMap<String, Value>) -> Result<Value> {
     Ok(Value::String(comments))
 }
 
-/// Creates a multiline examples comment from a list of strings or a string.
-/// The `value` parameter is a string.
-/// The `prefix` parameter is a string.
-pub fn comment_examples(value: &Value, ctx: &HashMap<String, Value>) -> Result<Value> {
-    let examples = match value {
-        Value::Array(examples) => {
-            let examples = examples.iter().filter_map(|v| {
-                match v {
-                    Value::String(example) => Some(format!("* {}", example)),
-                    _ => None
-                }
-            }).collect::<Vec<String>>();
-            examples
-        }
-        Value::String(example) => vec![format!("* {}", example)],
-        _ => return Ok(Value::Null)
-    };
-    let prefix = match ctx.get("prefix") {
-        Some(Value::String(prefix)) => prefix.clone(),
-        _ => { "".to_string() }
-    };
 
-    if examples.len() == 0 {
-        return Ok(Value::Null);
-    }
-
-    let mut comments = String::new();
-    if !examples.is_empty() {
-        comments.push_str(format!("\n{}# Examples:\n", prefix).as_ref());
-        for example in examples {
-            let example = example.replace("\\n", "\n");
-            for line in wrap(example.trim_end(), Options::new(80).initial_indent(&prefix).subsequent_indent(&prefix)) {
-                comments.push_str(line.as_ref());
-                comments.push('\n');
-            }
-        }
-    }
-    comments = comments.trim_end().to_string();
-    Ok(Value::String(comments))
-}
 
 fn uppercase_first_letter(s: &str) -> String {
     let mut c = s.chars();

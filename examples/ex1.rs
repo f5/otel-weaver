@@ -2,40 +2,76 @@
 
 //! Example 1
 
-use crate::otel::tracers::http_request::{Event, HttpRequestAttrs, HttpRequestOptAttrs, Status};
+use crate::otel::meters::JvmThreadCountAttrs;
+use crate::otel::tracers::{HttpRequestAttrs, HttpRequestEvent, HttpRequestOptAttrs, Status};
 
 mod otel;
 
 fn main() {
-    let mut span = otel::tracers::http_request::start("test", HttpRequestAttrs {
-        url_host: "localhost".to_string(),
-    });
-    span.attr_url_scheme("https".to_string());
-    span.attr_client_port(443);
-    span.event(Event::Error {
-        exception_type: None,
-        exception_message: None,
-        exception_stacktrace: None,
-    });
-    span.status(Status::Ok);
-    span.end();
+    // Starts a new span with the required attributes.
+    let mut span1 = otel::tracers::start_http_request(
+        HttpRequestAttrs {
+            url_host: "localhost".to_string(),
+        });
 
-    let mut span = otel::tracers::http_request::start("test", HttpRequestAttrs {
-        url_host: "localhost".to_string(),
+    // Specifies some optional attributes.
+    span1.attr_url_scheme("https".to_string());
+    span1.attr_client_port(443);
+
+    // Add an event to the span.
+    span1.event(HttpRequestEvent::Error {
+        exception_type: None,
+        exception_message: Some("an error message".into()),
+        exception_stacktrace: None,
     });
-    span.event(Event::Error {
+
+    // Set the status of the span.
+    span1.status(Status::Ok);
+    // End the span. After this call, the span is not longer
+    // accessible.
+    span1.end();
+
+    // At this point, any reference to the span1 will result in a compiler
+    // error.
+
+    // ========================================================================
+    // Starts a new span with the required attributes.
+    let mut span2 = otel::tracers::start_http_request(
+        HttpRequestAttrs {
+            url_host: "localhost".to_string(),
+        });
+    span2.event(HttpRequestEvent::Error {
         exception_type: None,
         exception_message: None,
         exception_stacktrace: None,
     });
-    span.status(Status::Ok);
-    span.end_with_opt_attrs(HttpRequestOptAttrs {
+    span2.status(Status::Ok);
+    // End the span with optional attributes.
+    span2.end_with_opt_attrs(HttpRequestOptAttrs {
         url_scheme: Some("https".to_string()),
         client_port: Some(443),
         ..Default::default()
     });
 
-    otel::loggers::http::log(otel::loggers::http::Attrs {
+    // ========================================================================
+    // Logs an HTTP event.
+    otel::loggers::log_http(otel::loggers::HttpAttrs {
+        server_address: Some("localhost".to_string()),
+        server_port: Some(443),
+        http_response_status_code: Some(200),
+        network_protocol_name: Some("http".to_string()),
+        network_protocol_version: None,
+        url_scheme: None,
+    });
+
+
+    // ========================================================================
+    // Example of univariate metrics.
+    let mut jvm_thread_count = otel::meters::jvm_thread_count_long_up_down_counter();
+    jvm_thread_count.add(10, JvmThreadCountAttrs { thread_daemon: Some(true) });
+
+    let mut http_server = otel::meters::http_server_request_duration_double_histogram();
+    http_server.record(10.0, otel::meters::HttpServerRequestDurationAttrs {
         server_address: Some("localhost".to_string()),
         server_port: Some(443),
         http_response_status_code: Some(200),

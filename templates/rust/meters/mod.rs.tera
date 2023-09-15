@@ -3,11 +3,56 @@
 //! Generated OTel Client Loggers API.
 
 {% if schema.resource_metrics is defined %}
+{% if schema.resource_metrics.univariate_metrics is defined %}
 {% for metric in schema.resource_metrics.univariate_metrics %}
-pub mod {{ metric.id | file_name }};
-{% endfor  %}
+/// Metric `{{ metric.name }}` to report long values.
+pub fn {{ metric.name | function_name }}_long_{{ metric.instrument | instrument | function_name }}() -> {{ metric.name | struct_name }}Long{{ metric.instrument | instrument | struct_name }} {
+    {{ metric.name | struct_name }}Long{{ metric.instrument | instrument | struct_name }}{}
+}
 
-{% for metric in schema.resource_metrics.multivariate_metrics %}
-pub mod {{ metric.id | file_name }};
+/// Metric `{{ metric.name }}` to report double values.
+pub fn {{ metric.name | function_name }}_double_{{ metric.instrument | instrument | function_name }}() -> {{ metric.name | struct_name }}Double{{ metric.instrument | instrument | struct_name }} {
+    {{ metric.name | struct_name }}Double{{ metric.instrument | instrument | struct_name }}{}
+}
+
+pub struct {{ metric.name | struct_name }}Long{{ metric.instrument | instrument | struct_name }} {
+}
+
+pub struct {{ metric.name | struct_name }}Double{{ metric.instrument | instrument | struct_name }} {
+}
+
+impl {{ metric.name | struct_name }}Long{{ metric.instrument | instrument | struct_name }} {
+    {% if metric.instrument == "counter" %}
+    pub fn add(&mut self, value: i64, attrs: {{ metric.name | struct_name }}Attrs) {}
+    {% elif metric.instrument == "updowncounter" %}
+    pub fn add(&mut self, value: i64, attrs: {{ metric.name | struct_name }}Attrs) {}
+    {% elif metric.instrument == "gauge" %}
+    pub fn add(&mut self, value: i64, attrs: {{ metric.name | struct_name }}Attrs) {}
+    {% elif metric.instrument == "histogram" %}
+    pub fn record(&mut self, value: i64, attrs: {{ metric.name | struct_name }}Attrs) {}
+    {% endif %}
+}
+
+impl {{ metric.name | struct_name }}Double{{ metric.instrument | instrument | struct_name }} {
+    {% if metric.instrument == "counter" %}
+    pub fn add(&mut self, value: f64, attrs: {{ metric.name | struct_name }}Attrs) {}
+    {% elif metric.instrument == "updowncounter" %}
+    pub fn add(&mut self, value: f64, attrs: {{ metric.name | struct_name }}Attrs) {}
+    {% elif metric.instrument == "gauge" %}
+    pub fn add(&mut self, value: f64, attrs: {{ metric.name | struct_name }}Attrs) {}
+    {% elif metric.instrument == "histogram" %}
+    pub fn record(&mut self, value: f64, attrs: {{ metric.name | struct_name }}Attrs) {}
+    {% endif %}
+}
+
+/// Metric attributes for `{{ metric.name }}`.
+pub struct {{ metric.name | struct_name }}Attrs {
+    {%- for attr in metric.attributes %}
+    /// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    /// ") }}
+    pub {{attr.id | arg_name}}: {% if attr is required %}{{ attr.type | type_mapping }}{% else %}Option<{{ attr.type | type_mapping }}>{% endif %},
+    {%- endfor %}
+}
+
 {% endfor  %}
+{% endif %}
 {% endif %}

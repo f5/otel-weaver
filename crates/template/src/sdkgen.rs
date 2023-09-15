@@ -71,10 +71,10 @@ impl ClientSdkGenerator {
         tera.register_filter("arg_name", filters::CaseConverter::new(lang_config.arg_name, "arg_name"));
         tera.register_filter("struct_name", filters::CaseConverter::new(lang_config.struct_name, "struct_name"));
         tera.register_filter("field_name", filters::CaseConverter::new(lang_config.field_name, "field_name"));
+        tera.register_filter("instrument", filters::instrument);
         tera.register_filter("required", filters::required);
         tera.register_filter("not_required", filters::not_required);
         tera.register_filter("comment", filters::comment);
-        tera.register_filter("comment_examples", filters::comment_examples);
         tera.register_filter("type_mapping", filters::TypeMapping {
             type_mapping: lang_config.type_mapping,
         });
