@@ -85,7 +85,20 @@ schema:
   # Events declaration
   resource_events:
     events:
-      - event_name: http  # name of a specific meter
+      - event_name: request
+        domain: http
+        attributes:
+          - ref: server.address
+          - ref: server.port
+          # - ref: http.request.method
+          - ref: network.protocol.name
+          - ref: network.protocol.version
+          - ref: url.scheme
+          - id: url.host
+            type: string
+            brief: The host of the request
+            requirement_level: required
+      - event_name: response
         domain: http
         attributes:
           - ref: server.address

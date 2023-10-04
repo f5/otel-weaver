@@ -7,33 +7,26 @@ package eventer
 {%- set required_attrs = event.attributes | required -%}
 {%- set not_required_attrs = event.attributes | not_required -%}
 
-// Event{{ event.event_name | function_name }} events `{{ event.event_name }}` record with the given
+// Event{{ event.domain | function_name }}{{ event.event_name | function_name }} events `{{ event.event_name }}` record with the given
 // required attributes.
-func Event{{ event.event_name | function_name }} (
+func Event{{ event.domain | function_name }}{{ event.event_name | function_name }} (
     {%- for attr in required_attrs %}
     {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,
     {%- endfor %}
 ) {}
 
-// Event{{ event.event_name | function_name }}WithOptAttrs events `{{ event.event_name }}` record with the given
+// Event{{ event.domain | function_name }}{{ event.event_name | function_name }}WithOptAttrs events `{{ event.event_name }}` record with the given
 // required attributes and the optional attributes.
-func Event{{ event.event_name | function_name }}WithOptAttrs (
+func Event{{ event.domain | function_name }}{{ event.event_name | function_name }}WithOptAttrs (
 {%- for attr in required_attrs %}
     {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,
 {%- endfor %}
-    optAttrs {{ event.event_name | struct_name }}OptAttrs,
+    optAttrs {{ event.domain | struct_name }}{{ event.event_name | struct_name }}OptAttrs,
 ) {}
 
 {% if required_attrs | length > 0 -%}
-{%- for attr in required_attrs %}
-// {{attr.id | struct_name}}ReqAttr represents a required attribute for `{{ event.event_name }}`.
-// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
-type {{attr.id | struct_name}}ReqAttr struct { {{ attr.type | type_mapping }} }
-func {{attr.id | struct_name}}(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}ReqAttr { return {{attr.id | struct_name}}ReqAttr{v} }
-{%- endfor %}
-
-// {{event.event_name | struct_name}}Attrs represents the required event attributes for `{{ event.event_name }}`.
-type {{event.event_name | struct_name}}Attrs struct {
+// {{event.domain | struct_name}}{{event.event_name | struct_name}}Attrs represents the required event attributes for `{{ event.event_name }}`.
+type {{event.domain | struct_name}}{{event.event_name | struct_name}}Attrs struct {
     {%- for attr in required_attrs %}
     // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    // ") }}
     {{attr.id | field_name}} {{ attr.type | type_mapping }}
@@ -41,8 +34,8 @@ type {{event.event_name | struct_name}}Attrs struct {
 }
 {%- endif %}
 
-// {{ event.event_name | struct_name }}OptAttrs represents all the optional attributes for `{{ event.event_name }}`.
-type {{ event.event_name | struct_name }}OptAttrs struct {
+// {{event.domain | struct_name}}{{ event.event_name | struct_name }}OptAttrs represents all the optional attributes for `{{ event.event_name }}`.
+type {{event.domain | struct_name}}{{ event.event_name | struct_name }}OptAttrs struct {
     {%- for attr in not_required_attrs %}
     // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    // ") }}
     {{attr.id | field_name}} {{ attr.type | type_mapping }}
@@ -50,4 +43,10 @@ type {{ event.event_name | struct_name }}OptAttrs struct {
 }
 
 {% endfor  %}
+{% for attr in schema.resource_events.events | unique_attributes | required %}
+// {{attr.id | struct_name}}ReqAttr represents a required attribute.
+// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
+type {{attr.id | struct_name}}ReqAttr struct { {{ attr.type | type_mapping }} }
+func {{attr.id | struct_name}}(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}ReqAttr { return {{attr.id | struct_name}}ReqAttr{v} }
+{% endfor %}
 {% endif %}

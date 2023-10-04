@@ -55,8 +55,18 @@ fn main() {
     });
 
     // ========================================================================
-    // Logs an HTTP event.
-    otel::eventer::event_http(otel::eventer::HttpAttrs {
+    // Reports an HTTP Request event.
+    otel::eventer::event_http_request(otel::eventer::HttpRequestAttrs {
+        server_address: Some("localhost".to_string()),
+        server_port: Some(443),
+        network_protocol_name: Some("http".to_string()),
+        network_protocol_version: None,
+        url_scheme: None,
+        url_host: "".to_string(),
+    });
+    // ========================================================================
+    // Reports an HTTP Response event.
+    otel::eventer::event_http_response(otel::eventer::HttpResponseAttrs {
         server_address: Some("localhost".to_string()),
         server_port: Some(443),
         http_response_status_code: Some(200),

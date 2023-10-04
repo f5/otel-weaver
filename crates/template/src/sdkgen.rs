@@ -71,6 +71,7 @@ impl ClientSdkGenerator {
         tera.register_filter("arg_name", filters::CaseConverter::new(lang_config.arg_name, "arg_name"));
         tera.register_filter("struct_name", filters::CaseConverter::new(lang_config.struct_name, "struct_name"));
         tera.register_filter("field_name", filters::CaseConverter::new(lang_config.field_name, "field_name"));
+        tera.register_filter("unique_attributes", filters::unique_attributes);
         tera.register_filter("instrument", filters::instrument);
         tera.register_filter("required", filters::required);
         tera.register_filter("not_required", filters::not_required);

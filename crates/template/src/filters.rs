@@ -49,6 +49,43 @@ pub fn instrument(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
     }
 }
 
+/// Filter ro deduplicate attributes from a list of values containing attributes.
+pub fn unique_attributes(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
+    let mut unique_attributes = HashMap::new();
+    match value {
+        Value::Array(values) => {
+            for value in values {
+                match value {
+                    Value::Object(map) => {
+                        let attributes = map.get("attributes");
+                        if let Some(Value::Array(objects)) = attributes {
+                            for object in objects {
+                                if let Value::Object(map) = object {
+                                    let id = map.get("id");
+                                    if let Some(Value::String(id)) = id {
+                                        if unique_attributes.contains_key(id) {
+                                            // attribute already exists
+                                            continue;
+                                        }
+                                        unique_attributes.insert(id, object.clone());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        _ => return Ok(value.clone())
+    }
+    let mut attributes = vec![];
+    for attribute in unique_attributes.into_values() {
+        attributes.push(attribute);
+    }
+    Ok(Value::Array(attributes))
+}
+
 /// Filter out attributes that are not required.
 pub fn required(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
     let mut required_values = vec![];
