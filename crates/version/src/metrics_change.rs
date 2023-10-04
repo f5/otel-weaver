@@ -23,4 +23,8 @@ pub struct MetricsChange {
 pub struct RenameAttributes {
     /// A collection of rename operations to apply to the metric attributes.
     pub attribute_map: HashMap<String, String>,
+    /// A collection of metric references.
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub apply_to_metrics: Vec<String>,
 }

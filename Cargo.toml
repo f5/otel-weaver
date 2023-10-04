@@ -20,6 +20,7 @@ serde = { version = "1.0.188", features = ["derive"] }
 serde_yaml = "0.9.25"
 thiserror = "1.0.47"
 ureq = "2.7.1"
+regex = "1.9.6"
 
 [[bin]]
 bench = false

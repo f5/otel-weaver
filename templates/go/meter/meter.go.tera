@@ -3,8 +3,8 @@
 package meter
 
 {% if schema.resource_metrics is defined %}
-{% if schema.resource_metrics.univariate_metrics is defined %}
-{% for metric in schema.resource_metrics.univariate_metrics %}
+{% if schema.resource_metrics.metrics is defined %}
+{% for metric in schema.resource_metrics.metrics %}
 // Metric `{{ metric.name }}` to report int64 values.
 func {{ metric.name | function_name }}IntMetric() *{{ metric.name | struct_name }}Int{{ metric.instrument | instrument | struct_name }} {
     return &{{ metric.name | struct_name }}Int{{ metric.instrument | instrument | struct_name }}{}
@@ -55,8 +55,8 @@ type {{ metric.name | struct_name }}Attrs struct {
 
 
 {% if schema.resource_metrics is defined %}
-{% if schema.resource_metrics.multivariate_metrics is defined %}
-{% for metric in schema.resource_metrics.multivariate_metrics %}
+{% if schema.resource_metrics.metric_group is defined %}
+{% for metric in schema.resource_metrics.metric_group %}
 {%- set required_attrs = metric.attributes | required -%}
 {%- set not_required_attrs = metric.attributes | not_required -%}
 

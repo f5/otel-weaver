@@ -1,6 +1,5 @@
 file_format: 1.2.0
-# Inherit from the OpenTelemetry schema v1.21.0
-parent_schema_url: https://opentelemetry.io/schemas/1.21.0
+parent_schema_url: file://open-telemetry-schema.1.22.0.yaml
 # Current schema url
 schema_url: https://mycompany.com/schemas/1.0.0
 
@@ -82,11 +81,11 @@ schema:
           - ref: jvm.class.loaded
           - ref: jvm.cpu.recent_utilization
 
-  # Logs declaration
-  resource_logs:
-    logs:
-      - id: http  # name of a specific meter
-        body: string
+  # Events declaration
+  resource_events:
+    events:
+      - event_name: http  # name of a specific meter
+        domain: http
         attributes:
           - ref: server.address
           - ref: server.port

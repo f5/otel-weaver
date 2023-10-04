@@ -1,39 +1,39 @@
 // SPDX-License-Identifier: Apache-2.0
 
-package logger
+package eventer
 
-{% if schema.resource_logs is defined %}
-{% for log in schema.resource_logs.logs %}
-{%- set required_attrs = log.attributes | required -%}
-{%- set not_required_attrs = log.attributes | not_required -%}
+{% if schema.resource_events is defined %}
+{% for event in schema.resource_events.events %}
+{%- set required_attrs = event.attributes | required -%}
+{%- set not_required_attrs = event.attributes | not_required -%}
 
-// Log{{ log.id | function_name }} logs `{{ log.id }}` record with the given
+// Event{{ event.event_name | function_name }} events `{{ event.event_name }}` record with the given
 // required attributes.
-func Log{{ log.id | function_name }} (
+func Event{{ event.event_name | function_name }} (
     {%- for attr in required_attrs %}
     {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,
     {%- endfor %}
 ) {}
 
-// Log{{ log.id | function_name }}WithOptAttrs logs `{{ log.id }}` record with the given
+// Event{{ event.event_name | function_name }}WithOptAttrs events `{{ event.event_name }}` record with the given
 // required attributes and the optional attributes.
-func Log{{ log.id | function_name }}WithOptAttrs (
+func Event{{ event.event_name | function_name }}WithOptAttrs (
 {%- for attr in required_attrs %}
     {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,
 {%- endfor %}
-    optAttrs {{ log.id | struct_name }}OptAttrs,
+    optAttrs {{ event.event_name | struct_name }}OptAttrs,
 ) {}
 
 {% if required_attrs | length > 0 -%}
 {%- for attr in required_attrs %}
-// {{attr.id | struct_name}}ReqAttr represents a required attribute for `{{ log.id }}`.
+// {{attr.id | struct_name}}ReqAttr represents a required attribute for `{{ event.event_name }}`.
 // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
 type {{attr.id | struct_name}}ReqAttr struct { {{ attr.type | type_mapping }} }
 func {{attr.id | struct_name}}(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}ReqAttr { return {{attr.id | struct_name}}ReqAttr{v} }
 {%- endfor %}
 
-// {{log.id | struct_name}}Attrs represents the required log attributes for `{{ log.id }}`.
-type {{log.id | struct_name}}Attrs struct {
+// {{event.event_name | struct_name}}Attrs represents the required event attributes for `{{ event.event_name }}`.
+type {{event.event_name | struct_name}}Attrs struct {
     {%- for attr in required_attrs %}
     // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    // ") }}
     {{attr.id | field_name}} {{ attr.type | type_mapping }}
@@ -41,8 +41,8 @@ type {{log.id | struct_name}}Attrs struct {
 }
 {%- endif %}
 
-// {{ log.id | struct_name }}OptAttrs represents all the optional attributes for `{{ log.id }}`.
-type {{ log.id | struct_name }}OptAttrs struct {
+// {{ event.event_name | struct_name }}OptAttrs represents all the optional attributes for `{{ event.event_name }}`.
+type {{ event.event_name | struct_name }}OptAttrs struct {
     {%- for attr in not_required_attrs %}
     // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    // ") }}
     {{attr.id | field_name}} {{ attr.type | type_mapping }}

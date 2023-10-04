@@ -11,6 +11,8 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use url::quirks::host;
+use url::Url;
 use version::{Versions};
 
 pub mod event;
@@ -113,25 +115,42 @@ impl TelemetrySchema {
     }
 
     /// Loads a telemetry schema from a URL and returns the schema.
-    pub fn load_from_url(schema_url: &str) -> Result<TelemetrySchema, Error> {
-        // Create a content reader from the schema URL
-        let reader = ureq::get(schema_url)
-            .call()
-            .map_err(|e| Error::SchemaNotFound {
-                path_or_url: schema_url.to_string(),
-                error: e.to_string(),
-            })?
-            .into_reader();
+    pub fn load_from_url(schema_url: &Url) -> Result<TelemetrySchema, Error> {
+        match schema_url.scheme() {
+            "http" | "https" => {
+                // Create a content reader from the schema URL
+                let reader = ureq::get(&schema_url.to_string())
+                    .call()
+                    .map_err(|e| Error::SchemaNotFound {
+                        path_or_url: schema_url.to_string(),
+                        error: e.to_string(),
+                    })?
+                    .into_reader();
 
-        // Deserialize the telemetry schema from the content reader
-        let schema: TelemetrySchema =
-            serde_yaml::from_reader(reader).map_err(|e| Error::InvalidSchema {
-                path_or_url: schema_url.to_string(),
-                line: e.location().map(|loc| loc.line()),
-                column: e.location().map(|loc| loc.column()),
-                error: e.to_string(),
-            })?;
-        Ok(schema)
+                // Deserialize the telemetry schema from the content reader
+                let schema: TelemetrySchema =
+                    serde_yaml::from_reader(reader).map_err(|e| Error::InvalidSchema {
+                        path_or_url: schema_url.to_string(),
+                        line: e.location().map(|loc| loc.line()),
+                        column: e.location().map(|loc| loc.column()),
+                        error: e.to_string(),
+                    })?;
+                Ok(schema)
+            }
+            "file" => {
+                let domain = schema_url.domain();
+                let path = schema_url.path();
+                let host = schema_url.host();
+                println!("Loading schema from file: {}", path);
+                Self::load_from_file(path)
+            }
+            _ => {
+                Err(Error::SchemaNotFound {
+                    path_or_url: schema_url.to_string(),
+                    error: format!("Unsupported URL scheme: {}", schema_url.scheme()),
+                })
+            }
+        }
     }
 }
 

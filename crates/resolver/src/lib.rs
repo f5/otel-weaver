@@ -18,6 +18,8 @@ use schema::univariate_metric::UnivariateMetric;
 use semconv::attribute::Attribute;
 use semconv::ResolverConfig;
 use semconv::tags::merge_with_override;
+use url::Url;
+use regex::Regex;
 use version::{VersionAttributeChanges, VersionChanges};
 
 /// A resolver that can be used to resolve telemetry schemas.
@@ -34,6 +36,13 @@ pub enum Error {
     /// A parent schema error.
     #[error("Parent schema error (error: {0:?})")]
     ParentSchemaError(schema::Error),
+
+    /// An invalid URL.
+    #[error("Invalid URL `{url:?}`, error: {error:?})")]
+    InvalidUrl {
+        url: String,
+        error: String,
+    },
 
     /// A semantic convention error.
     #[error("Semantic convention error (error: {0:?})")]
@@ -195,13 +204,35 @@ impl SchemaResolver {
         // Load the parent schema and merge it into the current schema.
         let parent_schema = if let Some(parent_schema_url) = schema.parent_schema_url.as_ref() {
             log.loading(&format!("Loading parent schema '{}'", parent_schema_url));
-            let parent_schema = TelemetrySchema::load_from_url(parent_schema_url).map_err(|e| {
-                log.error(&format!(
-                    "Failed to load parent schema '{}'",
-                    parent_schema_url
-                ));
-                Error::ParentSchemaError(e)
-            })?;
+            let url_pattern = Regex::new(r"^(https|http|file):.*").expect("invalid regex, please report this bug");
+            let parent_schema = if url_pattern.is_match(parent_schema_url) {
+                let url = Url::parse(parent_schema_url).map_err(|e| {
+                    log.error(&format!(
+                        "Failed to parset parent schema url '{}'",
+                        parent_schema_url
+                    ));
+                    Error::InvalidUrl {
+                        url: parent_schema_url.clone(),
+                        error: e.to_string(),
+                    }
+                })?;
+                TelemetrySchema::load_from_url(&url).map_err(|e| {
+                    log.error(&format!(
+                        "Failed to load parent schema '{}'",
+                        parent_schema_url
+                    ));
+                    Error::ParentSchemaError(e)
+                })?
+            } else {
+                TelemetrySchema::load_from_file(parent_schema_url).map_err(|e| {
+                    log.error(&format!(
+                        "Failed to load parent schema '{}'",
+                        parent_schema_url
+                    ));
+                    Error::ParentSchemaError(e)
+                })?
+            };
+
             log.success(&format!("Loaded parent schema '{}'", parent_schema_url));
             Some(parent_schema)
         } else {
