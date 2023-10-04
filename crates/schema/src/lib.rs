@@ -25,6 +25,7 @@ pub mod resource_spans;
 pub mod schema_spec;
 pub mod span;
 pub mod univariate_metric;
+pub mod tags;
 
 /// An error that can occur while loading a telemetry schema.
 #[derive(thiserror::Error, Debug)]
@@ -56,21 +57,30 @@ pub enum Error {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct TelemetrySchema {
-    /// The version of the telemetry schema specification.
+    /// Defines the file format. MUST be set to 1.2.0.
     pub file_format: String,
-    /// The URL of the parent schema (optional).
+    /// Optional field specifying the schema url of the parent schema. The current
+    /// schema overrides the parent schema.
+    /// Usually the parent schema is the official OpenTelemetry Telemetry schema
+    /// containing the versioning and their corresponding transformations.
+    /// However, it can also include any of the new fields defined in this OTEP.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_schema_url: Option<String>,
-    /// The URL of the current schema.
+    /// The Schema URL that this file is published at.
     pub schema_url: String,
     /// The semantic conventions that are imported by the current schema (optional).
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub semantic_conventions: Vec<SemConvImport>,
-    /// The schema specification for the current schema.
+    /// Definition of the telemetry schema for an application or a library.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub schema: Option<SchemaSpec>,
-    /// The versions and corresponding changes that can be applied to the current schema.
+    /// Definitions for each schema version in this family.
+    /// Note: the ordering of versions is defined according to semver
+    /// version number ordering rules.
+    /// This section is described in more details in the OTEP 0152 and in a dedicated
+    /// section below.
+    /// https://github.com/open-telemetry/oteps/blob/main/text/0152-telemetry-schemas.md
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versions: Option<Versions>,
 }

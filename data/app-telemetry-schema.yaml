@@ -22,6 +22,9 @@ semantic_conventions:
 # telemetry data might also have their own telemetry schema, detailing the
 # metrics, logs, and spans they generate locally.
 schema:
+  tags:
+    sensitive_data: true
+
   # Resource attributes
   # Only used when a Client SDK is generated
   resource:
@@ -48,7 +51,7 @@ schema:
         tag: sensitive-information
         requirement_level: required
     # Declaration of all the univariate metrics
-    univariate_metrics:
+    metrics:
       - ref: http.server.request.duration
         attributes:
           - ref: server.address
@@ -59,7 +62,7 @@ schema:
           - ref: network.protocol.version
           - ref: url.scheme
     # Declaration of all the multivariate metrics
-    multivariate_metrics:
+    metrics_group:
       - id: http  # name of a multivariate metrics group
         attributes:
           - ref: server.address
@@ -72,8 +75,8 @@ schema:
         metrics: # metrics sharing the same attributes
           - ref: http.server.request.duration
           - ref: http.server.active_requests
-          - ref: http.server.request.size
-          - ref: http.server.response.size
+          - ref: http.server.request.body.size
+          - ref: http.server.response.body.size
 
 
   # Logs declaration

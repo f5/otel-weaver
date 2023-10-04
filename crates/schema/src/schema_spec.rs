@@ -8,11 +8,15 @@ use crate::resource_logs::ResourceLogs;
 use crate::resource_metrics::ResourceMetrics;
 use crate::resource_spans::ResourceSpans;
 use serde::{Deserialize, Serialize};
+use crate::tags::Tags;
 
-/// A schema specification.
+/// Definition of the telemetry schema for an application or a library.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct SchemaSpec {
+    /// A set of tags for the schema.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tags: Option<Tags>,
     /// A common resource specification.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resource: Option<Resource>,

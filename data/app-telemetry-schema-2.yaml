@@ -49,7 +49,7 @@ schema:
         tag: sensitive-information
         requirement_level: required
     # Declaration of all the univariate metrics
-    univariate_metrics:
+    metrics:
       - ref: jvm.thread.count
       - ref: jvm.class.loaded
       - ref: jvm.cpu.recent_utilization
@@ -63,7 +63,7 @@ schema:
           - ref: network.protocol.version
           - ref: url.scheme
     # Declaration of all the multivariate metrics
-    multivariate_metrics:
+    metrics_group:
       - id: http  # name of a multivariate metrics group
         attributes:
           - ref: server.address
@@ -72,6 +72,10 @@ schema:
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
+          - id: url.host
+            type: string
+            brief: The host of the request
+            requirement_level: required
         metrics: # metrics sharing the same attributes
           - ref: jvm.thread.count
             # Note: u64 or f64 must be defined at this level
@@ -91,6 +95,10 @@ schema:
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
+          - id: url.host
+            type: string
+            brief: The host of the request
+            requirement_level: required
 
   # Spans declaration
   resource_spans:

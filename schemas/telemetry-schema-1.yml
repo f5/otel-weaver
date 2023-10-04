@@ -30,7 +30,7 @@ schema:
         brief: The environment in which the service is running
         tag: sensitive-information
         requirement_level: required
-    univariate-metrics:
+    metrics:
       - ref: metric.http.server.duration
         attributes:
           - ref: server.address
@@ -40,7 +40,7 @@ schema:
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
-    multivariate-metrics:
+    metrics_groups:
       - id: http  # name of a group of metrics
         attributes:
           - ref: server.address

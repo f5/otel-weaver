@@ -16,7 +16,8 @@ const (
 {%- set required_attrs = span.attributes | required -%}
 {%- set not_required_attrs = span.attributes | not_required -%}
 {%- if required_attrs | length > 0 %}
-// Start{{ span.id | function_name }} starts a new named `{{ span.id }}` span with the given required attributes.
+// Start{{ span.id | function_name }} starts a new `{{ span.id }}` span with
+// the given required attributes.
 func Start{{ span.id | function_name }}(
     {%- for attr in required_attrs %}
     {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,
@@ -31,8 +32,8 @@ func Start{{ span.id | function_name }}(
     }
 }
 
-// Start{{ span.id | function_name }}WithOptAttrs starts a new named `{{ span.id }}` span with the given required attributes
-// and the optional attributes.
+// Start{{ span.id | function_name }}WithOptAttrs starts a new `{{ span.id }}` span with
+// the given required attributes and the optional attributes.
 func Start{{ span.id | function_name }}WithOptAttrs(
     {%- for attr in required_attrs %}
     {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,

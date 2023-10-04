@@ -100,7 +100,7 @@ impl SchemaResolver {
             // Resolve metrics and their attributes
             if let Some(metrics) = schema.resource_metrics.as_mut() {
                 Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
-                for metric in metrics.univariate_metrics.iter_mut() {
+                for metric in metrics.metrics.iter_mut() {
                     if let UnivariateMetric::Ref { r#ref, attributes } = metric {
                         Self::resolve_attributes(attributes, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                         if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
@@ -122,7 +122,7 @@ impl SchemaResolver {
                         }
                     }
                 }
-                for metrics in metrics.multivariate_metrics.iter_mut() {
+                for metrics in metrics.metrics_group.iter_mut() {
                     Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                     for metric in metrics.metrics.iter_mut() {
                         if let Metric::Ref { r#ref } = metric {
@@ -284,7 +284,7 @@ mod test {
 
     #[test]
     fn resolve_schema() {
-        let mut log = Logger::new();
+        let mut log = Logger::new(0);
         let schema =
             SchemaResolver::resolve_schema_file("../../data/app-telemetry-schema.yaml", &mut log);
         assert!(schema.is_ok(), "{:#?}", schema.err().unwrap());

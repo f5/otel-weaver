@@ -4,12 +4,46 @@ package logger
 
 {% if schema.resource_logs is defined %}
 {% for log in schema.resource_logs.logs %}
-// Logs `{{ log.id }}` record with the given attributes.
-func Log{{ log.id | function_name }}(attrs {{ log.id | struct_name }}Attrs) {}
+{%- set required_attrs = log.attributes | required -%}
+{%- set not_required_attrs = log.attributes | not_required -%}
 
-// Log attributes for `{{ log.id }}`.
-type {{ log.id | struct_name }}Attrs struct {
-    {%- for attr in log.attributes %}
+// Log{{ log.id | function_name }} logs `{{ log.id }}` record with the given
+// required attributes.
+func Log{{ log.id | function_name }} (
+    {%- for attr in required_attrs %}
+    {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,
+    {%- endfor %}
+) {}
+
+// Log{{ log.id | function_name }}WithOptAttrs logs `{{ log.id }}` record with the given
+// required attributes and the optional attributes.
+func Log{{ log.id | function_name }}WithOptAttrs (
+{%- for attr in required_attrs %}
+    {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,
+{%- endfor %}
+    optAttrs {{ log.id | struct_name }}OptAttrs,
+) {}
+
+{% if required_attrs | length > 0 -%}
+{%- for attr in required_attrs %}
+// {{attr.id | struct_name}}ReqAttr represents a required attribute for `{{ log.id }}`.
+// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
+type {{attr.id | struct_name}}ReqAttr struct { {{ attr.type | type_mapping }} }
+func {{attr.id | struct_name}}(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}ReqAttr { return {{attr.id | struct_name}}ReqAttr{v} }
+{%- endfor %}
+
+// {{log.id | struct_name}}Attrs represents the required log attributes for `{{ log.id }}`.
+type {{log.id | struct_name}}Attrs struct {
+    {%- for attr in required_attrs %}
+    // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    // ") }}
+    {{attr.id | field_name}} {{ attr.type | type_mapping }}
+    {%- endfor %}
+}
+{%- endif %}
+
+// {{ log.id | struct_name }}OptAttrs represents all the optional attributes for `{{ log.id }}`.
+type {{ log.id | struct_name }}OptAttrs struct {
+    {%- for attr in not_required_attrs %}
     // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="    // ") }}
     {{attr.id | field_name}} {{ attr.type | type_mapping }}
     {%- endfor %}

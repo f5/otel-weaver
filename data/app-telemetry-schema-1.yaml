@@ -41,7 +41,7 @@ schema:
         tag: sensitive-information
         requirement_level: required
     # Declaration of all the univariate metrics
-    univariate_metrics:
+    metrics:
       - ref: http.server.request.duration
         attributes:
           - ref: server.address
@@ -55,7 +55,7 @@ schema:
         attributes:
           - ref: server.address
     # Declaration of all the multivariate metrics
-    multivariate_metrics:
+    metrics_group:
       - id: http  # name of a multivariate metrics group
         attributes:
           - ref: server.address
