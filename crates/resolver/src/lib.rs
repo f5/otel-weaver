@@ -40,7 +40,9 @@ pub enum Error {
     /// An invalid URL.
     #[error("Invalid URL `{url:?}`, error: {error:?})")]
     InvalidUrl {
+        /// The invalid URL.
         url: String,
+        /// The error that occurred.
         error: String,
     },
 
@@ -91,9 +93,14 @@ impl SchemaResolver {
 
         // Merges the versions of the parent schema into the current schema.
         if let Some(parent_schema) = parent_schema {
-            if let Some(versions) = schema.versions.as_mut() {
-                if let Some(parent_versions) = parent_schema.versions {
-                    versions.extend(parent_versions);
+            match schema.versions {
+                Some(ref mut versions) => {
+                    if let Some(parent_versions) = parent_schema.versions {
+                        versions.extend(parent_versions);
+                    }
+                }
+                None => {
+                    schema.versions = parent_schema.versions;
                 }
             }
         }
@@ -134,14 +141,14 @@ impl SchemaResolver {
                         }
                     }
                 }
-                for metrics in metrics.metrics_group.iter_mut() {
+                for metrics in metrics.metric_groups.iter_mut() {
                     Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                     for metric in metrics.metrics.iter_mut() {
                         if let Metric::Ref { r#ref, tags } = metric {
                             if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
                                 let inherited_attrs = referenced_metric.attributes.clone();
                                 if !inherited_attrs.is_empty() {
-                                    log.warn(&format!("Attributes inherited from the '{}' metric will be disregarded. Instead, the common attributes specified for the multivariate '{}' metric will be utilized.", r#ref, metrics.id));
+                                    log.warn(&format!("Attributes inherited from the '{}' metric will be disregarded. Instead, the common attributes specified for the metric group '{}' will be utilized.", r#ref, metrics.id));
                                 }
                                 *metric = Metric::Metric {
                                     name: referenced_metric.name.clone(),

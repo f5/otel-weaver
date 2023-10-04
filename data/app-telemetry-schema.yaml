@@ -1,7 +1,6 @@
 file_format: 1.2.0
 # Inherit from the OpenTelemetry schema v1.21.0
-#parent_schema_url: https://opentelemetry.io/schemas/1.21.0
-parent_schema_url: ../../data/open-telemetry-schema.1.22.0.yaml
+parent_schema_url: https://opentelemetry.io/schemas/1.21.0
 # Current schema url
 schema_url: https://mycompany.com/schemas/1.0.0
 
@@ -63,7 +62,7 @@ schema:
           - ref: network.protocol.version
           - ref: url.scheme
     # Declaration of all the multivariate metrics
-    metrics_group:
+    metric_groups:
       - id: http  # name of a multivariate metrics group
         attributes:
           - ref: server.address

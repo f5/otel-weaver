@@ -256,7 +256,7 @@ impl ClientSdkGenerator {
     fn process_multivariate_metrics(&self, log: &mut Logger, tmpl_file: &str, schema_path: &PathBuf, schema: &TelemetrySchema, output_dir: &PathBuf) -> Result<(), crate::Error> {
         if let Some(schema_spec) = &schema.schema {
             if let Some(metrics) = schema_spec.resource_metrics.as_ref() {
-                for metric in metrics.metrics_group.iter() {
+                for metric in metrics.metric_groups.iter() {
                     let context = &Context::from_serialize(metric).map_err(|e| {
                         InvalidTelemetrySchema {
                             schema: schema_path.clone(),

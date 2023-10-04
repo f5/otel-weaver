@@ -1,5 +1,5 @@
 file_format: 1.2.0
-parent_schema_url: file://open-telemetry-schema.1.22.0.yaml
+parent_schema_url: data/open-telemetry-schema.1.22.0.yaml
 # Current schema url
 schema_url: https://mycompany.com/schemas/1.0.0
 
@@ -8,6 +8,7 @@ semantic_conventions:
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/url.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/http-common.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/client.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/general.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/exception.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/server.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/network.yaml
@@ -62,8 +63,8 @@ schema:
           - ref: network.protocol.version
           - ref: url.scheme
     # Declaration of all the multivariate metrics
-    metrics_group:
-      - id: http  # name of a multivariate metrics group
+    metric_groups:
+      - id: http  # name of a metrics group
         attributes:
           - ref: server.address
           - ref: server.port

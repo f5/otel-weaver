@@ -55,8 +55,8 @@ type {{ metric.name | struct_name }}Attrs struct {
 
 
 {% if schema.resource_metrics is defined %}
-{% if schema.resource_metrics.metric_group is defined %}
-{% for metric in schema.resource_metrics.metric_group %}
+{% if schema.resource_metrics.metric_groups is defined %}
+{% for metric in schema.resource_metrics.metric_groups %}
 {%- set required_attrs = metric.attributes | required -%}
 {%- set not_required_attrs = metric.attributes | not_required -%}
 
