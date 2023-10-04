@@ -96,7 +96,7 @@ schema:
   # Spans declaration
   resource_spans:
     spans:
-      - id: http.request  # name of a specific tracer
+      - span_name: http.request  # name of a specific tracer
         attributes:
           - ref: server.address
           - ref: server.port
@@ -108,7 +108,7 @@ schema:
           - ref: client.socket.port
           - ref: url.scheme
         events:
-          - id: error
+          - event_name: error
             attributes:
               - ref: exception.type
               - ref: exception.message

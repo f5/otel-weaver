@@ -183,10 +183,16 @@ impl Default for ConvType {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum SpanKind {
+    /// An internal span.
+    Internal,
     /// A client span.
     Client,
     /// A server span.
     Server,
+    /// A producer span.
+    Producer,
+    /// A consumer span.
+    Consumer,
 }
 
 /// Allow to define additional requirements on the semantic convention.

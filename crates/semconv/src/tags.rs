@@ -6,6 +6,15 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 /// A set of tags.
+///
+/// Examples of tags:
+/// - sensitivity: pii
+/// - sensitivity: phi
+/// - data_classification: restricted
+/// - semantic_type: email
+/// - semantic_type: first_name
+/// - owner:
+/// - provenance: browser_sensor
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(transparent)]
 #[serde(deny_unknown_fields)]

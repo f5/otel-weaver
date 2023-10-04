@@ -359,7 +359,7 @@ impl ClientSdkGenerator {
                         self.config.lock().map_err(|e| InternalError(e.to_string()))?.reset();
                     }
 
-                    log.loading(&format!("Generating code for span `{}`", span.id));
+                    log.loading(&format!("Generating code for span `{}`", span.span_name));
                     let generated_code = self.generate_code(log, tmpl_file, context)?;
 
                     // Retrieve the file name from the config

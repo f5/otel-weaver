@@ -9,9 +9,10 @@ use semconv::tags::Tags;
 /// A span event specification.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
+#[serde(rename_all = "snake_case")]
 pub struct SpanEvent {
     /// The name of the span event.
-    pub id: String,
+    pub event_name: String,
     /// The attributes of the span event.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]

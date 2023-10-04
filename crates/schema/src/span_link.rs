@@ -9,9 +9,10 @@ use semconv::tags::Tags;
 /// A span link specification.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
+#[serde(rename_all = "snake_case")]
 pub struct SpanLink {
     /// The name of the span link.
-    pub id: String,
+    pub link_name: String,
     /// The attributes of the span link.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
