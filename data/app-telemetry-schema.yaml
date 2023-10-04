@@ -79,11 +79,10 @@ schema:
           - ref: http.server.response.body.size
 
 
-  # Logs declaration
-  resource_logs:
-    logs:
+  # Events declaration
+  resource_events:
+    events:
       - id: http  # name of a specific meter
-        body: string
         attributes:
           - ref: server.address
           - ref: server.port

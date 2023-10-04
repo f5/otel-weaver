@@ -149,9 +149,9 @@ impl SchemaResolver {
                 }
             }
 
-            if let Some(logs) = schema.resource_logs.as_mut() {
+            if let Some(logs) = schema.resource_events.as_mut() {
                 Self::resolve_attributes(logs.attributes.as_mut(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
-                for log in logs.logs.iter_mut() {
+                for log in logs.events.iter_mut() {
                     Self::resolve_attributes(log.attributes.as_mut(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
                 }
             }
@@ -169,8 +169,8 @@ impl SchemaResolver {
             }
             // Merge common attributes with the attributes of the corresponding resource_metrics,
             // resource_logs and resource_spans.
-            if let Some(logs) = schema.resource_logs.as_mut() {
-                for log in logs.logs.iter_mut() {
+            if let Some(logs) = schema.resource_events.as_mut() {
+                for log in logs.events.iter_mut() {
                     Self::resolve_attributes(log.attributes.as_mut(), &sem_conv_catalog, version_changes.resource_attribute_changes())?;
                 }
             }

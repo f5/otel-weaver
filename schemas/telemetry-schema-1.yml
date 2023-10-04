@@ -56,11 +56,10 @@ schema:
           - ref: metric.http.server.request.size
           - ref: metric.http.server.response.size
 
-  # Logs declaration
-  resource_logs:
-    logs:
+  # Events declaration
+  resource_events:
+    events:
       http: # name of a specific meter
-        body: string
         attributes:
           - ref: server.address
           - ref: server.port

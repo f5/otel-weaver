@@ -27,7 +27,7 @@ pub struct ResourceMetrics {
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub metrics_group: Vec<MultivariateMetrics>,
-    /// A set of tags for the schema.
+    /// A set of tags for the resource metrics.
     #[serde(skip_serializing_if = "Option::is_none")]
     tags: Option<Tags>,
 }

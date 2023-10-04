@@ -300,8 +300,8 @@ impl ClientSdkGenerator {
     /// Process all logs in the schema.
     fn process_logs(&self, log: &mut Logger, tmpl_file: &str, schema_path: &PathBuf, schema: &TelemetrySchema, output_dir: &PathBuf) -> Result<(), crate::Error> {
         if let Some(schema_spec) = &schema.schema {
-            if let Some(logs) = schema_spec.resource_logs.as_ref() {
-                for log_record in logs.logs.iter() {
+            if let Some(logs) = schema_spec.resource_events.as_ref() {
+                for log_record in logs.events.iter() {
                     let context = &Context::from_serialize(log_record).map_err(|e| {
                         InvalidTelemetrySchema {
                             schema: schema_path.clone(),
