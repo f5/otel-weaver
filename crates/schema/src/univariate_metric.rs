@@ -5,6 +5,7 @@
 use semconv::attribute::Attribute;
 use serde::{Deserialize, Serialize};
 use semconv::group::Instrument;
+use semconv::tags::Tags;
 
 /// A univariate metric specification.
 #[derive(Serialize, Deserialize, Debug)]
@@ -19,6 +20,9 @@ pub enum UnivariateMetric {
         #[serde(default)]
         #[serde(skip_serializing_if = "Vec::is_empty")]
         attributes: Vec<Attribute>,
+        /// A set of tags for the metric.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
     },
 
     /// A fully defined metric.
@@ -36,5 +40,8 @@ pub enum UnivariateMetric {
         instrument: Option<Instrument>,
         /// Unit of the metric.
         unit: Option<String>,
+        /// A set of tags for the metric.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
     },
 }

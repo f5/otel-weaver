@@ -6,19 +6,23 @@ use serde::{Deserialize, Serialize};
 
 use semconv::attribute::Attribute;
 use semconv::group::Instrument;
+use semconv::tags::Tags;
 
-/// A multivariate metric specification.
+/// The specification of a metric group.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct MultivariateMetrics {
-    /// The name of the multivariate metric.
+pub struct MetricGroup {
+    /// The name of the metric group.
     pub id: String,
-    /// The attributes of the multivariate metric.
+    /// The attributes of the metric group.
     #[serde(default)]
     pub attributes: Vec<Attribute>,
-    /// The metrics of the multivariate metric.
+    /// The metrics of the metric group.
     #[serde(default)]
     pub metrics: Vec<Metric>,
+    /// A set of tags for the metric group.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tags: Option<Tags>,
 }
 
 /// A metric specification.
@@ -29,7 +33,10 @@ pub enum Metric {
     /// A reference to a metric defined in a semantic convention catalog.
     Ref {
         /// The reference to the metric.
-        r#ref: String
+        r#ref: String,
+        /// A set of tags for the metric group.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
     },
 
     /// A fully defined metric.
@@ -47,5 +54,8 @@ pub enum Metric {
         instrument: Option<Instrument>,
         /// Unit of the metric.
         unit: Option<String>,
+        /// A set of tags for the metric.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
     },
 }

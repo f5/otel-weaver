@@ -29,4 +29,25 @@ impl Tags {
     pub fn iter(&self) -> impl Iterator<Item = (&String, &String)> {
         self.tags.iter()
     }
+
+    /// Merges the tags with another set of tags. If a tag exists in both sets of tags, the tag
+    /// from the current set of tags is used (i.e. self).
+    pub fn merge_with_override(&self, other: &Tags) -> Tags {
+        let mut tags = other.tags.clone();
+        for (key, value) in self.tags.iter() {
+            _ = tags.insert(key.clone(), value.clone());
+        }
+        Tags { tags }
+    }
+}
+
+/// Merges two sets of tags. If a tag exists in both sets of tags, the tag from `tags`
+/// is used to override the tag from `parent_tags`.
+pub fn merge_with_override(tags: Option<&Tags>, parent_tags: Option<&Tags>) -> Option<Tags> {
+    match (tags, parent_tags) {
+        (Some(tags), Some(parent_tags)) => Some(tags.merge_with_override(&parent_tags)),
+        (Some(tags), None) => Some(tags.clone()),
+        (None, Some(parent_tags)) => Some(parent_tags.clone()),
+        (None, None) => None
+    }
 }

@@ -316,6 +316,7 @@ impl SemConvCatalog {
                             attributes: group.attributes.clone(),
                             instrument: group.instrument.clone(),
                             unit: group.unit.clone(),
+                            tags: None,
                         });
                         if prev_val.is_some() {
                             return Err(Error::DuplicateMetricName {

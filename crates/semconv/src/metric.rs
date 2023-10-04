@@ -5,6 +5,7 @@
 use serde::{Deserialize, Serialize};
 use crate::attribute::Attribute;
 use crate::group::Instrument;
+use crate::tags::Tags;
 
 /// A metric specification.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -23,4 +24,7 @@ pub struct Metric {
     pub instrument: Option<Instrument>,
     /// Unit of the metric.
     pub unit: Option<String>,
+    /// A set of tags for the metric.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Tags>,
 }

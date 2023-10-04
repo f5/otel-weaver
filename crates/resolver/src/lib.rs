@@ -13,10 +13,11 @@ use std::path::Path;
 pub use schema::TelemetrySchema;
 
 use logger::Logger;
-use schema::multivariate_metrics::Metric;
+use schema::metric_group::Metric;
 use schema::univariate_metric::UnivariateMetric;
 use semconv::attribute::Attribute;
 use semconv::ResolverConfig;
+use semconv::tags::merge_with_override;
 use version::{VersionAttributeChanges, VersionChanges};
 
 /// A resolver that can be used to resolve telemetry schemas.
@@ -102,7 +103,7 @@ impl SchemaResolver {
             if let Some(metrics) = schema.resource_metrics.as_mut() {
                 Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                 for metric in metrics.metrics.iter_mut() {
-                    if let UnivariateMetric::Ref { r#ref, attributes } = metric {
+                    if let UnivariateMetric::Ref { r#ref, attributes, tags } = metric {
                         Self::resolve_attributes(attributes, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                         if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
                             let mut inherited_attrs = referenced_metric.attributes.clone();
@@ -115,6 +116,7 @@ impl SchemaResolver {
                                 attributes: merged_attrs,
                                 instrument: referenced_metric.instrument.clone(),
                                 unit: referenced_metric.unit.clone(),
+                                tags: merge_with_override(tags.as_ref(), referenced_metric.tags.as_ref()),
                             };
                         } else {
                             return Err(Error::FailToResolveMetric {
@@ -126,7 +128,7 @@ impl SchemaResolver {
                 for metrics in metrics.metrics_group.iter_mut() {
                     Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                     for metric in metrics.metrics.iter_mut() {
-                        if let Metric::Ref { r#ref } = metric {
+                        if let Metric::Ref { r#ref, tags } = metric {
                             if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
                                 let inherited_attrs = referenced_metric.attributes.clone();
                                 if !inherited_attrs.is_empty() {
@@ -139,6 +141,7 @@ impl SchemaResolver {
                                     attributes: metrics.attributes.clone(),
                                     instrument: referenced_metric.instrument.clone(),
                                     unit: referenced_metric.unit.clone(),
+                                    tags: merge_with_override(tags.as_ref(), referenced_metric.tags.as_ref()),
                                 };
                             } else {
                                 return Err(Error::FailToResolveMetric {

@@ -2,7 +2,7 @@
 
 //! A resource metrics specification.
 
-use crate::multivariate_metrics::MultivariateMetrics;
+use crate::metric_group::MetricGroup;
 use crate::univariate_metric::UnivariateMetric;
 use semconv::attribute::Attribute;
 use serde::{Deserialize, Serialize};
@@ -26,7 +26,7 @@ pub struct ResourceMetrics {
     /// generates.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub metrics_group: Vec<MultivariateMetrics>,
+    pub metrics_group: Vec<MetricGroup>,
     /// A set of tags for the resource metrics.
     #[serde(skip_serializing_if = "Option::is_none")]
     tags: Option<Tags>,

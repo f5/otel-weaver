@@ -17,7 +17,7 @@ pub mod log;
 pub mod instrumentation_library;
 pub mod link;
 pub mod event;
-pub mod multivariate_metrics;
+pub mod metric_group;
 pub mod resource;
 pub mod resource_events;
 pub mod resource_metrics;
