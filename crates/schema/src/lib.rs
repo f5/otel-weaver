@@ -13,10 +13,10 @@ use std::io::BufReader;
 use std::path::Path;
 use version::{Versions};
 
-pub mod log;
-pub mod instrumentation_library;
-pub mod link;
 pub mod event;
+pub mod instrumentation_library;
+pub mod span_link;
+pub mod span_event;
 pub mod metric_group;
 pub mod resource;
 pub mod resource_events;

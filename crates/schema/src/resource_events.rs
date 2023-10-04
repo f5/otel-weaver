@@ -2,10 +2,11 @@
 
 //! Resource logs specification.
 
-use crate::event::Event;
+use crate::span_event::SpanEvent;
 use semconv::attribute::Attribute;
 use serde::{Deserialize, Serialize};
 use semconv::tags::Tags;
+use crate::event::Event;
 
 /// A resource events specification.
 #[derive(Serialize, Deserialize, Debug)]
@@ -21,5 +22,5 @@ pub struct ResourceEvents {
     pub events: Vec<Event>,
     /// A set of tags for the resource events.
     #[serde(skip_serializing_if = "Option::is_none")]
-    tags: Option<Tags>,
+    pub tags: Option<Tags>,
 }

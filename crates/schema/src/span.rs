@@ -2,8 +2,8 @@
 
 //! Span specification.
 
-use crate::event::Event;
-use crate::link::Link;
+use crate::span_event::SpanEvent;
+use crate::span_link::SpanLink;
 use semconv::attribute::Attribute;
 use serde::{Deserialize, Serialize};
 
@@ -20,9 +20,9 @@ pub struct Span {
     /// The events of the span.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub events: Vec<Event>,
+    pub events: Vec<SpanEvent>,
     /// The links of the span.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub links: Vec<Link>,
+    pub links: Vec<SpanLink>,
 }

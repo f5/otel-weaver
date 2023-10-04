@@ -82,7 +82,8 @@ schema:
   # Events declaration
   resource_events:
     events:
-      - id: http  # name of a specific meter
+      - event_name: http  # name of a specific meter
+        domain: http
         attributes:
           - ref: server.address
           - ref: server.port

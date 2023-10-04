@@ -1,25 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! A resource spans specification.
+//! Event specification.
 
-use crate::span::Span;
 use semconv::attribute::Attribute;
 use serde::{Deserialize, Serialize};
 use semconv::tags::Tags;
 
-/// A resource spans specification.
+/// A span event specification.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct ResourceSpans {
-    /// Common attributes shared across spans.
+pub struct SpanEvent {
+    /// The name of the span event.
+    pub id: String,
+    /// The attributes of the span event.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub attributes: Vec<Attribute>,
-    /// Definitions of all spans this application or library generates.
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub spans: Vec<Span>,
-    /// A set of tags for the resource spans.
+    /// A set of tags for the span event.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Tags>,
 }

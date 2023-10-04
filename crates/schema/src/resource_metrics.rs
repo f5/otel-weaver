@@ -29,5 +29,5 @@ pub struct ResourceMetrics {
     pub metrics_group: Vec<MetricGroup>,
     /// A set of tags for the resource metrics.
     #[serde(skip_serializing_if = "Option::is_none")]
-    tags: Option<Tags>,
+    pub tags: Option<Tags>,
 }

@@ -17,7 +17,7 @@ use semconv::tags::Tags;
 pub struct SchemaSpec {
     /// A set of tags for the schema.
     #[serde(skip_serializing_if = "Option::is_none")]
-    tags: Option<Tags>,
+    pub tags: Option<Tags>,
     /// A common resource specification.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resource: Option<Resource>,

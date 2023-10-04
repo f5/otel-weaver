@@ -314,7 +314,7 @@ impl ClientSdkGenerator {
                         self.config.lock().map_err(|e| InternalError(e.to_string()))?.reset();
                     }
 
-                    log.loading(&format!("Generating code for log `{}`", log_record.id));
+                    log.loading(&format!("Generating code for log `{}`", log_record.event_name));
                     let generated_code = self.generate_code(log, tmpl_file, context)?;
 
                     // Retrieve the file name from the config

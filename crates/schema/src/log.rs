@@ -8,15 +8,16 @@ use serde::{Deserialize, Serialize};
 /// A log record specification.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct Log {
-    /// The name of the log record.
+pub struct LogRecord {
+    /// The id of the log record.
     pub id: String,
-    /// The type of body of the log record.
-    pub body: BodyType,
     /// The attributes of the log record.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub attributes: Vec<Attribute>,
+    /// A set of tags for the log record.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Tags>,
 }
 
 /// The type of body of a log record.
