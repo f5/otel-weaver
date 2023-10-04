@@ -6,6 +6,7 @@
 #![deny(clippy::print_stdout)]
 #![deny(clippy::print_stderr)]
 
+use std::{clone, iter};
 use std::collections::HashSet;
 use std::path::Path;
 
@@ -255,6 +256,9 @@ impl SchemaResolver {
         let main_attr_ids = main_attrs.iter().map(|attr| match attr {
             Attribute::Ref { r#ref, .. } => r#ref.clone(),
             Attribute::Id { id, .. } => id.clone(),
+            Attribute::AttributeGroupRef {..} => {
+                panic!("Attribute groups are not supported yet")
+            }
         }).collect::<HashSet<_>>();
 
         for inherited_attr in inherited_attrs.iter() {
@@ -268,6 +272,9 @@ impl SchemaResolver {
                     if main_attr_ids.contains(id) {
                         continue;
                     }
+                }
+                Attribute::AttributeGroupRef {..} => {
+                    panic!("Attribute groups are not supported yet")
                 }
             }
             merged_attrs.push(inherited_attr.clone());

@@ -4,7 +4,7 @@
 
 use semconv::attribute::Attribute;
 use serde::{Deserialize, Serialize};
-use crate::tags::Tags;
+use semconv::tags::Tags;
 
 /// A common resource specification.
 /// All the attributes mentioned in this specification will be inherited by all
@@ -16,7 +16,7 @@ pub struct Resource {
     /// The common attributes of the resource.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub attributes: Vec<Attribute>,
-    /// A set of tags for the schema.
+    /// A set of tags for the resource.
     #[serde(skip_serializing_if = "Option::is_none")]
     tags: Option<Tags>,
 }

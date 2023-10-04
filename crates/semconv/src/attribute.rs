@@ -4,11 +4,13 @@
 
 use serde::{Deserialize, Serialize};
 use crate::stability::Stability;
+use crate::tags::Tags;
 
 /// An attribute specification.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 #[serde(untagged)]
+#[serde(rename_all = "snake_case")]
 pub enum Attribute {
     /// Reference to another attribute.
     ///
@@ -64,11 +66,24 @@ pub enum Attribute {
         /// to use instead. See also stability.
         #[serde(skip_serializing_if = "Option::is_none")]
         deprecated: Option<String>,
+        /// A set of tags for the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
 
         /// The value of the attribute.
         /// Note: This is only used in a telemetry schema specification.
         #[serde(skip_serializing_if = "Option::is_none")]
         value: Option<Value>,
+    },
+    /// Reference to an attribute group.
+    ///
+    /// `attribute_group_ref` MUST have an id of an existing attribute.
+    AttributeGroupRef {
+        /// Reference an existing attribute group.
+        attribute_group_ref: String,
+        /// A set of tags for the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
     },
     /// Attribute definition.
     Id {
@@ -118,6 +133,9 @@ pub enum Attribute {
         /// to use instead. See also stability.
         #[serde(skip_serializing_if = "Option::is_none")]
         deprecated: Option<String>,
+        /// A set of tags for the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
 
         /// The value of the attribute.
         /// Note: This is only used in a telemetry schema specification.

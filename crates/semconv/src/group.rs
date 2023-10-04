@@ -126,6 +126,7 @@ fn validate_group(group: &Group) -> Result<(), ValidationError> {
                     return Err(ValidationError::new("This attribute contains a deprecated field but the stability is not set to deprecated."));
                 }
             }
+            Attribute::AttributeGroupRef{..} => { /*No specific validation*/}
         }
 
         // Examples are required only for string and string array attributes.

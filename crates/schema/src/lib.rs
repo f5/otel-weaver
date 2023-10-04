@@ -25,7 +25,6 @@ pub mod resource_spans;
 pub mod schema_spec;
 pub mod span;
 pub mod univariate_metric;
-pub mod tags;
 
 /// An error that can occur while loading a telemetry schema.
 #[derive(thiserror::Error, Debug)]

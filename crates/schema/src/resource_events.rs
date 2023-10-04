@@ -5,7 +5,7 @@
 use crate::event::Event;
 use semconv::attribute::Attribute;
 use serde::{Deserialize, Serialize};
-use crate::tags::Tags;
+use semconv::tags::Tags;
 
 /// A resource events specification.
 #[derive(Serialize, Deserialize, Debug)]

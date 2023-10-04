@@ -6,7 +6,7 @@ use crate::multivariate_metrics::MultivariateMetrics;
 use crate::univariate_metric::UnivariateMetric;
 use semconv::attribute::Attribute;
 use serde::{Deserialize, Serialize};
-use crate::tags::Tags;
+use semconv::tags::Tags;
 
 /// A resource metrics specification.
 #[derive(Serialize, Deserialize, Debug)]

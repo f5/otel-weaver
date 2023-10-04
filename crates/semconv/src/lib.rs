@@ -31,6 +31,7 @@ use crate::metric::Metric;
 pub mod attribute;
 pub mod group;
 pub mod metric;
+pub mod tags;
 mod stability;
 
 /// An error that can occur while loading a semantic convention catalog.
@@ -449,6 +450,17 @@ impl SemConvCatalog {
                         attribute: attr.clone(),
                     });
                     let _ = attributes_in_group.insert(r#ref.clone());
+                }
+                Attribute::AttributeGroupRef { attribute_group_ref, .. } => {
+                    // The attribute group has a reference, so add it to the
+                    // list of attributes to resolve.
+                    attributes_to_resolve.push(AttributeToResolve {
+                        path_or_url: path_or_url.clone(),
+                        group_id: group_id.clone(),
+                        r#ref: attribute_group_ref.clone(),
+                        attribute: attr.clone(),
+                    });
+                    let _ = attributes_in_group.insert(attribute_group_ref.clone());
                 }
             }
         }

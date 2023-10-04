@@ -8,7 +8,7 @@ use crate::resource_events::ResourceEvents;
 use crate::resource_metrics::ResourceMetrics;
 use crate::resource_spans::ResourceSpans;
 use serde::{Deserialize, Serialize};
-use crate::tags::Tags;
+use semconv::tags::Tags;
 
 /// Definition of the telemetry schema for an application or a library.
 #[derive(Serialize, Deserialize, Debug)]
