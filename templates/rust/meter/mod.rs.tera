@@ -3,8 +3,8 @@
 //! Generated OTel Client Loggers API.
 
 {% if schema.resource_metrics is defined %}
-{% if schema.resource_metrics.univariate_metrics is defined %}
-{% for metric in schema.resource_metrics.univariate_metrics %}
+{% if schema.resource_metrics.metrics is defined %}
+{% for metric in schema.resource_metrics.metrics %}
 /// Metric `{{ metric.name }}` to report u64 values.
 pub fn {{ metric.name | function_name }}_u64() -> {{ metric.name | struct_name }}U64{{ metric.instrument | instrument | struct_name }} {
     {{ metric.name | struct_name }}U64{{ metric.instrument | instrument | struct_name }}{}
@@ -59,8 +59,8 @@ pub struct {{ metric.name | struct_name }}Attrs {
 
 
 {% if schema.resource_metrics is defined %}
-{% if schema.resource_metrics.multivariate_metrics is defined %}
-{% for metric in schema.resource_metrics.multivariate_metrics %}
+{% if schema.resource_metrics.metric_groups is defined %}
+{% for metric in schema.resource_metrics.metric_groups %}
 /// Multivariate metric `{{ metric.id }}`.
 pub fn {{ metric.id | function_name }}() -> {{ metric.id | struct_name }} {
     {{ metric.id | struct_name }}{}

@@ -56,13 +56,14 @@ fn main() {
 
     // ========================================================================
     // Logs an HTTP event.
-    otel::logger::log_http(otel::logger::HttpAttrs {
+    otel::eventer::event_http(otel::eventer::HttpAttrs {
         server_address: Some("localhost".to_string()),
         server_port: Some(443),
         http_response_status_code: Some(200),
         network_protocol_name: Some("http".to_string()),
         network_protocol_version: None,
         url_scheme: None,
+        url_host: "".to_string(),
     });
 
 
@@ -100,6 +101,7 @@ fn main() {
             network_protocol_name: None,
             network_protocol_version: None,
             url_scheme: None,
+            url_host: "".to_string(),
         },
     );
 }

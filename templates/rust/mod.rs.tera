@@ -3,5 +3,5 @@
 //! Generated OTel Client API.
 
 pub mod meter;
-pub mod logger;
+pub mod eventer;
 pub mod tracer;
