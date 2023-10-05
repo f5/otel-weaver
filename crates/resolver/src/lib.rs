@@ -6,20 +6,19 @@
 #![deny(clippy::print_stdout)]
 #![deny(clippy::print_stderr)]
 
-use std::{clone, iter};
 use std::collections::HashSet;
 use std::path::Path;
 
-pub use schema::TelemetrySchema;
+use regex::Regex;
+use url::Url;
 
 use logger::Logger;
 use schema::metric_group::Metric;
+pub use schema::TelemetrySchema;
 use schema::univariate_metric::UnivariateMetric;
 use semconv::attribute::Attribute;
 use semconv::ResolverConfig;
 use semconv::tags::merge_with_override;
-use url::Url;
-use regex::Regex;
 use version::{VersionAttributeChanges, VersionChanges};
 
 /// A resolver that can be used to resolve telemetry schemas.
@@ -169,10 +168,10 @@ impl SchemaResolver {
                 }
             }
 
-            if let Some(logs) = schema.resource_events.as_mut() {
-                Self::resolve_attributes(logs.attributes.as_mut(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
-                for log in logs.events.iter_mut() {
-                    Self::resolve_attributes(log.attributes.as_mut(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
+            if let Some(events) = schema.resource_events.as_mut() {
+                Self::resolve_attributes(events.attributes.as_mut(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
+                for event in events.events.iter_mut() {
+                    Self::resolve_attributes(event.attributes.as_mut(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
                 }
             }
             if let Some(spans) = schema.resource_spans.as_mut() {
@@ -276,10 +275,86 @@ impl SchemaResolver {
         sem_conv_catalog: &semconv::SemConvCatalog,
         version_changes: impl VersionAttributeChanges) -> Result<(), Error> {
         for attribute in attributes.iter_mut() {
-            if let Attribute::Ref { r#ref, .. } = attribute {
+            if let Attribute::Ref {
+                r#ref,
+                brief: brief_from_ref,
+                examples: examples_from_ref,
+                tag: tag_from_ref,
+                requirement_level: requirement_level_from_ref,
+                sampling_relevant: sampling_from_ref,
+                note: note_from_ref,
+                stability: stability_from_ref,
+                deprecated: deprecated_from_ref,
+                tags: tags_from_ref,
+                value: value_from_ref,
+            } = attribute {
                 let normalized_ref = version_changes.get_attribute_name(r#ref);
-                if let Some(resolved_attribute) = sem_conv_catalog.get_attribute(&normalized_ref) {
-                    *attribute = resolved_attribute.clone();
+                if let Some(Attribute::Id {
+                                id,
+                                r#type,
+                                brief,
+                                examples,
+                                tag,
+                                requirement_level,
+                                sampling_relevant,
+                                note,
+                                stability,
+                                deprecated,
+                                tags,
+                                value,
+                            }) = sem_conv_catalog.get_attribute(&normalized_ref) {
+                    let id = id.clone();
+                    let r#type = r#type.clone();
+                    let mut brief = brief.clone();
+                    let mut examples = examples.clone();
+                    let mut requirement_level = requirement_level.clone();
+                    let mut tag = tag.clone();
+                    let mut sampling_relevant = sampling_relevant.clone();
+                    let mut note = note.clone();
+                    let mut stability = stability.clone();
+                    let mut deprecated = deprecated.clone();
+
+                    // Override process.
+                    // Use the field values from the reference when defined in the reference.
+                    if let Some(brief_from_ref) = brief_from_ref {
+                        brief = brief_from_ref.clone();
+                    }
+                    if let Some(requirement_level_from_ref) = requirement_level_from_ref {
+                        requirement_level = requirement_level_from_ref.clone();
+                    }
+                    if let Some(examples_from_ref) = examples_from_ref {
+                        examples = Some(examples_from_ref.clone());
+                    }
+                    if let Some(tag_from_ref) = tag_from_ref {
+                        tag = Some(tag_from_ref.clone());
+                    }
+                    if let Some(sampling_from_ref) = sampling_from_ref {
+                        sampling_relevant = Some(sampling_from_ref.clone());
+                    }
+                    if let Some(note_from_ref) = note_from_ref {
+                        note = note_from_ref.clone();
+                    }
+                    if let Some(stability_from_ref) = stability_from_ref {
+                        stability = Some(stability_from_ref.clone());
+                    }
+                    if let Some(deprecated_from_ref) = deprecated_from_ref {
+                        deprecated = Some(deprecated_from_ref.clone());
+                    }
+
+                    *attribute = Attribute::Id {
+                        id,
+                        r#type,
+                        brief,
+                        examples,
+                        tag,
+                        requirement_level,
+                        sampling_relevant,
+                        note,
+                        stability,
+                        deprecated,
+                        tags: tags_from_ref.clone(),
+                        value: value_from_ref.clone()
+                    }
                 } else {
                     return Err(Error::FailToResolveAttribute {
                         r#ref: r#ref.clone(),
@@ -297,7 +372,7 @@ impl SchemaResolver {
         let main_attr_ids = main_attrs.iter().map(|attr| match attr {
             Attribute::Ref { r#ref, .. } => r#ref.clone(),
             Attribute::Id { id, .. } => id.clone(),
-            Attribute::AttributeGroupRef {..} => {
+            Attribute::AttributeGroupRef { .. } => {
                 panic!("Attribute groups are not supported yet")
             }
         }).collect::<HashSet<_>>();
@@ -314,7 +389,7 @@ impl SchemaResolver {
                         continue;
                     }
                 }
-                Attribute::AttributeGroupRef {..} => {
+                Attribute::AttributeGroupRef { .. } => {
                     panic!("Attribute groups are not supported yet")
                 }
             }

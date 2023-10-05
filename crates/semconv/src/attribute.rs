@@ -43,8 +43,8 @@ pub enum Attribute {
         /// the attribute is "recommended". When set to
         /// "conditionally_required", the string provided as <condition> MUST
         /// specify the conditions under which the attribute is required.
-        #[serde(default)]
-        requirement_level: RequirementLevel,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        requirement_level: Option<RequirementLevel>,
         /// Specifies if the attribute is (especially) relevant for sampling
         /// and thus should be set at span start. It defaults to false.
         /// Note: this field is experimental.
@@ -53,7 +53,8 @@ pub enum Attribute {
         /// A more elaborate description of the attribute.
         /// It defaults to an empty string.
         #[serde(default)]
-        note: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        note: Option<String>,
         /// Specifies the stability of the attribute.
         /// Note that, if stability is missing but deprecated is present, it will
         /// automatically set the stability to deprecated. If deprecated is
@@ -99,6 +100,7 @@ pub enum Attribute {
         /// attributes. Example values must be of the same type of the
         /// attribute. If only a single example is provided, it can directly
         /// be reported without encapsulating it into a sequence/dictionary.
+        #[serde(skip_serializing_if = "Option::is_none")]
         examples: Option<Examples>,
         /// Associates a tag ("sub-group") to the attribute. It carries no
         /// particular semantic meaning but can be used e.g. for filtering
