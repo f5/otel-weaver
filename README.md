@@ -1,7 +1,10 @@
 # OTel Weaver
 _A Schema-Driven Client SDK Generator for OpenTelemetry_
 
-## Motivation
+> This project is a reference implementation of this
+> [OTEP](https://github.com/lquerel/oteps/blob/main/text/0240-telemetry-schema-ext.md).
+>
+> This project is a work in progress and is not ready for production use.
 
 ## Usage
 
