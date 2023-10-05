@@ -57,3 +57,8 @@ schema:
             type: string
             brief: The environment in which the service is running
             requirement_level: required
+      - event_name: error
+        domain: server
+        attributes:
+          - attribute_group_ref: server
+          - attribute_group_ref: error
