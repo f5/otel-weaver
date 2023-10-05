@@ -13,12 +13,12 @@ use regex::Regex;
 use url::Url;
 
 use logger::Logger;
+use schema::attribute::{Attribute, from_semconv_attributes};
 use schema::metric_group::Metric;
+use schema::tags::merge_with_override;
 pub use schema::TelemetrySchema;
 use schema::univariate_metric::UnivariateMetric;
-use semconv::attribute::Attribute;
 use semconv::ResolverConfig;
-use semconv::tags::merge_with_override;
 use version::{VersionAttributeChanges, VersionChanges};
 
 /// A resolver that can be used to resolve telemetry schemas.
@@ -121,7 +121,7 @@ impl SchemaResolver {
                     if let UnivariateMetric::Ref { r#ref, attributes, tags } = metric {
                         Self::resolve_attributes(attributes, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                         if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
-                            let mut inherited_attrs = referenced_metric.attributes.clone();
+                            let mut inherited_attrs = from_semconv_attributes(&referenced_metric.attributes);
                             Self::resolve_attributes(&mut inherited_attrs, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                             let merged_attrs = Self::merge_attributes(attributes, &inherited_attrs);
                             *metric = UnivariateMetric::Metric {
@@ -131,7 +131,7 @@ impl SchemaResolver {
                                 attributes: merged_attrs,
                                 instrument: referenced_metric.instrument.clone(),
                                 unit: referenced_metric.unit.clone(),
-                                tags: merge_with_override(tags.as_ref(), referenced_metric.tags.as_ref()),
+                                tags: tags.clone(),
                             };
                         } else {
                             return Err(Error::FailToResolveMetric {
@@ -156,7 +156,7 @@ impl SchemaResolver {
                                     attributes: metrics.attributes.clone(),
                                     instrument: referenced_metric.instrument.clone(),
                                     unit: referenced_metric.unit.clone(),
-                                    tags: merge_with_override(tags.as_ref(), referenced_metric.tags.as_ref()),
+                                    tags: tags.clone(),
                                 };
                             } else {
                                 return Err(Error::FailToResolveMetric {
@@ -174,6 +174,7 @@ impl SchemaResolver {
                     Self::resolve_attributes(event.attributes.as_mut(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
                 }
             }
+
             if let Some(spans) = schema.resource_spans.as_mut() {
                 Self::resolve_attributes(spans.attributes.as_mut(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
                 for span in spans.spans.iter_mut() {
@@ -289,7 +290,7 @@ impl SchemaResolver {
                 value: value_from_ref,
             } = attribute {
                 let normalized_ref = version_changes.get_attribute_name(r#ref);
-                if let Some(Attribute::Id {
+                if let Some(semconv::attribute::Attribute::Id {
                                 id,
                                 r#type,
                                 brief,
@@ -300,8 +301,6 @@ impl SchemaResolver {
                                 note,
                                 stability,
                                 deprecated,
-                                tags,
-                                value,
                             }) = sem_conv_catalog.get_attribute(&normalized_ref) {
                     let id = id.clone();
                     let r#type = r#type.clone();

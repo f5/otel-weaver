@@ -4,10 +4,10 @@
 
 use crate::span_event::SpanEvent;
 use crate::span_link::SpanLink;
-use semconv::attribute::Attribute;
+use crate::attribute::Attribute;
 use serde::{Deserialize, Serialize};
 use semconv::group::SpanKind;
-use semconv::tags::Tags;
+use crate::tags::Tags;
 
 /// A span specification.
 #[derive(Serialize, Deserialize, Debug)]

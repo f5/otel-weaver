@@ -2,9 +2,9 @@
 
 //! A common resource specification.
 
-use semconv::attribute::Attribute;
+use crate::attribute::Attribute;
 use serde::{Deserialize, Serialize};
-use semconv::tags::Tags;
+use crate::tags::Tags;
 
 /// A common resource specification.
 /// All the attributes mentioned in this specification will be inherited by all

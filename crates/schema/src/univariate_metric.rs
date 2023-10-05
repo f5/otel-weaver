@@ -2,10 +2,10 @@
 
 //! A univariate metric specification.
 
-use semconv::attribute::Attribute;
+use crate::attribute::Attribute;
 use serde::{Deserialize, Serialize};
 use semconv::group::Instrument;
-use semconv::tags::Tags;
+use crate::tags::Tags;
 
 /// A univariate metric specification.
 #[derive(Serialize, Deserialize, Debug)]

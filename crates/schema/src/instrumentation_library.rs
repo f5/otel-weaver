@@ -3,7 +3,7 @@
 //! Instrumentation library specification.
 
 use serde::{Deserialize, Serialize};
-use semconv::tags::Tags;
+use crate::tags::Tags;
 
 /// An instrumentation library specification.
 /// MUST be used both by applications and libraries.

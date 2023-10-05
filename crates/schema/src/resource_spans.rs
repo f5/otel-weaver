@@ -3,9 +3,9 @@
 //! A resource spans specification.
 
 use crate::span::Span;
-use semconv::attribute::Attribute;
+use crate::attribute::Attribute;
 use serde::{Deserialize, Serialize};
-use semconv::tags::Tags;
+use crate::tags::Tags;
 
 /// A resource spans specification.
 #[derive(Serialize, Deserialize, Debug)]

@@ -4,9 +4,9 @@
 
 use crate::metric_group::MetricGroup;
 use crate::univariate_metric::UnivariateMetric;
-use semconv::attribute::Attribute;
+use crate::attribute::Attribute;
 use serde::{Deserialize, Serialize};
-use semconv::tags::Tags;
+use crate::tags::Tags;
 
 /// A resource metrics specification.
 #[derive(Serialize, Deserialize, Debug)]

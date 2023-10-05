@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! Attribute specification.
+//! Definition of an attribute in the context of a telemetry schema.
 
 use serde::{Deserialize, Serialize};
-use crate::stability::Stability;
+
+use semconv::attribute::{AttributeType, Examples, RequirementLevel, Value};
+use semconv::stability::Stability;
+
+use crate::tags::Tags;
 
 /// An attribute specification.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -14,6 +18,11 @@ pub enum Attribute {
     /// Reference to another attribute.
     ///
     /// ref MUST have an id of an existing attribute.
+    /// ref is useful for specifying that an existing attribute of another
+    /// semantic convention is part of the current semantic convention and
+    /// inherit its brief, note, and example values. However, if these fields
+    /// are present in the current attribute definition, they override the
+    /// inherited values.
     Ref {
         /// Reference an existing attribute.
         r#ref: String,
@@ -61,6 +70,24 @@ pub enum Attribute {
         /// to use instead. See also stability.
         #[serde(skip_serializing_if = "Option::is_none")]
         deprecated: Option<String>,
+        /// A set of tags for the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
+
+        /// The value of the attribute.
+        /// Note: This is only used in a telemetry schema specification.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        value: Option<Value>,
+    },
+    /// Reference to an attribute group.
+    ///
+    /// `attribute_group_ref` MUST have an id of an existing attribute.
+    AttributeGroupRef {
+        /// Reference an existing attribute group.
+        attribute_group_ref: String,
+        /// A set of tags for the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
     },
     /// Attribute definition.
     Id {
@@ -111,175 +138,63 @@ pub enum Attribute {
         /// to use instead. See also stability.
         #[serde(skip_serializing_if = "Option::is_none")]
         deprecated: Option<String>,
+        /// A set of tags for the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
+
+        /// The value of the attribute.
+        /// Note: This is only used in a telemetry schema specification.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        value: Option<Value>,
     },
 }
 
-/// The different types of attributes.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "snake_case")]
-#[serde(untagged)]
-pub enum AttributeType {
-    /// Primitive or array type.
-    PrimitiveOrArray(PrimitiveOrArrayType),
-    /// A template type.
-    Template(TemplateType),
-    /// An enum definition type.
-    Enum {
-        /// Set to false to not accept values other than the specified members.
-        /// It defaults to true.
-        #[serde(default="default_as_true")]
-        allow_custom_values: bool,
-        /// List of enum entries.
-        members: Vec<EnumEntries>,
-    },
-}
-
-/// Specifies the default value for allow_custom_values.
-fn default_as_true() -> bool {
-    true
-}
-
-/// Primitive or array types.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "snake_case")]
-pub enum PrimitiveOrArrayType {
-    /// A boolean attribute.
-    Boolean,
-    /// A integer attribute (signed 64 bit integer).
-    Int,
-    /// A double attribute (double precision floating point (IEEE 754-1985)).
-    Double,
-    /// A string attribute.
-    String,
-    /// An array of strings attribute.
-    #[serde(rename = "string[]")]
-    Strings,
-    /// An array of integer attribute.
-    #[serde(rename = "int[]")]
-    Ints,
-    /// An array of double attribute.
-    #[serde(rename = "double[]")]
-    Doubles,
-    /// An array of boolean attribute.
-    #[serde(rename = "boolean[]")]
-    Booleans,
-}
-
-/// Template types.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "snake_case")]
-pub enum TemplateType {
-    /// A boolean attribute.
-    #[serde(rename = "template[boolean]")]
-    Boolean,
-    /// A integer attribute.
-    #[serde(rename = "template[int]")]
-    Int,
-    /// A double attribute.
-    #[serde(rename = "template[double]")]
-    Double,
-    /// A string attribute.
-    #[serde(rename = "template[string]")]
-    String,
-    /// An array of strings attribute.
-    #[serde(rename = "template[string[]]")]
-    Strings,
-    /// An array of integer attribute.
-    #[serde(rename = "template[int[]]")]
-    Ints,
-    /// An array of double attribute.
-    #[serde(rename = "template[double[]]")]
-    Doubles,
-    /// An array of boolean attribute.
-    #[serde(rename = "template[boolean[]]")]
-    Booleans,
-}
-
-/// Possible enum entries.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub struct EnumEntries {
-    /// String that uniquely identifies the enum entry.
-    pub id: String,
-    /// String, int, or boolean; value of the enum entry.
-    pub value: Value,
-    /// Brief description of the enum entry value.
-    /// It defaults to the value of id.
-    pub brief: Option<String>,
-    /// Longer description.
-    /// It defaults to an empty string.
-    pub note: Option<String>,
-}
-
-/// The different types of values.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "snake_case")]
-#[serde(untagged)]
-pub enum Value {
-    /// A integer value.
-    Int(i64),
-    /// A double value.
-    Double(f64),
-    /// A string value.
-    String(String),
-}
-
-/// The different types of examples.
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "snake_case")]
-#[serde(untagged)]
-pub enum Examples {
-    /// A integer example.
-    Int(i64),
-    /// A double example.
-    Double(f64),
-    /// A string example.
-    String(String),
-    /// A array of integers example.
-    Ints(Vec<i64>),
-    /// A array of doubles example.
-    Doubles(Vec<f64>),
-    /// A array of strings example.
-    Strings(Vec<String>),
-}
-
-/// The different requirement levels.
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "snake_case")]
-#[serde(untagged)]
-pub enum RequirementLevel {
-    /// A basic requirement level.
-    Basic(BasicRequirementLevel),
-    /// A conditional requirement level.
-    ConditionallyRequired {
-        /// The description of the condition.
-        #[serde(rename = "conditionally_required")]
-        text: String,
-    },
-    /// A recommended requirement level.
-    Recommended {
-        /// The description of the recommendation.
-        #[serde(rename = "recommended")]
-        text: String,
-    },
-}
-
-// Specifies the default requirement level as defined in the OTel
-// specification.
-impl Default for RequirementLevel {
-    fn default() -> Self {
-        RequirementLevel::Basic(BasicRequirementLevel::Recommended)
+impl From<&semconv::attribute::Attribute> for Attribute {
+    /// Convert a semantic convention attribute to a schema attribute.
+    fn from(attr: &semconv::attribute::Attribute) -> Self {
+        match attr.clone() {
+            semconv::attribute::Attribute::Ref {
+                r#ref, brief,
+                examples, tag,
+                requirement_level, sampling_relevant,
+                note, stability, deprecated
+            } => Attribute::Ref {
+                r#ref,
+                brief,
+                examples,
+                tag,
+                requirement_level,
+                sampling_relevant,
+                note,
+                stability,
+                deprecated,
+                tags: None,
+                value: None,
+            },
+            semconv::attribute::Attribute::Id {
+                id, r#type, brief,
+                examples, tag,
+                requirement_level, sampling_relevant,
+                note, stability, deprecated
+            } => Attribute::Id {
+                id,
+                r#type,
+                brief,
+                examples,
+                tag,
+                requirement_level,
+                sampling_relevant,
+                note,
+                stability,
+                deprecated,
+                tags: None,
+                value: None,
+            },
+        }
     }
 }
 
-/// The different types of basic requirement levels.
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "snake_case")]
-pub enum BasicRequirementLevel {
-    /// A required requirement level.
-    Required,
-    /// An optional requirement level.
-    Recommended,
-    /// An opt-in requirement level.
-    OptIn,
+/// Convert a slice of semantic convention attributes to a vector of schema attributes.
+pub fn from_semconv_attributes(attrs: &[semconv::attribute::Attribute]) -> Vec<Attribute> {
+    attrs.iter().map(|attr| attr.into()).collect()
 }

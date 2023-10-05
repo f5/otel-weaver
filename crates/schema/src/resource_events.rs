@@ -2,11 +2,10 @@
 
 //! Resource logs specification.
 
-use crate::span_event::SpanEvent;
-use semconv::attribute::Attribute;
+use crate::attribute::Attribute;
 use serde::{Deserialize, Serialize};
-use semconv::tags::Tags;
 use crate::event::Event;
+use crate::tags::Tags;
 
 /// A resource events specification.
 #[derive(Serialize, Deserialize, Debug)]

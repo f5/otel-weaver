@@ -2,8 +2,9 @@
 
 //! Log record specification.
 
-use semconv::attribute::Attribute;
 use serde::{Deserialize, Serialize};
+use crate::attribute::Attribute;
+use crate::tags::Tags;
 
 /// A log record specification.
 #[derive(Serialize, Deserialize, Debug)]

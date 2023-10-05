@@ -2,9 +2,9 @@
 
 //! Event specification.
 
-use semconv::attribute::Attribute;
+use crate::attribute::Attribute;
 use serde::{Deserialize, Serialize};
-use semconv::tags::Tags;
+use crate::tags::Tags;
 
 /// A span event specification.
 #[derive(Serialize, Deserialize, Debug)]

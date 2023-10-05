@@ -4,9 +4,9 @@
 
 use serde::{Deserialize, Serialize};
 
-use semconv::attribute::Attribute;
+use crate::attribute::Attribute;
 use semconv::group::Instrument;
-use semconv::tags::Tags;
+use crate::tags::Tags;
 
 /// The specification of a metric group.
 #[derive(Serialize, Deserialize, Debug)]
