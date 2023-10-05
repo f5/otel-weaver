@@ -16,87 +16,6 @@ schema:
     - event_name: request
       domain: http
       attributes:
-      - id: http.request.method
-        type:
-          allow_custom_values: true
-          members:
-          - id: connect
-            value: CONNECT
-            brief: CONNECT method.
-            note: null
-          - id: delete
-            value: DELETE
-            brief: DELETE method.
-            note: null
-          - id: get
-            value: GET
-            brief: GET method.
-            note: null
-          - id: head
-            value: HEAD
-            brief: HEAD method.
-            note: null
-          - id: options
-            value: OPTIONS
-            brief: OPTIONS method.
-            note: null
-          - id: patch
-            value: PATCH
-            brief: PATCH method.
-            note: null
-          - id: post
-            value: POST
-            brief: POST method.
-            note: null
-          - id: put
-            value: PUT
-            brief: PUT method.
-            note: null
-          - id: trace
-            value: TRACE
-            brief: TRACE method.
-            note: null
-          - id: other
-            value: _OTHER
-            brief: Any HTTP method that the instrumentation has no prior knowledge of.
-            note: null
-        brief: HTTP request method.
-        examples:
-        - GET
-        - POST
-        - HEAD
-        requirement_level: required
-        note: |
-          HTTP request method value SHOULD be "known" to the instrumentation.
-          By default, this convention defines "known" methods as the ones listed in [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-methods)
-          and the PATCH method defined in [RFC5789](https://www.rfc-editor.org/rfc/rfc5789.html).
-
-          If the HTTP request method is not known to instrumentation, it MUST set the `http.request.method` attribute to `_OTHER`.
-
-          If the HTTP instrumentation could end up converting valid HTTP request methods to `_OTHER`, then it MUST provide a way to override
-          the list of known HTTP methods. If this override is done via environment variable, then the environment variable MUST be named
-          OTEL_INSTRUMENTATION_HTTP_KNOWN_METHODS and support a comma-separated list of case-sensitive known HTTP methods
-          (this list MUST be a full override of the default known method, it is not a list of known methods in addition to the defaults).
-
-          HTTP method names are case-sensitive and `http.request.method` attribute value MUST match a known HTTP method name exactly.
-          Instrumentations for specific web frameworks that consider HTTP methods to be case insensitive, SHOULD populate a canonical equivalent.
-          Tracing instrumentations that do so, MUST also set `http.request.method_original` to the original value.
-      - id: network.protocol.name
-        type: string
-        brief: '[OSI application layer](https://osi-model.com/application-layer/) or non-OSI equivalent.'
-        examples:
-        - amqp
-        - http
-        - mqtt
-        requirement_level: recommended
-        note: The value SHOULD be normalized to lowercase.
-      - id: network.protocol.version
-        type: string
-        brief: Version of the protocol specified in `network.protocol.name`.
-        examples: 3.1.1
-        requirement_level: recommended
-        note: |
-          `network.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
       - id: http.route
         type: string
         brief: |
@@ -111,15 +30,6 @@ schema:
           SHOULD include the [application root](/docs/http/http-spans.md#http-server-definitions) if there is one.
         tags:
           sensitivity: PII
-      - id: server.address
-        type: string
-        brief: Server address - domain name if available without reverse DNS lookup, otherwise IP address or Unix domain socket name.
-        examples:
-        - example.com
-        requirement_level: recommended
-        note: |
-          When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent
-          the server address behind any intermediaries (e.g. proxies) if it's available.
       - id: server.port
         type: int
         brief: Server port number
@@ -130,23 +40,36 @@ schema:
         requirement_level: recommended
         note: |
           When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries (e.g. proxies) if it's available.
-      - id: url.scheme
-        type: string
-        brief: The [URI scheme](https://www.rfc-editor.org/rfc/rfc3986#section-3.1) component identifying the used protocol.
-        examples:
-        - https
-        - ftp
-        - telnet
-        requirement_level: required
-        note: ''
       - id: mycompany.com.env
         type: string
         brief: The environment in which the service is running
         requirement_level: required
         note: ''
-    - event_name: response
-      domain: http
-      attributes:
+      - id: network.protocol.version
+        type: string
+        brief: Version of the protocol specified in `network.protocol.name`.
+        examples: 3.1.1
+        requirement_level: recommended
+        note: |
+          `network.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
+      - id: network.protocol.name
+        type: string
+        brief: '[OSI application layer](https://osi-model.com/application-layer/) or non-OSI equivalent.'
+        examples:
+        - amqp
+        - http
+        - mqtt
+        requirement_level: recommended
+        note: The value SHOULD be normalized to lowercase.
+      - id: server.address
+        type: string
+        brief: Server address - domain name if available without reverse DNS lookup, otherwise IP address or Unix domain socket name.
+        examples:
+        - example.com
+        requirement_level: recommended
+        note: |
+          When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent
+          the server address behind any intermediaries (e.g. proxies) if it's available.
       - id: http.request.method
         type:
           allow_custom_values: true
@@ -212,15 +135,28 @@ schema:
           HTTP method names are case-sensitive and `http.request.method` attribute value MUST match a known HTTP method name exactly.
           Instrumentations for specific web frameworks that consider HTTP methods to be case insensitive, SHOULD populate a canonical equivalent.
           Tracing instrumentations that do so, MUST also set `http.request.method_original` to the original value.
-      - id: network.protocol.name
+      - id: url.scheme
         type: string
-        brief: '[OSI application layer](https://osi-model.com/application-layer/) or non-OSI equivalent.'
+        brief: The [URI scheme](https://www.rfc-editor.org/rfc/rfc3986#section-3.1) component identifying the used protocol.
         examples:
-        - amqp
-        - http
-        - mqtt
+        - https
+        - ftp
+        - telnet
+        requirement_level: required
+        note: ''
+    - event_name: response
+      domain: http
+      attributes:
+      - id: server.port
+        type: int
+        brief: Server port number
+        examples:
+        - 80
+        - 8080
+        - 443
         requirement_level: recommended
-        note: The value SHOULD be normalized to lowercase.
+        note: |
+          When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries (e.g. proxies) if it's available.
       - id: network.protocol.version
         type: string
         brief: Version of the protocol specified in `network.protocol.name`.
@@ -228,6 +164,24 @@ schema:
         requirement_level: recommended
         note: |
           `network.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
+      - id: server.address
+        type: string
+        brief: Server address - domain name if available without reverse DNS lookup, otherwise IP address or Unix domain socket name.
+        examples:
+        - example.com
+        requirement_level: recommended
+        note: |
+          When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent
+          the server address behind any intermediaries (e.g. proxies) if it's available.
+      - id: url.scheme
+        type: string
+        brief: The [URI scheme](https://www.rfc-editor.org/rfc/rfc3986#section-3.1) component identifying the used protocol.
+        examples:
+        - https
+        - ftp
+        - telnet
+        requirement_level: required
+        note: ''
       - id: http.route
         type: string
         brief: |
@@ -242,41 +196,80 @@ schema:
           SHOULD include the [application root](/docs/http/http-spans.md#http-server-definitions) if there is one.
         tags:
           sensitivity: PII
-      - id: server.address
+      - id: network.protocol.name
         type: string
-        brief: Server address - domain name if available without reverse DNS lookup, otherwise IP address or Unix domain socket name.
+        brief: '[OSI application layer](https://osi-model.com/application-layer/) or non-OSI equivalent.'
         examples:
-        - example.com
+        - amqp
+        - http
+        - mqtt
         requirement_level: recommended
-        note: |
-          When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent
-          the server address behind any intermediaries (e.g. proxies) if it's available.
-      - id: server.port
-        type: int
-        brief: Server port number
+        note: The value SHOULD be normalized to lowercase.
+      - id: http.request.method
+        type:
+          allow_custom_values: true
+          members:
+          - id: connect
+            value: CONNECT
+            brief: CONNECT method.
+            note: null
+          - id: delete
+            value: DELETE
+            brief: DELETE method.
+            note: null
+          - id: get
+            value: GET
+            brief: GET method.
+            note: null
+          - id: head
+            value: HEAD
+            brief: HEAD method.
+            note: null
+          - id: options
+            value: OPTIONS
+            brief: OPTIONS method.
+            note: null
+          - id: patch
+            value: PATCH
+            brief: PATCH method.
+            note: null
+          - id: post
+            value: POST
+            brief: POST method.
+            note: null
+          - id: put
+            value: PUT
+            brief: PUT method.
+            note: null
+          - id: trace
+            value: TRACE
+            brief: TRACE method.
+            note: null
+          - id: other
+            value: _OTHER
+            brief: Any HTTP method that the instrumentation has no prior knowledge of.
+            note: null
+        brief: HTTP request method.
         examples:
-        - 80
-        - 8080
-        - 443
-        requirement_level: recommended
-        note: |
-          When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries (e.g. proxies) if it's available.
-      - id: url.scheme
-        type: string
-        brief: The [URI scheme](https://www.rfc-editor.org/rfc/rfc3986#section-3.1) component identifying the used protocol.
-        examples:
-        - https
-        - ftp
-        - telnet
+        - GET
+        - POST
+        - HEAD
         requirement_level: required
-        note: ''
-      - id: http.response.status_code
-        type: int
-        brief: '[HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).'
-        examples:
-        - 200
-        requirement_level: required
-        note: Required status code for HTTP response events.
+        note: |
+          HTTP request method value SHOULD be "known" to the instrumentation.
+          By default, this convention defines "known" methods as the ones listed in [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-methods)
+          and the PATCH method defined in [RFC5789](https://www.rfc-editor.org/rfc/rfc5789.html).
+
+          If the HTTP request method is not known to instrumentation, it MUST set the `http.request.method` attribute to `_OTHER`.
+
+          If the HTTP instrumentation could end up converting valid HTTP request methods to `_OTHER`, then it MUST provide a way to override
+          the list of known HTTP methods. If this override is done via environment variable, then the environment variable MUST be named
+          OTEL_INSTRUMENTATION_HTTP_KNOWN_METHODS and support a comma-separated list of case-sensitive known HTTP methods
+          (this list MUST be a full override of the default known method, it is not a list of known methods in addition to the defaults).
+
+          HTTP method names are case-sensitive and `http.request.method` attribute value MUST match a known HTTP method name exactly.
+          Instrumentations for specific web frameworks that consider HTTP methods to be case insensitive, SHOULD populate a canonical equivalent.
+          Tracing instrumentations that do so, MUST also set `http.request.method_original` to the original value.
       - id: error.type
         type:
           allow_custom_values: true
@@ -311,6 +304,13 @@ schema:
         brief: The environment in which the service is running
         requirement_level: required
         note: ''
+      - id: http.response.status_code
+        type: int
+        brief: '[HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).'
+        examples:
+        - 200
+        requirement_level: required
+        note: Required status code for HTTP response events.
 versions:
   1.4.0:
     metrics: null
@@ -339,8 +339,8 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            db.cassandra.keyspace: db.name
             db.hbase.namespace: db.name
+            db.cassandra.keyspace: db.name
     resources: null
   1.9.0:
     metrics: null
@@ -369,8 +369,8 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            net.host.ip: net.sock.host.addr
             net.peer.ip: net.sock.peer.addr
+            net.host.ip: net.sock.host.addr
     resources: null
   1.14.0:
     metrics: null
@@ -398,24 +398,24 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
+            messaging.destination: messaging.destination.name
             messaging.consumer_id: messaging.consumer.id
-            messaging.kafka.partition: messaging.kafka.destination.partition
-            messaging.rocketmq.message_type: messaging.rocketmq.message.type
-            messaging.protocol: net.app.protocol.name
-            messaging.rabbitmq.routing_key: messaging.rabbitmq.destination.routing_key
-            messaging.protocol_version: net.app.protocol.version
-            messaging.message_id: messaging.message.id
-            messaging.message_payload_size_bytes: messaging.message.payload_size_bytes
             messaging.kafka.tombstone: messaging.kafka.message.tombstone
+            messaging.message_id: messaging.message.id
+            messaging.rabbitmq.routing_key: messaging.rabbitmq.destination.routing_key
             messaging.destination_kind: messaging.destination.kind
             messaging.kafka.message_key: messaging.kafka.message.key
-            messaging.destination: messaging.destination.name
-            messaging.message_payload_compressed_size_bytes: messaging.message.payload_compressed_size_bytes
-            messaging.temp_destination: messaging.destination.temporary
             messaging.conversation_id: messaging.message.conversation_id
-            messaging.rocketmq.message_tag: messaging.rocketmq.message.tag
             messaging.kafka.consumer_group: messaging.kafka.consumer.group
+            messaging.message_payload_compressed_size_bytes: messaging.message.payload_compressed_size_bytes
+            messaging.rocketmq.message_type: messaging.rocketmq.message.type
             messaging.rocketmq.message_keys: messaging.rocketmq.message.keys
+            messaging.rocketmq.message_tag: messaging.rocketmq.message.tag
+            messaging.temp_destination: messaging.destination.temporary
+            messaging.protocol_version: net.app.protocol.version
+            messaging.message_payload_size_bytes: messaging.message.payload_size_bytes
+            messaging.kafka.partition: messaging.kafka.destination.partition
+            messaging.protocol: net.app.protocol.name
     resources: null
   1.18.0:
     metrics: null
@@ -448,8 +448,8 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            net.app.protocol.version: net.protocol.version
             net.app.protocol.name: net.protocol.name
+            net.app.protocol.version: net.protocol.version
     resources: null
   1.21.0:
     metrics:
@@ -467,28 +467,28 @@ versions:
             messaging.kafka.client_id: messaging.client_id
       - rename_attributes:
           attribute_map:
-            net.host.name: server.address
             net.host.port: server.port
-            net.sock.peer.name: server.socket.domain
-            http.client_ip: client.address
-            net.sock.host.addr: server.socket.address
+            net.host.name: server.address
             net.sock.host.port: server.socket.port
+            net.sock.host.addr: server.socket.address
+            http.client_ip: client.address
+            net.sock.peer.name: server.socket.domain
       - rename_attributes:
           attribute_map:
-            net.protocol.version: network.protocol.version
-            net.protocol.name: network.protocol.name
-            net.host.connection.subtype: network.connection.subtype
-            net.host.carrier.name: network.carrier.name
-            net.host.carrier.mnc: network.carrier.mnc
             net.host.connection.type: network.connection.type
             net.host.carrier.mcc: network.carrier.mcc
+            net.protocol.version: network.protocol.version
+            net.host.carrier.name: network.carrier.name
+            net.host.carrier.mnc: network.carrier.mnc
             net.host.carrier.icc: network.carrier.icc
+            net.host.connection.subtype: network.connection.subtype
+            net.protocol.name: network.protocol.name
       - rename_attributes:
           attribute_map:
-            http.method: http.request.method
-            http.status_code: http.response.status_code
             http.url: url.full
-            http.response_content_length: http.response.body.size
+            http.status_code: http.response.status_code
+            http.method: http.request.method
             http.request_content_length: http.request.body.size
             http.scheme: url.scheme
+            http.response_content_length: http.response.body.size
     resources: null

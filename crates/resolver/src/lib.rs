@@ -6,7 +6,8 @@
 #![deny(clippy::print_stdout)]
 #![deny(clippy::print_stderr)]
 
-use std::collections::HashSet;
+use std::{clone, iter};
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use regex::Regex;
@@ -15,7 +16,6 @@ use url::Url;
 use logger::Logger;
 use schema::attribute::{Attribute, from_semconv_attributes};
 use schema::metric_group::Metric;
-use schema::tags::merge_with_override;
 pub use schema::TelemetrySchema;
 use schema::univariate_metric::UnivariateMetric;
 use semconv::ResolverConfig;
@@ -50,10 +50,12 @@ pub enum Error {
     SemConvError(semconv::Error),
 
     /// Failed to resolve an attribute.
-    #[error("Failed to resolve the attribute '{r#ref}'")]
+    #[error("Failed to resolve the attribute '{id}'")]
     FailToResolveAttribute {
-        /// The reference to the attribute.
-        r#ref: String,
+        /// The id of the attribute.
+        id: String,
+        /// The error that occurred.
+        error: String,
     },
 
     /// Failed to resolve a metric.
@@ -116,13 +118,13 @@ impl SchemaResolver {
         if let Some(schema) = schema.schema.as_mut() {
             // Resolve metrics and their attributes
             if let Some(metrics) = schema.resource_metrics.as_mut() {
-                Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                metrics.attributes = Self::resolve_attributes(metrics.attributes.as_ref(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                 for metric in metrics.metrics.iter_mut() {
                     if let UnivariateMetric::Ref { r#ref, attributes, tags } = metric {
-                        Self::resolve_attributes(attributes, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                        *attributes = Self::resolve_attributes(attributes, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                         if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
                             let mut inherited_attrs = from_semconv_attributes(&referenced_metric.attributes);
-                            Self::resolve_attributes(&mut inherited_attrs, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                            inherited_attrs = Self::resolve_attributes(&inherited_attrs, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                             let merged_attrs = Self::merge_attributes(attributes, &inherited_attrs);
                             *metric = UnivariateMetric::Metric {
                                 name: referenced_metric.name.clone(),
@@ -141,7 +143,7 @@ impl SchemaResolver {
                     }
                 }
                 for metrics in metrics.metric_groups.iter_mut() {
-                    Self::resolve_attributes(metrics.attributes.as_mut(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                    metrics.attributes = Self::resolve_attributes(metrics.attributes.as_ref(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
                     for metric in metrics.metrics.iter_mut() {
                         if let Metric::Ref { r#ref, tags } = metric {
                             if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
@@ -169,29 +171,27 @@ impl SchemaResolver {
             }
 
             if let Some(events) = schema.resource_events.as_mut() {
-                Self::resolve_attributes(events.attributes.as_mut(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
+                events.attributes = Self::resolve_attributes(events.attributes.as_ref(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
                 for event in events.events.iter_mut() {
-                    Self::resolve_attributes(event.attributes.as_mut(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
+                    event.attributes = Self::resolve_attributes(event.attributes.as_ref(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
                 }
             }
 
             if let Some(spans) = schema.resource_spans.as_mut() {
-                Self::resolve_attributes(spans.attributes.as_mut(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
+                spans.attributes = Self::resolve_attributes(spans.attributes.as_ref(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
                 for span in spans.spans.iter_mut() {
-                    Self::resolve_attributes(span.attributes.as_mut(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
+                    span.attributes = Self::resolve_attributes(span.attributes.as_ref(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
                     for event in span.events.iter_mut() {
-                        Self::resolve_attributes(event.attributes.as_mut(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
+                        event.attributes = Self::resolve_attributes(event.attributes.as_ref(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
                     }
                     for link in span.links.iter_mut() {
-                        Self::resolve_attributes(link.attributes.as_mut(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
+                        link.attributes = Self::resolve_attributes(link.attributes.as_ref(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
                     }
                 }
             }
-            // Merge common attributes with the attributes of the corresponding resource_metrics,
-            // resource_logs and resource_spans.
-            if let Some(logs) = schema.resource_events.as_mut() {
-                for log in logs.events.iter_mut() {
-                    Self::resolve_attributes(log.attributes.as_mut(), &sem_conv_catalog, version_changes.resource_attribute_changes())?;
+            if let Some(events) = schema.resource_events.as_mut() {
+                for event in events.events.iter_mut() {
+                    event.attributes = Self::resolve_attributes(event.attributes.as_ref(), &sem_conv_catalog, version_changes.resource_attribute_changes())?;
                 }
             }
         }
@@ -270,97 +270,56 @@ impl SchemaResolver {
         Ok(sem_conv_catalog)
     }
 
+    /// Resolves a collection of attributes (i.e. `Attribute::Ref` and `Attribute::AttributeGroupRef`)
+    /// from the given semantic convention catalog and local attributes (i.e. `Attribute::Id`).
+    /// `Attribute::AttributeGroupRef` are first resolved, then `Attribute::Ref`, and finally
+    /// `Attribute::Id` are added.
+    /// An `Attribute::Ref` can override an attribute contains in an `Attribute::AttributeGroupRef`.
+    /// An `Attribute::Id` can override an attribute contains in an `Attribute::Ref` or an
+    /// `Attribute::AttributeGroupRef`.
+    ///
+    /// Note: Version changes are used during the resolution process to determine the names of the
+    /// attributes.
     fn resolve_attributes(
-        attributes: &mut [Attribute],
+        attributes: &[Attribute],
         sem_conv_catalog: &semconv::SemConvCatalog,
-        version_changes: impl VersionAttributeChanges) -> Result<(), Error> {
-        for attribute in attributes.iter_mut() {
-            if let Attribute::Ref {
-                r#ref,
-                brief: brief_from_ref,
-                examples: examples_from_ref,
-                tag: tag_from_ref,
-                requirement_level: requirement_level_from_ref,
-                sampling_relevant: sampling_from_ref,
-                note: note_from_ref,
-                stability: stability_from_ref,
-                deprecated: deprecated_from_ref,
-                tags: tags_from_ref,
-                value: value_from_ref,
-            } = attribute {
-                let normalized_ref = version_changes.get_attribute_name(r#ref);
-                if let Some(semconv::attribute::Attribute::Id {
-                                id,
-                                r#type,
-                                brief,
-                                examples,
-                                tag,
-                                requirement_level,
-                                sampling_relevant,
-                                note,
-                                stability,
-                                deprecated,
-                            }) = sem_conv_catalog.get_attribute(&normalized_ref) {
-                    let id = id.clone();
-                    let r#type = r#type.clone();
-                    let mut brief = brief.clone();
-                    let mut examples = examples.clone();
-                    let mut requirement_level = requirement_level.clone();
-                    let mut tag = tag.clone();
-                    let mut sampling_relevant = sampling_relevant.clone();
-                    let mut note = note.clone();
-                    let mut stability = stability.clone();
-                    let mut deprecated = deprecated.clone();
+        version_changes: impl VersionAttributeChanges,
+    ) -> Result<Vec<Attribute>, Error> {
+        let mut resolved_attributes = HashMap::new();
 
-                    // Override process.
-                    // Use the field values from the reference when defined in the reference.
-                    if let Some(brief_from_ref) = brief_from_ref {
-                        brief = brief_from_ref.clone();
-                    }
-                    if let Some(requirement_level_from_ref) = requirement_level_from_ref {
-                        requirement_level = requirement_level_from_ref.clone();
-                    }
-                    if let Some(examples_from_ref) = examples_from_ref {
-                        examples = Some(examples_from_ref.clone());
-                    }
-                    if let Some(tag_from_ref) = tag_from_ref {
-                        tag = Some(tag_from_ref.clone());
-                    }
-                    if let Some(sampling_from_ref) = sampling_from_ref {
-                        sampling_relevant = Some(sampling_from_ref.clone());
-                    }
-                    if let Some(note_from_ref) = note_from_ref {
-                        note = note_from_ref.clone();
-                    }
-                    if let Some(stability_from_ref) = stability_from_ref {
-                        stability = Some(stability_from_ref.clone());
-                    }
-                    if let Some(deprecated_from_ref) = deprecated_from_ref {
-                        deprecated = Some(deprecated_from_ref.clone());
-                    }
-
-                    *attribute = Attribute::Id {
-                        id,
-                        r#type,
-                        brief,
-                        examples,
-                        tag,
-                        requirement_level,
-                        sampling_relevant,
-                        note,
-                        stability,
-                        deprecated,
-                        tags: tags_from_ref.clone(),
-                        value: value_from_ref.clone()
-                    }
-                } else {
-                    return Err(Error::FailToResolveAttribute {
-                        r#ref: r#ref.clone(),
-                    });
+        // Resolve `Attribute::AttributeGroupRef`
+        for attribute in attributes.iter() {
+            if let Attribute::AttributeGroupRef { attribute_group_ref, tags } = attribute {
+                for (attr_id, attr) in sem_conv_catalog.get_attributes(&attribute_group_ref) {
+                    let mut attr: Attribute = attr.into();
+                    attr.set_tags(tags);
+                    resolved_attributes.insert(attr_id.clone(), attr);
                 }
             }
         }
-        Ok(())
+
+        // Resolve `Attribute::Ref`
+        for attribute in attributes.iter() {
+            if let Attribute::Ref { r#ref, .. } = attribute {
+                let normalized_ref = version_changes.get_attribute_name(r#ref);
+                let sem_conv_attr = sem_conv_catalog.get_attribute(&normalized_ref);
+                let resolved_attribute = attribute.resolve_from(sem_conv_attr).map_err(|e| Error::FailToResolveAttribute {
+                    id: r#ref.clone(),
+                    error: e.to_string(),
+                })?;
+                resolved_attributes.insert(normalized_ref, resolved_attribute);
+            }
+        }
+
+        // Resolve `Attribute::Id`
+        // Note: any resolved attributes with the same id will be overridden.
+        for attribute in attributes.iter() {
+            if let Attribute::Id { id, .. } = attribute {
+                resolved_attributes.insert(id.clone(), attribute.clone());
+            }
+        }
+
+        Ok(resolved_attributes.into_values().collect())
     }
 
     /// Merges the given main attributes with the inherited attributes.

@@ -55,6 +55,15 @@ pub enum Error {
         /// The error that occurred.
         error: String,
     },
+
+    /// The attribute is invalid.
+    #[error("Invalid attribute `{id:?}`\n{error:?}")]
+    InvalidAttribute {
+        /// The attribute id.
+        id: String,
+        /// The error that occurred.
+        error: String,
+    }
 }
 
 /// A telemetry schema.

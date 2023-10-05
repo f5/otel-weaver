@@ -384,6 +384,21 @@ impl SemConvCatalog {
         self.all_attributes.get(attr_ref)
     }
 
+    /// Returns a map id -> attribute definition from an attribute group reference.
+    pub fn get_attributes(&self, attr_group_ref: &str) -> HashMap<&String, &Attribute> {
+        let mut attributes = HashMap::new();
+        if let Some(group_ids) = self.attr_grp_group_attributes.get(attr_group_ref) {
+            for attr_id in group_ids.ids.iter() {
+                if let Some(attr) = self.all_attributes.get(attr_id) {
+                    // Note: we only keep the last attribute definition for attributes that
+                    // are defined multiple times in the group.
+                    _ = attributes.insert(attr_id, attr);
+                }
+            }
+        }
+        attributes
+    }
+
     /// Returns a metric definition from its name or `None` if the
     /// name does not exist.
     pub fn get_metric(&self, metric_name: &str) -> Option<&Metric> {

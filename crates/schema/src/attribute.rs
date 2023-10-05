@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use semconv::attribute::{AttributeType, Examples, RequirementLevel, Value};
 use semconv::stability::Stability;
 
+use crate::Error;
 use crate::tags::Tags;
 
 /// An attribute specification.
@@ -197,4 +198,125 @@ impl From<&semconv::attribute::Attribute> for Attribute {
 /// Convert a slice of semantic convention attributes to a vector of schema attributes.
 pub fn from_semconv_attributes(attrs: &[semconv::attribute::Attribute]) -> Vec<Attribute> {
     attrs.iter().map(|attr| attr.into()).collect()
+}
+
+impl Attribute {
+    /// Sets the tags of the attribute.
+    pub fn set_tags(&mut self, tags: &Option<Tags>) {
+        match self {
+            Attribute::Ref { tags: tags_ref, .. } => {
+                *tags_ref = tags.clone();
+            }
+            Attribute::Id { tags: tags_id, .. } => {
+                *tags_id = tags.clone();
+            }
+            Attribute::AttributeGroupRef { tags: tags_group, .. } => {
+                *tags_group = tags.clone();
+            }
+        }
+    }
+
+    /// Returns a resolved attribute. The current attribute is expected to be a reference to another
+    /// attribute. The semantic convention attribute provided as argument is used to resolve the
+    /// reference. The semantic attribute must be an `Attribute::Id` otherwise an error is returned.
+    pub fn resolve_from(&self, sem_conv_attr: Option<&semconv::attribute::Attribute>) -> Result<Attribute, Error> {
+        match self {
+            Attribute::Ref {
+                r#ref,
+                brief: brief_from_ref,
+                examples: examples_from_ref,
+                tag: tag_from_ref,
+                requirement_level: requirement_level_from_ref,
+                sampling_relevant: sampling_from_ref,
+                note: note_from_ref,
+                stability: stability_from_ref,
+                deprecated: deprecated_from_ref,
+                tags: tags_from_ref,
+                value: value_from_ref,
+            } => {
+                if let Some(semconv::attribute::Attribute::Id {
+                                id,
+                                r#type,
+                                brief,
+                                examples,
+                                tag,
+                                requirement_level,
+                                sampling_relevant,
+                                note,
+                                stability,
+                                deprecated,
+                            }) = sem_conv_attr {
+                    let id = id.clone();
+                    let r#type = r#type.clone();
+                    let mut brief = brief.clone();
+                    let mut examples = examples.clone();
+                    let mut requirement_level = requirement_level.clone();
+                    let mut tag = tag.clone();
+                    let mut sampling_relevant = sampling_relevant.clone();
+                    let mut note = note.clone();
+                    let mut stability = stability.clone();
+                    let mut deprecated = deprecated.clone();
+
+                    // Override process.
+                    // Use the field values from the reference when defined in the reference.
+                    if let Some(brief_from_ref) = brief_from_ref {
+                        brief = brief_from_ref.clone();
+                    }
+                    if let Some(requirement_level_from_ref) = requirement_level_from_ref {
+                        requirement_level = requirement_level_from_ref.clone();
+                    }
+                    if let Some(examples_from_ref) = examples_from_ref {
+                        examples = Some(examples_from_ref.clone());
+                    }
+                    if let Some(tag_from_ref) = tag_from_ref {
+                        tag = Some(tag_from_ref.clone());
+                    }
+                    if let Some(sampling_from_ref) = sampling_from_ref {
+                        sampling_relevant = Some(sampling_from_ref.clone());
+                    }
+                    if let Some(note_from_ref) = note_from_ref {
+                        note = note_from_ref.clone();
+                    }
+                    if let Some(stability_from_ref) = stability_from_ref {
+                        stability = Some(stability_from_ref.clone());
+                    }
+                    if let Some(deprecated_from_ref) = deprecated_from_ref {
+                        deprecated = Some(deprecated_from_ref.clone());
+                    }
+
+                    Ok(Attribute::Id {
+                        id,
+                        r#type,
+                        brief,
+                        examples,
+                        tag,
+                        requirement_level,
+                        sampling_relevant,
+                        note,
+                        stability,
+                        deprecated,
+                        tags: tags_from_ref.clone(),
+                        value: value_from_ref.clone(),
+                    })
+                } else {
+                    return Err(Error::InvalidAttribute {
+                        id: r#ref.clone(),
+                        error: "Cannot resolve an attribute from a semantic convention attribute reference.".into(),
+                    });
+                }
+            }
+            Attribute::Id { id, .. } => {
+                Err(Error::InvalidAttribute {
+                    id: "".into(),
+                    error: "Cannot resolve an attribute from a non-reference attribute.".into(),
+                })
+            }
+            Attribute::AttributeGroupRef { attribute_group_ref, .. } => {
+                Err(Error::InvalidAttribute {
+                    id: attribute_group_ref.clone(),
+                    error: "Cannot resolve an attribute from an attribute group reference.".into(),
+                })
+            }
+        }
+    }
 }

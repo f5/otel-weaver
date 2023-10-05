@@ -42,9 +42,10 @@ schema:
       - event_name: response
         domain: http
         attributes:
-          - ref: http.request.method
-          - ref: network.protocol.name
-          - ref: network.protocol.version
+          - attribute_group_ref: attributes.http.common
+          - ref: http.response.status_code
+            requirement_level: required
+            note: Required status code for HTTP response events.
           - ref: http.route
             tags:
               sensitivity: PII
@@ -52,10 +53,6 @@ schema:
           - ref: server.port
           - ref: url.scheme
             requirement_level: required
-          - ref: http.response.status_code
-            requirement_level: required
-            note: Required status code for HTTP response events.
-          - ref: error.type
           - id: mycompany.com.env
             type: string
             brief: The environment in which the service is running
