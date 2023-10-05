@@ -200,8 +200,7 @@ impl SchemaResolver {
             schema_path.as_ref().display()
         ));
 
-        // Remove version information from the schema.
-        schema.versions.take();
+        schema.semantic_conventions.clear();
 
         Ok(schema)
     }
