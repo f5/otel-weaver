@@ -4,24 +4,6 @@ schema_url: https://mycompany.com/schemas/1.0.0
 schema:
   resource:
     attributes:
-    - id: os.build_id
-      type: string
-      brief: Unique identifier for a particular build or compilation of the operating system.
-      examples:
-      - TQ3C.230805.001.B2
-      - '20E247'
-      - '22621'
-      requirement_level: recommended
-      note: ''
-    - id: os.version
-      type: string
-      brief: |
-        The version string of the operating system as defined in [Version Attributes](/docs/resource/README.md#version-attributes).
-      examples:
-      - 14.2.1
-      - 18.04.1
-      requirement_level: recommended
-      note: ''
     - id: os.type
       type:
         allow_custom_values: true
@@ -73,15 +55,6 @@ schema:
       brief: The operating system type.
       requirement_level: required
       note: ''
-    - id: os.description
-      type: string
-      brief: |
-        Human readable (not intended to be parsed) OS version information, like e.g. reported by `ver` or `lsb_release -a` commands.
-      examples:
-      - Microsoft Windows [Version 10.0.18363.778]
-      - Ubuntu 18.04.1 LTS
-      requirement_level: recommended
-      note: ''
     - id: os.name
       type: string
       brief: Human readable operating system name.
@@ -89,6 +62,33 @@ schema:
       - iOS
       - Android
       - Ubuntu
+      requirement_level: recommended
+      note: ''
+    - id: os.build_id
+      type: string
+      brief: Unique identifier for a particular build or compilation of the operating system.
+      examples:
+      - TQ3C.230805.001.B2
+      - '20E247'
+      - '22621'
+      requirement_level: recommended
+      note: ''
+    - id: os.version
+      type: string
+      brief: |
+        The version string of the operating system as defined in [Version Attributes](/docs/resource/README.md#version-attributes).
+      examples:
+      - 14.2.1
+      - 18.04.1
+      requirement_level: recommended
+      note: ''
+    - id: os.description
+      type: string
+      brief: |
+        Human readable (not intended to be parsed) OS version information, like e.g. reported by `ver` or `lsb_release -a` commands.
+      examples:
+      - Microsoft Windows [Version 10.0.18363.778]
+      - Ubuntu 18.04.1 LTS
       requirement_level: recommended
       note: ''
   instrumentation_library:
@@ -137,8 +137,8 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            db.hbase.namespace: db.name
             db.cassandra.keyspace: db.name
+            db.hbase.namespace: db.name
     resources: null
   1.9.0:
     metrics: null
@@ -167,8 +167,8 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            net.peer.ip: net.sock.peer.addr
             net.host.ip: net.sock.host.addr
+            net.peer.ip: net.sock.peer.addr
     resources: null
   1.14.0:
     metrics: null
@@ -196,24 +196,24 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            messaging.protocol_version: net.app.protocol.version
-            messaging.kafka.partition: messaging.kafka.destination.partition
             messaging.rocketmq.message_keys: messaging.rocketmq.message.keys
-            messaging.rocketmq.message_type: messaging.rocketmq.message.type
-            messaging.kafka.consumer_group: messaging.kafka.consumer.group
-            messaging.kafka.message_key: messaging.kafka.message.key
-            messaging.rocketmq.message_tag: messaging.rocketmq.message.tag
-            messaging.message_id: messaging.message.id
-            messaging.consumer_id: messaging.consumer.id
-            messaging.destination_kind: messaging.destination.kind
-            messaging.message_payload_compressed_size_bytes: messaging.message.payload_compressed_size_bytes
-            messaging.message_payload_size_bytes: messaging.message.payload_size_bytes
             messaging.destination: messaging.destination.name
-            messaging.conversation_id: messaging.message.conversation_id
+            messaging.kafka.consumer_group: messaging.kafka.consumer.group
+            messaging.protocol_version: net.app.protocol.version
+            messaging.destination_kind: messaging.destination.kind
+            messaging.kafka.message_key: messaging.kafka.message.key
+            messaging.rocketmq.message_type: messaging.rocketmq.message.type
+            messaging.consumer_id: messaging.consumer.id
             messaging.temp_destination: messaging.destination.temporary
-            messaging.rabbitmq.routing_key: messaging.rabbitmq.destination.routing_key
-            messaging.kafka.tombstone: messaging.kafka.message.tombstone
             messaging.protocol: net.app.protocol.name
+            messaging.conversation_id: messaging.message.conversation_id
+            messaging.kafka.tombstone: messaging.kafka.message.tombstone
+            messaging.message_payload_compressed_size_bytes: messaging.message.payload_compressed_size_bytes
+            messaging.message_id: messaging.message.id
+            messaging.rabbitmq.routing_key: messaging.rabbitmq.destination.routing_key
+            messaging.message_payload_size_bytes: messaging.message.payload_size_bytes
+            messaging.kafka.partition: messaging.kafka.destination.partition
+            messaging.rocketmq.message_tag: messaging.rocketmq.message.tag
     resources: null
   1.18.0:
     metrics: null
@@ -246,8 +246,8 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            net.app.protocol.version: net.protocol.version
             net.app.protocol.name: net.protocol.name
+            net.app.protocol.version: net.protocol.version
     resources: null
   1.21.0:
     metrics:
@@ -265,28 +265,28 @@ versions:
             messaging.rocketmq.client_id: messaging.client_id
       - rename_attributes:
           attribute_map:
-            http.client_ip: client.address
-            net.sock.host.port: server.socket.port
             net.sock.peer.name: server.socket.domain
+            net.sock.host.port: server.socket.port
             net.host.port: server.port
             net.host.name: server.address
             net.sock.host.addr: server.socket.address
+            http.client_ip: client.address
       - rename_attributes:
           attribute_map:
-            net.protocol.version: network.protocol.version
-            net.host.connection.type: network.connection.type
-            net.host.carrier.icc: network.carrier.icc
-            net.host.carrier.mcc: network.carrier.mcc
-            net.host.carrier.name: network.carrier.name
             net.host.carrier.mnc: network.carrier.mnc
-            net.protocol.name: network.protocol.name
+            net.protocol.version: network.protocol.version
+            net.host.carrier.icc: network.carrier.icc
             net.host.connection.subtype: network.connection.subtype
+            net.host.carrier.name: network.carrier.name
+            net.host.connection.type: network.connection.type
+            net.host.carrier.mcc: network.carrier.mcc
+            net.protocol.name: network.protocol.name
       - rename_attributes:
           attribute_map:
-            http.method: http.request.method
-            http.status_code: http.response.status_code
-            http.response_content_length: http.response.body.size
-            http.request_content_length: http.request.body.size
             http.url: url.full
+            http.method: http.request.method
+            http.request_content_length: http.request.body.size
+            http.response_content_length: http.response.body.size
+            http.status_code: http.response.status_code
             http.scheme: url.scheme
     resources: null

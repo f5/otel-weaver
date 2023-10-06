@@ -7,17 +7,21 @@
 #![deny(clippy::print_stderr)]
 
 mod attribute;
+mod resource;
+mod resource_events;
+mod resource_metrics;
+mod resource_spans;
 
 use std::path::Path;
 
 use regex::Regex;
 use url::Url;
 
-use crate::attribute::{merge_attributes, resolve_attributes};
+use crate::resource::resolve_resource;
+use crate::resource_events::resolve_events;
+use crate::resource_metrics::resolve_metrics;
+use crate::resource_spans::resolve_spans;
 use logger::Logger;
-use schema::attribute::from_semconv_attributes;
-use schema::metric_group::Metric;
-use schema::univariate_metric::UnivariateMetric;
 pub use schema::TelemetrySchema;
 use semconv::ResolverConfig;
 use version::VersionChanges;
@@ -125,134 +129,10 @@ impl SchemaResolver {
         // Resolve the references to the semantic conventions.
         log.loading("Solving semantic convention references");
         if let Some(schema) = schema.schema.as_mut() {
-            // Resolve resource attributes
-            if let Some(res) = schema.resource.as_mut() {
-                res.attributes = resolve_attributes(
-                    res.attributes.as_ref(),
-                    &sem_conv_catalog,
-                    version_changes.log_attribute_changes(),
-                )?;
-            }
-
-            // Resolve metrics and their attributes
-            if let Some(metrics) = schema.resource_metrics.as_mut() {
-                metrics.attributes = resolve_attributes(
-                    metrics.attributes.as_ref(),
-                    &sem_conv_catalog,
-                    version_changes.metric_attribute_changes(),
-                )?;
-                for metric in metrics.metrics.iter_mut() {
-                    if let UnivariateMetric::Ref {
-                        r#ref,
-                        attributes,
-                        tags,
-                    } = metric
-                    {
-                        *attributes = resolve_attributes(
-                            attributes,
-                            &sem_conv_catalog,
-                            version_changes.metric_attribute_changes(),
-                        )?;
-                        if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
-                            let mut inherited_attrs =
-                                from_semconv_attributes(&referenced_metric.attributes);
-                            inherited_attrs = resolve_attributes(
-                                &inherited_attrs,
-                                &sem_conv_catalog,
-                                version_changes.metric_attribute_changes(),
-                            )?;
-                            let merged_attrs = merge_attributes(attributes, &inherited_attrs);
-                            *metric = UnivariateMetric::Metric {
-                                name: referenced_metric.name.clone(),
-                                brief: referenced_metric.brief.clone(),
-                                note: referenced_metric.note.clone(),
-                                attributes: merged_attrs,
-                                instrument: referenced_metric.instrument.clone(),
-                                unit: referenced_metric.unit.clone(),
-                                tags: tags.clone(),
-                            };
-                        } else {
-                            return Err(Error::FailToResolveMetric {
-                                r#ref: r#ref.clone(),
-                            });
-                        }
-                    }
-                }
-                for metrics in metrics.metric_groups.iter_mut() {
-                    metrics.attributes = resolve_attributes(
-                        metrics.attributes.as_ref(),
-                        &sem_conv_catalog,
-                        version_changes.metric_attribute_changes(),
-                    )?;
-                    for metric in metrics.metrics.iter_mut() {
-                        if let Metric::Ref { r#ref, tags } = metric {
-                            if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
-                                let inherited_attrs = referenced_metric.attributes.clone();
-                                if !inherited_attrs.is_empty() {
-                                    log.warn(&format!("Attributes inherited from the '{}' metric will be disregarded. Instead, the common attributes specified for the metric group '{}' will be utilized.", r#ref, metrics.id));
-                                }
-                                *metric = Metric::Metric {
-                                    name: referenced_metric.name.clone(),
-                                    brief: referenced_metric.brief.clone(),
-                                    note: referenced_metric.note.clone(),
-                                    attributes: metrics.attributes.clone(),
-                                    instrument: referenced_metric.instrument.clone(),
-                                    unit: referenced_metric.unit.clone(),
-                                    tags: tags.clone(),
-                                };
-                            } else {
-                                return Err(Error::FailToResolveMetric {
-                                    r#ref: r#ref.clone(),
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-
-            if let Some(events) = schema.resource_events.as_mut() {
-                events.attributes = resolve_attributes(
-                    events.attributes.as_ref(),
-                    &sem_conv_catalog,
-                    version_changes.log_attribute_changes(),
-                )?;
-                for event in events.events.iter_mut() {
-                    event.attributes = resolve_attributes(
-                        event.attributes.as_ref(),
-                        &sem_conv_catalog,
-                        version_changes.log_attribute_changes(),
-                    )?;
-                }
-            }
-
-            if let Some(spans) = schema.resource_spans.as_mut() {
-                spans.attributes = resolve_attributes(
-                    spans.attributes.as_ref(),
-                    &sem_conv_catalog,
-                    version_changes.span_attribute_changes(),
-                )?;
-                for span in spans.spans.iter_mut() {
-                    span.attributes = resolve_attributes(
-                        span.attributes.as_ref(),
-                        &sem_conv_catalog,
-                        version_changes.span_attribute_changes(),
-                    )?;
-                    for event in span.events.iter_mut() {
-                        event.attributes = resolve_attributes(
-                            event.attributes.as_ref(),
-                            &sem_conv_catalog,
-                            version_changes.span_attribute_changes(),
-                        )?;
-                    }
-                    for link in span.links.iter_mut() {
-                        link.attributes = resolve_attributes(
-                            link.attributes.as_ref(),
-                            &sem_conv_catalog,
-                            version_changes.span_attribute_changes(),
-                        )?;
-                    }
-                }
-            }
+            resolve_resource(schema, &mut sem_conv_catalog, &version_changes)?;
+            resolve_metrics(log, schema, &mut sem_conv_catalog, &version_changes)?;
+            resolve_events(schema, &mut sem_conv_catalog, &version_changes)?;
+            resolve_spans(schema, &mut sem_conv_catalog, version_changes)?;
         }
         log.success(&format!(
             "Resolved schema '{}'",
