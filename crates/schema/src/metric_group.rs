@@ -5,8 +5,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::attribute::Attribute;
-use semconv::group::Instrument;
 use crate::tags::Tags;
+use semconv::group::Instrument;
 
 /// The specification of a metric group.
 #[derive(Serialize, Deserialize, Debug)]

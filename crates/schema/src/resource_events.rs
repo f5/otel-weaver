@@ -3,9 +3,9 @@
 //! Resource logs specification.
 
 use crate::attribute::Attribute;
-use serde::{Deserialize, Serialize};
 use crate::event::Event;
 use crate::tags::Tags;
+use serde::{Deserialize, Serialize};
 
 /// A resource events specification.
 #[derive(Serialize, Deserialize, Debug)]

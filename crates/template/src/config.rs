@@ -5,8 +5,8 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use serde::Deserialize;
 use convert_case::{Case, Casing};
+use serde::Deserialize;
 
 use crate::Error;
 use crate::Error::InvalidConfigFile;
@@ -89,18 +89,15 @@ impl LanguageConfig {
     pub fn try_new(lang_path: &PathBuf) -> Result<LanguageConfig, Error> {
         let config_file = lang_path.join("config.yaml");
         if config_file.exists() {
-            let reader = std::fs::File::open(config_file.clone()).map_err(|e|
-                InvalidConfigFile {
+            let reader =
+                std::fs::File::open(config_file.clone()).map_err(|e| InvalidConfigFile {
                     config_file: config_file.clone(),
                     error: e.to_string(),
-                }
-            )?;
-            serde_yaml::from_reader(reader).map_err(|e|
-                InvalidConfigFile {
-                    config_file: config_file.clone(),
-                    error: e.to_string(),
-                }
-            )
+                })?;
+            serde_yaml::from_reader(reader).map_err(|e| InvalidConfigFile {
+                config_file: config_file.clone(),
+                error: e.to_string(),
+            })
         } else {
             Ok(LanguageConfig::default())
         }

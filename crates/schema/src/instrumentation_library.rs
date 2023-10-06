@@ -2,8 +2,8 @@
 
 //! Instrumentation library specification.
 
-use serde::{Deserialize, Serialize};
 use crate::tags::Tags;
+use serde::{Deserialize, Serialize};
 
 /// An instrumentation library specification.
 /// MUST be used both by applications and libraries.

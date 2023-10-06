@@ -4,6 +4,15 @@ schema_url: https://mycompany.com/schemas/1.0.0
 schema:
   resource:
     attributes:
+    - id: os.build_id
+      type: string
+      brief: Unique identifier for a particular build or compilation of the operating system.
+      examples:
+      - TQ3C.230805.001.B2
+      - '20E247'
+      - '22621'
+      requirement_level: recommended
+      note: ''
     - id: os.version
       type: string
       brief: |
@@ -11,15 +20,6 @@ schema:
       examples:
       - 14.2.1
       - 18.04.1
-      requirement_level: recommended
-      note: ''
-    - id: os.name
-      type: string
-      brief: Human readable operating system name.
-      examples:
-      - iOS
-      - Android
-      - Ubuntu
       requirement_level: recommended
       note: ''
     - id: os.type
@@ -82,13 +82,13 @@ schema:
       - Ubuntu 18.04.1 LTS
       requirement_level: recommended
       note: ''
-    - id: os.build_id
+    - id: os.name
       type: string
-      brief: Unique identifier for a particular build or compilation of the operating system.
+      brief: Human readable operating system name.
       examples:
-      - TQ3C.230805.001.B2
-      - '20E247'
-      - '22621'
+      - iOS
+      - Android
+      - Ubuntu
       requirement_level: recommended
       note: ''
   instrumentation_library:
@@ -104,7 +104,7 @@ schema:
       note: ''
     metrics:
     - name: http.server.request.duration
-      brief: Measures the duration of inbound HTTP requests.
+      brief: Duration of HTTP server requests.
       note: ''
       attributes: []
       instrument: histogram
@@ -197,23 +197,23 @@ versions:
       - rename_attributes:
           attribute_map:
             messaging.protocol_version: net.app.protocol.version
-            messaging.message_payload_size_bytes: messaging.message.payload_size_bytes
-            messaging.rocketmq.message_type: messaging.rocketmq.message.type
-            messaging.message_id: messaging.message.id
-            messaging.protocol: net.app.protocol.name
-            messaging.rabbitmq.routing_key: messaging.rabbitmq.destination.routing_key
-            messaging.rocketmq.message_keys: messaging.rocketmq.message.keys
-            messaging.temp_destination: messaging.destination.temporary
-            messaging.kafka.consumer_group: messaging.kafka.consumer.group
-            messaging.destination: messaging.destination.name
-            messaging.consumer_id: messaging.consumer.id
             messaging.kafka.partition: messaging.kafka.destination.partition
-            messaging.conversation_id: messaging.message.conversation_id
+            messaging.rocketmq.message_keys: messaging.rocketmq.message.keys
+            messaging.rocketmq.message_type: messaging.rocketmq.message.type
+            messaging.kafka.consumer_group: messaging.kafka.consumer.group
             messaging.kafka.message_key: messaging.kafka.message.key
-            messaging.message_payload_compressed_size_bytes: messaging.message.payload_compressed_size_bytes
             messaging.rocketmq.message_tag: messaging.rocketmq.message.tag
+            messaging.message_id: messaging.message.id
+            messaging.consumer_id: messaging.consumer.id
             messaging.destination_kind: messaging.destination.kind
+            messaging.message_payload_compressed_size_bytes: messaging.message.payload_compressed_size_bytes
+            messaging.message_payload_size_bytes: messaging.message.payload_size_bytes
+            messaging.destination: messaging.destination.name
+            messaging.conversation_id: messaging.message.conversation_id
+            messaging.temp_destination: messaging.destination.temporary
+            messaging.rabbitmq.routing_key: messaging.rabbitmq.destination.routing_key
             messaging.kafka.tombstone: messaging.kafka.message.tombstone
+            messaging.protocol: net.app.protocol.name
     resources: null
   1.18.0:
     metrics: null
@@ -261,32 +261,32 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            messaging.rocketmq.client_id: messaging.client_id
             messaging.kafka.client_id: messaging.client_id
+            messaging.rocketmq.client_id: messaging.client_id
       - rename_attributes:
           attribute_map:
-            net.sock.host.addr: server.socket.address
-            net.host.port: server.port
-            net.sock.peer.name: server.socket.domain
-            net.sock.host.port: server.socket.port
             http.client_ip: client.address
+            net.sock.host.port: server.socket.port
+            net.sock.peer.name: server.socket.domain
+            net.host.port: server.port
             net.host.name: server.address
+            net.sock.host.addr: server.socket.address
       - rename_attributes:
           attribute_map:
-            net.host.carrier.icc: network.carrier.icc
-            net.protocol.name: network.protocol.name
             net.protocol.version: network.protocol.version
             net.host.connection.type: network.connection.type
-            net.host.connection.subtype: network.connection.subtype
-            net.host.carrier.name: network.carrier.name
+            net.host.carrier.icc: network.carrier.icc
             net.host.carrier.mcc: network.carrier.mcc
+            net.host.carrier.name: network.carrier.name
             net.host.carrier.mnc: network.carrier.mnc
+            net.protocol.name: network.protocol.name
+            net.host.connection.subtype: network.connection.subtype
       - rename_attributes:
           attribute_map:
-            http.request_content_length: http.request.body.size
-            http.scheme: url.scheme
-            http.response_content_length: http.response.body.size
-            http.status_code: http.response.status_code
-            http.url: url.full
             http.method: http.request.method
+            http.status_code: http.response.status_code
+            http.response_content_length: http.response.body.size
+            http.request_content_length: http.request.body.size
+            http.url: url.full
+            http.scheme: url.scheme
     resources: null

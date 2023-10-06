@@ -2,12 +2,12 @@
 
 //! Span specification.
 
+use crate::attribute::Attribute;
 use crate::span_event::SpanEvent;
 use crate::span_link::SpanLink;
-use crate::attribute::Attribute;
-use serde::{Deserialize, Serialize};
-use semconv::group::SpanKind;
 use crate::tags::Tags;
+use semconv::group::SpanKind;
+use serde::{Deserialize, Serialize};
 
 /// A span specification.
 #[derive(Serialize, Deserialize, Debug)]

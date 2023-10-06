@@ -6,21 +6,21 @@
 #![deny(clippy::print_stdout)]
 #![deny(clippy::print_stderr)]
 
-use std::collections::{HashMap, HashSet};
+mod attribute;
+
 use std::path::Path;
 
 use regex::Regex;
 use url::Url;
 
+use crate::attribute::{merge_attributes, resolve_attributes};
 use logger::Logger;
-use schema::attribute::{Attribute, from_semconv_attributes};
+use schema::attribute::from_semconv_attributes;
 use schema::metric_group::Metric;
-use schema::tags::Tags;
-pub use schema::TelemetrySchema;
 use schema::univariate_metric::UnivariateMetric;
-use semconv::group::ConvType;
+pub use schema::TelemetrySchema;
 use semconv::ResolverConfig;
-use version::{VersionAttributeChanges, VersionChanges};
+use version::VersionChanges;
 
 /// A resolver that can be used to resolve telemetry schemas.
 /// All references to semantic conventions will be resolved.
@@ -91,7 +91,9 @@ impl SchemaResolver {
 
         let parent_schema = Self::load_parent_schema(&schema, log)?;
         let mut sem_conv_catalog = Self::create_semantic_convention_catalog(&schema, log)?;
-        let _ = sem_conv_catalog.resolve(ResolverConfig::default()).map_err(Error::SemConvError)?;
+        let _ = sem_conv_catalog
+            .resolve(ResolverConfig::default())
+            .map_err(Error::SemConvError)?;
 
         // Merges the versions of the parent schema into the current schema.
         if let Some(parent_schema) = parent_schema {
@@ -108,30 +110,58 @@ impl SchemaResolver {
         }
 
         // Generates version changes
-        let version_changes = schema.versions.as_ref().map(|versions| if let Some(latest_version) = versions.latest_version() {
-            versions.version_changes_for(latest_version)
-        } else {
-            VersionChanges::default()
-        }).unwrap_or_default();
+        let version_changes = schema
+            .versions
+            .as_ref()
+            .map(|versions| {
+                if let Some(latest_version) = versions.latest_version() {
+                    versions.version_changes_for(latest_version)
+                } else {
+                    VersionChanges::default()
+                }
+            })
+            .unwrap_or_default();
 
         // Resolve the references to the semantic conventions.
         log.loading("Solving semantic convention references");
         if let Some(schema) = schema.schema.as_mut() {
             // Resolve resource attributes
             if let Some(res) = schema.resource.as_mut() {
-                res.attributes = Self::resolve_attributes(res.attributes.as_ref(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
+                res.attributes = resolve_attributes(
+                    res.attributes.as_ref(),
+                    &sem_conv_catalog,
+                    version_changes.log_attribute_changes(),
+                )?;
             }
 
             // Resolve metrics and their attributes
             if let Some(metrics) = schema.resource_metrics.as_mut() {
-                metrics.attributes = Self::resolve_attributes(metrics.attributes.as_ref(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                metrics.attributes = resolve_attributes(
+                    metrics.attributes.as_ref(),
+                    &sem_conv_catalog,
+                    version_changes.metric_attribute_changes(),
+                )?;
                 for metric in metrics.metrics.iter_mut() {
-                    if let UnivariateMetric::Ref { r#ref, attributes, tags } = metric {
-                        *attributes = Self::resolve_attributes(attributes, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                    if let UnivariateMetric::Ref {
+                        r#ref,
+                        attributes,
+                        tags,
+                    } = metric
+                    {
+                        *attributes = resolve_attributes(
+                            attributes,
+                            &sem_conv_catalog,
+                            version_changes.metric_attribute_changes(),
+                        )?;
                         if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
-                            let mut inherited_attrs = from_semconv_attributes(&referenced_metric.attributes);
-                            inherited_attrs = Self::resolve_attributes(&inherited_attrs, &sem_conv_catalog, version_changes.metric_attribute_changes())?;
-                            let merged_attrs = Self::merge_attributes(attributes, &inherited_attrs);
+                            let mut inherited_attrs =
+                                from_semconv_attributes(&referenced_metric.attributes);
+                            inherited_attrs = resolve_attributes(
+                                &inherited_attrs,
+                                &sem_conv_catalog,
+                                version_changes.metric_attribute_changes(),
+                            )?;
+                            let merged_attrs = merge_attributes(attributes, &inherited_attrs);
                             *metric = UnivariateMetric::Metric {
                                 name: referenced_metric.name.clone(),
                                 brief: referenced_metric.brief.clone(),
@@ -149,7 +179,11 @@ impl SchemaResolver {
                     }
                 }
                 for metrics in metrics.metric_groups.iter_mut() {
-                    metrics.attributes = Self::resolve_attributes(metrics.attributes.as_ref(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
+                    metrics.attributes = resolve_attributes(
+                        metrics.attributes.as_ref(),
+                        &sem_conv_catalog,
+                        version_changes.metric_attribute_changes(),
+                    )?;
                     for metric in metrics.metrics.iter_mut() {
                         if let Metric::Ref { r#ref, tags } = metric {
                             if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
@@ -177,21 +211,45 @@ impl SchemaResolver {
             }
 
             if let Some(events) = schema.resource_events.as_mut() {
-                events.attributes = Self::resolve_attributes(events.attributes.as_ref(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
+                events.attributes = resolve_attributes(
+                    events.attributes.as_ref(),
+                    &sem_conv_catalog,
+                    version_changes.log_attribute_changes(),
+                )?;
                 for event in events.events.iter_mut() {
-                    event.attributes = Self::resolve_attributes(event.attributes.as_ref(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
+                    event.attributes = resolve_attributes(
+                        event.attributes.as_ref(),
+                        &sem_conv_catalog,
+                        version_changes.log_attribute_changes(),
+                    )?;
                 }
             }
 
             if let Some(spans) = schema.resource_spans.as_mut() {
-                spans.attributes = Self::resolve_attributes(spans.attributes.as_ref(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
+                spans.attributes = resolve_attributes(
+                    spans.attributes.as_ref(),
+                    &sem_conv_catalog,
+                    version_changes.span_attribute_changes(),
+                )?;
                 for span in spans.spans.iter_mut() {
-                    span.attributes = Self::resolve_attributes(span.attributes.as_ref(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
+                    span.attributes = resolve_attributes(
+                        span.attributes.as_ref(),
+                        &sem_conv_catalog,
+                        version_changes.span_attribute_changes(),
+                    )?;
                     for event in span.events.iter_mut() {
-                        event.attributes = Self::resolve_attributes(event.attributes.as_ref(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
+                        event.attributes = resolve_attributes(
+                            event.attributes.as_ref(),
+                            &sem_conv_catalog,
+                            version_changes.span_attribute_changes(),
+                        )?;
                     }
                     for link in span.links.iter_mut() {
-                        link.attributes = Self::resolve_attributes(link.attributes.as_ref(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
+                        link.attributes = resolve_attributes(
+                            link.attributes.as_ref(),
+                            &sem_conv_catalog,
+                            version_changes.span_attribute_changes(),
+                        )?;
                     }
                 }
             }
@@ -207,11 +265,15 @@ impl SchemaResolver {
     }
 
     /// Loads the parent telemetry schema if it exists.
-    fn load_parent_schema(schema: &TelemetrySchema, log: &mut Logger) -> Result<Option<TelemetrySchema>, Error> {
+    fn load_parent_schema(
+        schema: &TelemetrySchema,
+        log: &mut Logger,
+    ) -> Result<Option<TelemetrySchema>, Error> {
         // Load the parent schema and merge it into the current schema.
         let parent_schema = if let Some(parent_schema_url) = schema.parent_schema_url.as_ref() {
             log.loading(&format!("Loading parent schema '{}'", parent_schema_url));
-            let url_pattern = Regex::new(r"^(https|http|file):.*").expect("invalid regex, please report this bug");
+            let url_pattern = Regex::new(r"^(https|http|file):.*")
+                .expect("invalid regex, please report this bug");
             let parent_schema = if url_pattern.is_match(parent_schema_url) {
                 let url = Url::parse(parent_schema_url).map_err(|e| {
                     log.error(&format!(
@@ -250,7 +312,10 @@ impl SchemaResolver {
     }
 
     /// Creates a semantic convention catalog from the given telemetry schema.
-    fn create_semantic_convention_catalog(schema: &TelemetrySchema, log: &mut Logger) -> Result<semconv::SemConvCatalog, Error> {
+    fn create_semantic_convention_catalog(
+        schema: &TelemetrySchema,
+        log: &mut Logger,
+    ) -> Result<semconv::SemConvCatalog, Error> {
         // Load all the semantic convention catalogs.
         let mut sem_conv_catalog = semconv::SemConvCatalog::default();
         log.loading(&format!(
@@ -258,10 +323,12 @@ impl SchemaResolver {
             schema.semantic_conventions.len()
         ));
         for sem_conv_import in schema.semantic_conventions.iter() {
-            sem_conv_catalog.load_from_url(&sem_conv_import.url).map_err(|e| {
-                log.error(&e.to_string());
-                Error::SemConvError(e)
-            })?;
+            sem_conv_catalog
+                .load_from_url(&sem_conv_import.url)
+                .map_err(|e| {
+                    log.error(&e.to_string());
+                    Error::SemConvError(e)
+                })?;
         }
         log.success(&format!(
             "Loaded {} semantic convention catalogs",
@@ -269,151 +336,6 @@ impl SchemaResolver {
         ));
 
         Ok(sem_conv_catalog)
-    }
-
-    /// Resolves a collection of attributes (i.e. `Attribute::Ref`, `Attribute::AttributeGroupRef`,
-    /// and `Attribute::SpanRef`) from the given semantic convention catalog and local attributes
-    /// (i.e. `Attribute::Id`).
-    /// `Attribute::AttributeGroupRef` are first resolved, then `Attribute::SpanRef`, then
-    /// `Attribute::Ref`, and finally `Attribute::Id` are added.
-    /// An `Attribute::Ref` can override an attribute contained in an `Attribute::AttributeGroupRef`
-    /// or an `Attribute::SpanRef`.
-    /// An `Attribute::Id` can override an attribute contains in an `Attribute::Ref`, an
-    /// `Attribute::AttributeGroupRef`, or an `Attribute::SpanRef`.
-    ///
-    /// Note: Version changes are used during the resolution process to determine the names of the
-    /// attributes.
-    fn resolve_attributes(
-        attributes: &[Attribute],
-        sem_conv_catalog: &semconv::SemConvCatalog,
-        version_changes: impl VersionAttributeChanges,
-    ) -> Result<Vec<Attribute>, Error> {
-        let mut resolved_attrs = HashMap::new();
-        let mut copy_into_resolved_attrs = |attrs: HashMap<&String, &semconv::attribute::Attribute>, tags: &Option<Tags>| {
-            for (attr_id, attr) in attrs {
-                let mut attr: Attribute = attr.into();
-                attr.set_tags(tags);
-                resolved_attrs.insert(attr_id.clone(), attr);
-            }
-        };
-
-        // Resolve `Attribute::AttributeGroupRef`
-        for attribute in attributes.iter() {
-            if let Attribute::AttributeGroupRef { attribute_group_ref, tags } = attribute {
-                let attrs = sem_conv_catalog.get_attributes(&attribute_group_ref, ConvType::AttributeGroup).map_err(|e| Error::FailToResolveAttribute {
-                    id: attribute_group_ref.clone(),
-                    error: e.to_string(),
-                })?;
-                copy_into_resolved_attrs(attrs, tags);
-            }
-        }
-
-        // Resolve `Attribute::ResourceRef`
-        for attribute in attributes.iter() {
-            if let Attribute::ResourceRef { resource_ref, tags } = attribute {
-                let attrs = sem_conv_catalog.get_attributes(&resource_ref, ConvType::Resource).map_err(|e| Error::FailToResolveAttribute {
-                    id: resource_ref.clone(),
-                    error: e.to_string(),
-                })?;
-                copy_into_resolved_attrs(attrs, tags);
-            }
-        }
-
-        // Resolve `Attribute::SpanRef`
-        for attribute in attributes.iter() {
-            if let Attribute::SpanRef { span_ref, tags } = attribute {
-                let attrs = sem_conv_catalog.get_attributes(&span_ref, ConvType::Span).map_err(|e| Error::FailToResolveAttribute {
-                    id: span_ref.clone(),
-                    error: e.to_string(),
-                })?;
-                copy_into_resolved_attrs(attrs, tags);
-            }
-        }
-
-        // Resolve `Attribute::EventRef`
-        for attribute in attributes.iter() {
-            if let Attribute::EventRef { event_ref, tags } = attribute {
-                let attrs = sem_conv_catalog.get_attributes(&event_ref, ConvType::Event).map_err(|e| Error::FailToResolveAttribute {
-                    id: event_ref.clone(),
-                    error: e.to_string(),
-                })?;
-                copy_into_resolved_attrs(attrs, tags);
-            }
-        }
-
-        // Resolve `Attribute::Ref`
-        for attribute in attributes.iter() {
-            if let Attribute::Ref { r#ref, .. } = attribute {
-                let normalized_ref = version_changes.get_attribute_name(r#ref);
-                let sem_conv_attr = sem_conv_catalog.get_attribute(&normalized_ref);
-                let resolved_attribute = attribute.resolve_from(sem_conv_attr).map_err(|e| Error::FailToResolveAttribute {
-                    id: r#ref.clone(),
-                    error: e.to_string(),
-                })?;
-                resolved_attrs.insert(normalized_ref, resolved_attribute);
-            }
-        }
-
-        // Resolve `Attribute::Id`
-        // Note: any resolved attributes with the same id will be overridden.
-        for attribute in attributes.iter() {
-            if let Attribute::Id { id, .. } = attribute {
-                resolved_attrs.insert(id.clone(), attribute.clone());
-            }
-        }
-
-        Ok(resolved_attrs.into_values().collect())
-    }
-
-    /// Merges the given main attributes with the inherited attributes.
-    /// Main attributes have precedence over inherited attributes.
-    fn merge_attributes(main_attrs: &[Attribute], inherited_attrs: &[Attribute]) -> Vec<Attribute> {
-        let mut merged_attrs = main_attrs.to_vec();
-        let main_attr_ids = main_attrs.iter().map(|attr| match attr {
-            Attribute::Ref { r#ref, .. } => r#ref.clone(),
-            Attribute::Id { id, .. } => id.clone(),
-            Attribute::AttributeGroupRef { .. } => {
-                panic!("Attribute groups are not supported yet")
-            }
-            Attribute::SpanRef { .. } => {
-                panic!("Span references are not supported yet")
-            }
-            Attribute::ResourceRef { .. } => {
-                panic!("Resource references are not supported yet")
-            }
-            Attribute::EventRef { .. } => {
-                panic!("Event references are not supported yet")
-            }
-        }).collect::<HashSet<_>>();
-
-        for inherited_attr in inherited_attrs.iter() {
-            match inherited_attr {
-                Attribute::Ref { r#ref, .. } => {
-                    if main_attr_ids.contains(r#ref) {
-                        continue;
-                    }
-                }
-                Attribute::Id { id, .. } => {
-                    if main_attr_ids.contains(id) {
-                        continue;
-                    }
-                }
-                Attribute::AttributeGroupRef { .. } => {
-                    panic!("Attribute groups are not supported yet")
-                }
-                Attribute::SpanRef { .. } => {
-                    panic!("Span references are not supported yet")
-                }
-                Attribute::ResourceRef { .. } => {
-                    panic!("Resource references are not supported yet")
-                }
-                Attribute::EventRef { .. } => {
-                    panic!("Event references are not supported yet")
-                }
-            }
-            merged_attrs.push(inherited_attr.clone());
-        }
-        merged_attrs
     }
 }
 

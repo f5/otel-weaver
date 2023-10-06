@@ -114,12 +114,14 @@ impl Versions {
             path_or_url: path_buf.as_path().display().to_string(),
             error: e.to_string(),
         })?;
-        let top_level: TopLevel = serde_yaml::from_reader(BufReader::new(versions_file))
-            .map_err(|e| Error::InvalidVersions {
-                path_or_url: path_buf.as_path().display().to_string(),
-                line: e.location().map(|loc| loc.line()),
-                column: e.location().map(|loc| loc.column()),
-                error: e.to_string(),
+        let top_level: TopLevel =
+            serde_yaml::from_reader(BufReader::new(versions_file)).map_err(|e| {
+                Error::InvalidVersions {
+                    path_or_url: path_buf.as_path().display().to_string(),
+                    line: e.location().map(|loc| loc.line()),
+                    column: e.location().map(|loc| loc.column()),
+                    error: e.to_string(),
+                }
             })?;
         Ok(top_level.versions)
     }
@@ -143,13 +145,19 @@ impl Versions {
 
     /// Returns a vector of tuples containing the versions and their corresponding changes
     /// in ascending order from the given version.
-    pub fn versions_asc_from(&self, version: &semver::Version) -> Vec<(&semver::Version, &VersionSpec)> {
+    pub fn versions_asc_from(
+        &self,
+        version: &semver::Version,
+    ) -> Vec<(&semver::Version, &VersionSpec)> {
         self.versions.range(version.clone()..).collect()
     }
 
     /// Returns a vector of tuples containing the versions and their corresponding changes
     /// in descending order from the given version.
-    pub fn versions_desc_from(&self, version: &semver::Version) -> Vec<(&semver::Version, &VersionSpec)> {
+    pub fn versions_desc_from(
+        &self,
+        version: &semver::Version,
+    ) -> Vec<(&semver::Version, &VersionSpec)> {
         self.versions.range(..=version.clone()).rev().collect()
     }
 
@@ -169,10 +177,14 @@ impl Versions {
             // Builds a map of old to new attribute names for the attributes that have been renamed
             // in the different versions of the resources.
             if let Some(resources) = spec.resources.as_ref() {
-                resources.changes.iter().flat_map(|change| change.rename_attributes.attribute_map.iter())
+                resources
+                    .changes
+                    .iter()
+                    .flat_map(|change| change.rename_attributes.attribute_map.iter())
                     .for_each(|(old_name, new_name)| {
                         if !resource_old_to_new_attributes.contains_key(old_name) {
-                            resource_old_to_new_attributes.insert(old_name.clone(), new_name.clone());
+                            resource_old_to_new_attributes
+                                .insert(old_name.clone(), new_name.clone());
                         }
                     });
             }
@@ -180,7 +192,10 @@ impl Versions {
             // Builds a map of old to new metric names that have been renamed
             // in the different versions.
             if let Some(metrics) = spec.metrics.as_ref() {
-                metrics.changes.iter().flat_map(|change| change.rename_metrics.iter())
+                metrics
+                    .changes
+                    .iter()
+                    .flat_map(|change| change.rename_metrics.iter())
                     .for_each(|(old_name, new_name)| {
                         if !metric_old_to_new_names.contains_key(old_name) {
                             metric_old_to_new_names.insert(old_name.clone(), new_name.clone());
@@ -191,7 +206,10 @@ impl Versions {
             // Builds a map of old to new attribute names for the attributes that have been renamed
             // in the different versions of the metrics.
             if let Some(metrics) = spec.metrics.as_ref() {
-                metrics.changes.iter().flat_map(|change| change.rename_attributes.attribute_map.iter())
+                metrics
+                    .changes
+                    .iter()
+                    .flat_map(|change| change.rename_attributes.attribute_map.iter())
                     .for_each(|(old_name, new_name)| {
                         if !metric_old_to_new_attributes.contains_key(old_name) {
                             metric_old_to_new_attributes.insert(old_name.clone(), new_name.clone());
@@ -202,7 +220,9 @@ impl Versions {
             // Builds a map of old to new attribute names for the attributes that have been renamed
             // in the different versions of the logs.
             if let Some(logs) = spec.logs.as_ref() {
-                logs.changes.iter().flat_map(|change| change.rename_attributes.attribute_map.iter())
+                logs.changes
+                    .iter()
+                    .flat_map(|change| change.rename_attributes.attribute_map.iter())
                     .for_each(|(old_name, new_name)| {
                         if !log_old_to_new_attributes.contains_key(old_name) {
                             log_old_to_new_attributes.insert(old_name.clone(), new_name.clone());
@@ -213,7 +233,10 @@ impl Versions {
             // Builds a map of old to new attribute names for the attributes that have been renamed
             // in the different versions of the spans.
             if let Some(spans) = spec.spans.as_ref() {
-                spans.changes.iter().flat_map(|change| change.rename_attributes.attribute_map.iter())
+                spans
+                    .changes
+                    .iter()
+                    .flat_map(|change| change.rename_attributes.attribute_map.iter())
                     .for_each(|(old_name, new_name)| {
                         if !span_old_to_new_attributes.contains_key(old_name) {
                             span_old_to_new_attributes.insert(old_name.clone(), new_name.clone());
@@ -256,21 +279,46 @@ impl VersionSpec {
             let mut resource_change = ResourceChange::default();
             for change in resources.changes {
                 'next_parent_renaming: for (old, new) in change.rename_attributes.attribute_map {
-                    for local_change in self.resources.get_or_insert_with(ResourceVersion::default).changes.iter() {
-                        if local_change.rename_attributes.attribute_map.contains_key(&old) {
+                    for local_change in self
+                        .resources
+                        .get_or_insert_with(ResourceVersion::default)
+                        .changes
+                        .iter()
+                    {
+                        if local_change
+                            .rename_attributes
+                            .attribute_map
+                            .contains_key(&old)
+                        {
                             // renaming already present in local changes, skip it
                             continue 'next_parent_renaming;
                         }
                     }
                     // renaming not found in local changes, add it
-                    resource_change.rename_attributes.attribute_map.insert(old, new);
+                    resource_change
+                        .rename_attributes
+                        .attribute_map
+                        .insert(old, new);
                 }
             }
             if !resource_change.rename_attributes.attribute_map.is_empty() {
-                if self.resources.get_or_insert_with(ResourceVersion::default).changes.is_empty() {
-                    self.resources.get_or_insert_with(ResourceVersion::default).changes.push(resource_change);
+                if self
+                    .resources
+                    .get_or_insert_with(ResourceVersion::default)
+                    .changes
+                    .is_empty()
+                {
+                    self.resources
+                        .get_or_insert_with(ResourceVersion::default)
+                        .changes
+                        .push(resource_change);
                 } else {
-                    self.resources.get_or_insert_with(ResourceVersion::default).changes[0].rename_attributes.attribute_map.extend(resource_change.rename_attributes.attribute_map);
+                    self.resources
+                        .get_or_insert_with(ResourceVersion::default)
+                        .changes[0]
+                        .rename_attributes
+                        .attribute_map
+                        .extend(resource_change.rename_attributes.attribute_map);
                 }
             }
         }
@@ -280,7 +328,12 @@ impl VersionSpec {
             let mut metrics_change = MetricsChange::default();
             for change in metrics.changes {
                 'next_parent_renaming: for (old, new) in change.rename_metrics {
-                    for local_change in self.metrics.get_or_insert_with(MetricsVersion::default).changes.iter() {
+                    for local_change in self
+                        .metrics
+                        .get_or_insert_with(MetricsVersion::default)
+                        .changes
+                        .iter()
+                    {
                         if local_change.rename_metrics.contains_key(&old) {
                             // renaming already present in local changes, skip it
                             continue 'next_parent_renaming;
@@ -291,10 +344,22 @@ impl VersionSpec {
                 }
             }
             if !metrics_change.rename_metrics.is_empty() {
-                if self.metrics.get_or_insert_with(MetricsVersion::default).changes.is_empty() {
-                    self.metrics.get_or_insert_with(MetricsVersion::default).changes.push(metrics_change);
+                if self
+                    .metrics
+                    .get_or_insert_with(MetricsVersion::default)
+                    .changes
+                    .is_empty()
+                {
+                    self.metrics
+                        .get_or_insert_with(MetricsVersion::default)
+                        .changes
+                        .push(metrics_change);
                 } else {
-                    self.metrics.get_or_insert_with(MetricsVersion::default).changes[0].rename_metrics.extend(metrics_change.rename_metrics);
+                    self.metrics
+                        .get_or_insert_with(MetricsVersion::default)
+                        .changes[0]
+                        .rename_metrics
+                        .extend(metrics_change.rename_metrics);
                 }
             }
         }
@@ -304,8 +369,17 @@ impl VersionSpec {
             let mut logs_change = LogsChange::default();
             for change in logs.changes {
                 'next_parent_renaming: for (old, new) in change.rename_attributes.attribute_map {
-                    for local_change in self.logs.get_or_insert_with(LogsVersion::default).changes.iter() {
-                        if local_change.rename_attributes.attribute_map.contains_key(&old) {
+                    for local_change in self
+                        .logs
+                        .get_or_insert_with(LogsVersion::default)
+                        .changes
+                        .iter()
+                    {
+                        if local_change
+                            .rename_attributes
+                            .attribute_map
+                            .contains_key(&old)
+                        {
                             // renaming already present in local changes, skip it
                             continue 'next_parent_renaming;
                         }
@@ -315,10 +389,21 @@ impl VersionSpec {
                 }
             }
             if !logs_change.rename_attributes.attribute_map.is_empty() {
-                if self.logs.get_or_insert_with(LogsVersion::default).changes.is_empty() {
-                    self.logs.get_or_insert_with(LogsVersion::default).changes.push(logs_change);
+                if self
+                    .logs
+                    .get_or_insert_with(LogsVersion::default)
+                    .changes
+                    .is_empty()
+                {
+                    self.logs
+                        .get_or_insert_with(LogsVersion::default)
+                        .changes
+                        .push(logs_change);
                 } else {
-                    self.logs.get_or_insert_with(LogsVersion::default).changes[0].rename_attributes.attribute_map.extend(logs_change.rename_attributes.attribute_map);
+                    self.logs.get_or_insert_with(LogsVersion::default).changes[0]
+                        .rename_attributes
+                        .attribute_map
+                        .extend(logs_change.rename_attributes.attribute_map);
                 }
             }
         }
@@ -328,21 +413,44 @@ impl VersionSpec {
             let mut spans_change = SpansChange::default();
             for change in spans.changes {
                 'next_parent_renaming: for (old, new) in change.rename_attributes.attribute_map {
-                    for local_change in self.spans.get_or_insert_with(SpansVersion::default).changes.iter() {
-                        if local_change.rename_attributes.attribute_map.contains_key(&old) {
+                    for local_change in self
+                        .spans
+                        .get_or_insert_with(SpansVersion::default)
+                        .changes
+                        .iter()
+                    {
+                        if local_change
+                            .rename_attributes
+                            .attribute_map
+                            .contains_key(&old)
+                        {
                             // renaming already present in local changes, skip it
                             continue 'next_parent_renaming;
                         }
                     }
                     // renaming not found in local changes, add it
-                    spans_change.rename_attributes.attribute_map.insert(old, new);
+                    spans_change
+                        .rename_attributes
+                        .attribute_map
+                        .insert(old, new);
                 }
             }
             if !spans_change.rename_attributes.attribute_map.is_empty() {
-                if self.spans.get_or_insert_with(SpansVersion::default).changes.is_empty() {
-                    self.spans.get_or_insert_with(SpansVersion::default).changes.push(spans_change);
+                if self
+                    .spans
+                    .get_or_insert_with(SpansVersion::default)
+                    .changes
+                    .is_empty()
+                {
+                    self.spans
+                        .get_or_insert_with(SpansVersion::default)
+                        .changes
+                        .push(spans_change);
                 } else {
-                    self.spans.get_or_insert_with(SpansVersion::default).changes[0].rename_attributes.attribute_map.extend(spans_change.rename_attributes.attribute_map);
+                    self.spans.get_or_insert_with(SpansVersion::default).changes[0]
+                        .rename_attributes
+                        .attribute_map
+                        .extend(spans_change.rename_attributes.attribute_map);
                 }
             }
         }
@@ -513,19 +621,43 @@ mod tests {
         let changes = versions.version_changes_for(versions.latest_version().unwrap());
 
         // Test renaming of resource attributes
-        assert_eq!("user_agent.original", changes.get_resource_attribute_name("browser.user_agent"));
+        assert_eq!(
+            "user_agent.original",
+            changes.get_resource_attribute_name("browser.user_agent")
+        );
 
         // Test renaming of metric names
-        assert_eq!("process.runtime.jvm.cpu.recent_utilization", changes.get_metric_name("process.runtime.jvm.cpu.utilization"));
+        assert_eq!(
+            "process.runtime.jvm.cpu.recent_utilization",
+            changes.get_metric_name("process.runtime.jvm.cpu.utilization")
+        );
 
         // Test renaming of span attributes
-        assert_eq!("user_agent.original", changes.get_span_attribute_name("http.user_agent"));
-        assert_eq!("http.request.method", changes.get_span_attribute_name("http.method"));
+        assert_eq!(
+            "user_agent.original",
+            changes.get_span_attribute_name("http.user_agent")
+        );
+        assert_eq!(
+            "http.request.method",
+            changes.get_span_attribute_name("http.method")
+        );
         assert_eq!("url.full", changes.get_span_attribute_name("http.url"));
-        assert_eq!("net.protocol.name", changes.get_span_attribute_name("net.app.protocol.name"));
-        assert_eq!("cloud.resource_id", changes.get_span_attribute_name("faas.id"));
-        assert_eq!("db.name", changes.get_span_attribute_name("db.hbase.namespace"));
-        assert_eq!("db.name", changes.get_span_attribute_name("db.cassandra.keyspace"));
+        assert_eq!(
+            "net.protocol.name",
+            changes.get_span_attribute_name("net.app.protocol.name")
+        );
+        assert_eq!(
+            "cloud.resource_id",
+            changes.get_span_attribute_name("faas.id")
+        );
+        assert_eq!(
+            "db.name",
+            changes.get_span_attribute_name("db.hbase.namespace")
+        );
+        assert_eq!(
+            "db.name",
+            changes.get_span_attribute_name("db.cassandra.keyspace")
+        );
         assert_eq!("metric_1", changes.get_metric_name("m1"));
         assert_eq!("metric_2", changes.get_metric_name("m2"));
     }
@@ -540,62 +672,81 @@ mod tests {
 
         // Transformations defined in `app_versions.yaml` overriding or
         // complementing `parent_versions.yaml`
-        let v1_22 = app_versions.versions
-            .get(&semver::Version::parse("1.22.0").unwrap()).unwrap();
-        let observed_value = v1_22.spans.as_ref().unwrap()
-            .changes[0]
-            .rename_attributes.attribute_map.get("messaging.kafka.client_id");
+        let v1_22 = app_versions
+            .versions
+            .get(&semver::Version::parse("1.22.0").unwrap())
+            .unwrap();
+        let observed_value = v1_22.spans.as_ref().unwrap().changes[0]
+            .rename_attributes
+            .attribute_map
+            .get("messaging.kafka.client_id");
         assert_eq!(observed_value, Some(&"messaging.client.id".to_string()));
 
-        let v1_8 = app_versions.versions
-            .get(&semver::Version::parse("1.8.0").unwrap()).unwrap();
-        let observed_value = v1_8.spans.as_ref().unwrap()
-            .changes[0]
-            .rename_attributes.attribute_map.get("db.cassandra.keyspace");
+        let v1_8 = app_versions
+            .versions
+            .get(&semver::Version::parse("1.8.0").unwrap())
+            .unwrap();
+        let observed_value = v1_8.spans.as_ref().unwrap().changes[0]
+            .rename_attributes
+            .attribute_map
+            .get("db.cassandra.keyspace");
         assert_eq!(observed_value, Some(&"database.name".to_string()));
-        let observed_value = v1_8.spans.as_ref().unwrap()
-            .changes[0]
-            .rename_attributes.attribute_map.get("db.cassandra.keyspace");
+        let observed_value = v1_8.spans.as_ref().unwrap().changes[0]
+            .rename_attributes
+            .attribute_map
+            .get("db.cassandra.keyspace");
         assert_eq!(observed_value, Some(&"database.name".to_string()));
-        let observed_value = v1_8.spans.as_ref().unwrap()
-            .changes[0]
-            .rename_attributes.attribute_map.get("db.hbase.namespace");
+        let observed_value = v1_8.spans.as_ref().unwrap().changes[0]
+            .rename_attributes
+            .attribute_map
+            .get("db.hbase.namespace");
         assert_eq!(observed_value, Some(&"db.name".to_string()));
-        let observed_value = v1_8.logs.as_ref().unwrap()
-            .changes[0]
-            .rename_attributes.attribute_map.get("db.cassandra.keyspace");
+        let observed_value = v1_8.logs.as_ref().unwrap().changes[0]
+            .rename_attributes
+            .attribute_map
+            .get("db.cassandra.keyspace");
         assert_eq!(observed_value, Some(&"database.name".to_string()));
-        let observed_value = v1_8.logs.as_ref().unwrap()
-            .changes[0]
-            .rename_attributes.attribute_map.get("db.hbase.namespace");
+        let observed_value = v1_8.logs.as_ref().unwrap().changes[0]
+            .rename_attributes
+            .attribute_map
+            .get("db.hbase.namespace");
         assert_eq!(observed_value, Some(&"db.name".to_string()));
-        let observed_value = v1_8.metrics.as_ref().unwrap()
-            .changes[0]
-            .rename_metrics.get("m1");
+        let observed_value = v1_8.metrics.as_ref().unwrap().changes[0]
+            .rename_metrics
+            .get("m1");
         assert_eq!(observed_value, Some(&"metric_1".to_string()));
-        let observed_value = v1_8.metrics.as_ref().unwrap()
-            .changes[0]
-            .rename_metrics.get("m2");
+        let observed_value = v1_8.metrics.as_ref().unwrap().changes[0]
+            .rename_metrics
+            .get("m2");
         assert_eq!(observed_value, Some(&"metric2".to_string()));
 
-        let v1_7_1 = app_versions.versions
-            .get(&semver::Version::parse("1.7.1").unwrap()).unwrap();
-        let observed_value = v1_7_1.spans.as_ref().unwrap()
-            .changes[0]
-            .rename_attributes.attribute_map.get("db.cassandra.table");
+        let v1_7_1 = app_versions
+            .versions
+            .get(&semver::Version::parse("1.7.1").unwrap())
+            .unwrap();
+        let observed_value = v1_7_1.spans.as_ref().unwrap().changes[0]
+            .rename_attributes
+            .attribute_map
+            .get("db.cassandra.table");
         assert_eq!(observed_value, Some(&"database.table".to_string()));
 
         // Transformations inherited from `parent_versions.yaml` and
         // initially not present in `app_versions.yaml`
-        let v1_21 = app_versions.versions
-            .get(&semver::Version::parse("1.21.0").unwrap()).unwrap();
-        let observed_value = v1_21.metrics.as_ref().unwrap()
-            .changes[0]
-            .rename_metrics.get("process.runtime.jvm.cpu.utilization");
-        assert_eq!(observed_value, Some(&"process.runtime.jvm.cpu.recent_utilization".to_string()));
-        let observed_value = v1_21.spans.as_ref().unwrap()
-            .changes[0]
-            .rename_attributes.attribute_map.get("messaging.kafka.client_id");
+        let v1_21 = app_versions
+            .versions
+            .get(&semver::Version::parse("1.21.0").unwrap())
+            .unwrap();
+        let observed_value = v1_21.metrics.as_ref().unwrap().changes[0]
+            .rename_metrics
+            .get("process.runtime.jvm.cpu.utilization");
+        assert_eq!(
+            observed_value,
+            Some(&"process.runtime.jvm.cpu.recent_utilization".to_string())
+        );
+        let observed_value = v1_21.spans.as_ref().unwrap().changes[0]
+            .rename_attributes
+            .attribute_map
+            .get("messaging.kafka.client_id");
         assert_eq!(observed_value, Some(&"messaging.client_id".to_string()));
 
         let changes = app_versions.version_changes_for(app_versions.latest_version().unwrap());

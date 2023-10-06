@@ -8,10 +8,10 @@ use crate::gen_client_sdk::command_gen_client_sdk;
 use crate::resolve::command_resolve;
 
 mod cli;
-mod resolve;
 mod gen_client_api;
 mod gen_client_sdk;
 mod languages;
+mod resolve;
 
 fn main() {
     let cli = Cli::parse();
@@ -24,7 +24,7 @@ fn main() {
         Some(Commands::GenClientSdk(params)) => {
             command_gen_client_sdk(&mut log, params);
         }
-        Some(Commands::GenClientApi {schema}) => {
+        Some(Commands::GenClientApi { schema }) => {
             command_gen_client_api(&mut log, schema);
         }
         Some(Commands::Languages(params)) => {
@@ -32,5 +32,4 @@ fn main() {
         }
         None => {}
     }
-
 }

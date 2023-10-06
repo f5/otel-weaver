@@ -2,8 +2,8 @@
 
 //! Tags for telemetry schemas.
 
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// A set of tags.
 ///
@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 #[serde(deny_unknown_fields)]
 pub struct Tags {
     /// The tags.
-    tags: HashMap<String, String>
+    tags: HashMap<String, String>,
 }
 
 impl Tags {
@@ -57,6 +57,6 @@ pub fn merge_with_override(tags: Option<&Tags>, parent_tags: Option<&Tags>) -> O
         (Some(tags), Some(parent_tags)) => Some(tags.merge_with_override(&parent_tags)),
         (Some(tags), None) => Some(tags.clone()),
         (None, Some(parent_tags)) => Some(parent_tags.clone()),
-        (None, None) => None
+        (None, None) => None,
     }
 }

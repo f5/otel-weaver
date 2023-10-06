@@ -2,10 +2,8 @@
 
 //! Generate a client API (third party)
 
-use std::path::PathBuf;
 use logger::Logger;
+use std::path::PathBuf;
 
 /// Generate a client API (third party)
-pub fn command_gen_client_api(_log: &mut Logger, _schema: &PathBuf) {
-
-}
+pub fn command_gen_client_api(_log: &mut Logger, _schema: &PathBuf) {}

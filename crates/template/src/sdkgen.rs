@@ -2,10 +2,10 @@
 
 //! Client SDK generator
 
-use std::{fs, process};
 use std::error::Error;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+use std::{fs, process};
 
 use glob::glob;
 use tera::{Context, Tera};
@@ -14,9 +14,12 @@ use logger::Logger;
 use resolver::{SchemaResolver, TelemetrySchema};
 use schema::univariate_metric::UnivariateMetric;
 
-use crate::{filters, functions, GeneratorConfig, testers};
 use crate::config::{DynamicGlobalConfig, LanguageConfig};
-use crate::Error::{InternalError, InvalidTelemetrySchema, InvalidTemplate, InvalidTemplateDirectory, InvalidTemplateFile, LanguageNotSupported, TemplateFileNameUndefined, WriteGeneratedCodeFailed};
+use crate::Error::{
+    InternalError, InvalidTelemetrySchema, InvalidTemplate, InvalidTemplateDirectory,
+    InvalidTemplateFile, LanguageNotSupported, TemplateFileNameUndefined, WriteGeneratedCodeFailed,
+};
+use crate::{filters, functions, testers, GeneratorConfig};
 
 /// Client SDK generator
 pub struct ClientSdkGenerator {
@@ -66,19 +69,37 @@ impl ClientSdkGenerator {
         let config = Arc::new(Mutex::new(DynamicGlobalConfig::default()));
 
         // Register custom filters
-        tera.register_filter("file_name", filters::CaseConverter::new(lang_config.file_name, "file_name"));
-        tera.register_filter("function_name", filters::CaseConverter::new(lang_config.function_name, "function_name"));
-        tera.register_filter("arg_name", filters::CaseConverter::new(lang_config.arg_name, "arg_name"));
-        tera.register_filter("struct_name", filters::CaseConverter::new(lang_config.struct_name, "struct_name"));
-        tera.register_filter("field_name", filters::CaseConverter::new(lang_config.field_name, "field_name"));
+        tera.register_filter(
+            "file_name",
+            filters::CaseConverter::new(lang_config.file_name, "file_name"),
+        );
+        tera.register_filter(
+            "function_name",
+            filters::CaseConverter::new(lang_config.function_name, "function_name"),
+        );
+        tera.register_filter(
+            "arg_name",
+            filters::CaseConverter::new(lang_config.arg_name, "arg_name"),
+        );
+        tera.register_filter(
+            "struct_name",
+            filters::CaseConverter::new(lang_config.struct_name, "struct_name"),
+        );
+        tera.register_filter(
+            "field_name",
+            filters::CaseConverter::new(lang_config.field_name, "field_name"),
+        );
         tera.register_filter("unique_attributes", filters::unique_attributes);
         tera.register_filter("instrument", filters::instrument);
         tera.register_filter("required", filters::required);
         tera.register_filter("not_required", filters::not_required);
         tera.register_filter("comment", filters::comment);
-        tera.register_filter("type_mapping", filters::TypeMapping {
-            type_mapping: lang_config.type_mapping,
-        });
+        tera.register_filter(
+            "type_mapping",
+            filters::TypeMapping {
+                type_mapping: lang_config.type_mapping,
+            },
+        );
 
         // Register custom functions
         tera.register_function("config", functions::FunctionConfig::new(config.clone()));
@@ -95,23 +116,23 @@ impl ClientSdkGenerator {
     }
 
     /// Generate a client SDK for the given schema
-    pub fn generate(&self,
-                    log: &mut Logger,
-                    schema_path: PathBuf,
-                    output_dir: PathBuf,
+    pub fn generate(
+        &self,
+        log: &mut Logger,
+        schema_path: PathBuf,
+        output_dir: PathBuf,
     ) -> Result<(), crate::Error> {
-        let schema = SchemaResolver::resolve_schema_file(schema_path.clone(), log).map_err(|e| {
-            InvalidTelemetrySchema {
-                schema: schema_path.clone(),
-                error: format!("{}", e),
-            }
-        })?;
+        let schema =
+            SchemaResolver::resolve_schema_file(schema_path.clone(), log).map_err(|e| {
+                InvalidTelemetrySchema {
+                    schema: schema_path.clone(),
+                    error: format!("{}", e),
+                }
+            })?;
 
-        let context = &Context::from_serialize(&schema).map_err(|e| {
-            InvalidTelemetrySchema {
-                schema: schema_path.clone(),
-                error: format!("{}", e),
-            }
+        let context = &Context::from_serialize(&schema).map_err(|e| InvalidTelemetrySchema {
+            schema: schema_path.clone(),
+            error: format!("{}", e),
         })?;
 
         // Process recursively all files in the template directory
@@ -129,15 +150,28 @@ impl ClientSdkGenerator {
                     continue;
                 }
                 let relative_path = tmpl_file_path.strip_prefix(&self.lang_path).unwrap();
-                let tmpl_file = relative_path.to_str()
+                let tmpl_file = relative_path
+                    .to_str()
                     .ok_or(InvalidTemplateFile(tmpl_file_path.clone()))?;
 
                 match tmpl_file_path.file_stem().map(|s| s.to_str()).flatten() {
                     Some("univariate_metric") => {
-                        self.process_univariate_metrics(log, tmpl_file, &schema_path, &schema, &output_dir)?;
+                        self.process_univariate_metrics(
+                            log,
+                            tmpl_file,
+                            &schema_path,
+                            &schema,
+                            &output_dir,
+                        )?;
                     }
                     Some("multivariate_metric") => {
-                        self.process_multivariate_metrics(log, tmpl_file, &schema_path, &schema, &output_dir)?;
+                        self.process_multivariate_metrics(
+                            log,
+                            tmpl_file,
+                            &schema_path,
+                            &schema,
+                            &output_dir,
+                        )?;
                     }
                     Some("log") => {
                         self.process_logs(log, tmpl_file, &schema_path, &schema, &output_dir)?;
@@ -154,7 +188,8 @@ impl ClientSdkGenerator {
                         let mut relative_path = relative_path.to_path_buf();
                         relative_path.set_extension("");
 
-                        let generated_file = Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                        let generated_file =
+                            Self::save_generated_code(&output_dir, relative_path, generated_code)?;
                         log.success(&format!("Generated file {:?}", generated_file));
                     }
                 }
@@ -167,7 +202,12 @@ impl ClientSdkGenerator {
     }
 
     /// Generate code.
-    fn generate_code(&self, log: &mut Logger, tmpl_file: &str, context: &Context) -> Result<String, crate::Error> {
+    fn generate_code(
+        &self,
+        log: &mut Logger,
+        tmpl_file: &str,
+        context: &Context,
+    ) -> Result<String, crate::Error> {
         let generated_code = self.tera.render(tmpl_file, &context).unwrap_or_else(|err| {
             log.newline(1);
             log.error(&format!("{}", err));
@@ -183,7 +223,11 @@ impl ClientSdkGenerator {
     }
 
     /// Save the generated code to the output directory.
-    fn save_generated_code(output_dir: &PathBuf, relative_path: PathBuf, generated_code: String) -> Result<PathBuf, crate::Error> {
+    fn save_generated_code(
+        output_dir: &PathBuf,
+        relative_path: PathBuf,
+        generated_code: String,
+    ) -> Result<PathBuf, crate::Error> {
         // Create all intermediary directories if they don't exist
         let output_file_path = output_dir.join(relative_path);
         if let Some(parent_dir) = output_file_path.parent() {
@@ -207,7 +251,14 @@ impl ClientSdkGenerator {
     }
 
     /// Process all univariate metrics in the schema.
-    fn process_univariate_metrics(&self, log: &mut Logger, tmpl_file: &str, schema_path: &PathBuf, schema: &TelemetrySchema, output_dir: &PathBuf) -> Result<(), crate::Error> {
+    fn process_univariate_metrics(
+        &self,
+        log: &mut Logger,
+        tmpl_file: &str,
+        schema_path: &PathBuf,
+        schema: &TelemetrySchema,
+        output_dir: &PathBuf,
+    ) -> Result<(), crate::Error> {
         if let Some(schema_spec) = &schema.schema {
             if let Some(metrics) = schema_spec.resource_metrics.as_ref() {
                 for metric in metrics.metrics.iter() {
@@ -221,7 +272,10 @@ impl ClientSdkGenerator {
 
                         // Reset the config
                         {
-                            self.config.lock().map_err(|e| InternalError(e.to_string()))?.reset();
+                            self.config
+                                .lock()
+                                .map_err(|e| InternalError(e.to_string()))?
+                                .reset();
                         }
 
                         log.loading(&format!("Generating code for univariate metric `{}`", name));
@@ -229,7 +283,9 @@ impl ClientSdkGenerator {
 
                         // Retrieve the file name from the config
                         let relative_path = {
-                            let mutex_guard = self.config.lock()
+                            let mutex_guard = self
+                                .config
+                                .lock()
                                 .map_err(|e| InternalError(e.to_string()))?;
                             match &mutex_guard.file_name {
                                 None => {
@@ -237,14 +293,13 @@ impl ClientSdkGenerator {
                                         template: PathBuf::from(tmpl_file),
                                     });
                                 }
-                                Some(file_name) => {
-                                    PathBuf::from(file_name.clone())
-                                }
+                                Some(file_name) => PathBuf::from(file_name.clone()),
                             }
                         };
 
                         // Save the generated code to the output directory
-                        let generated_file = Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                        let generated_file =
+                            Self::save_generated_code(&output_dir, relative_path, generated_code)?;
                         log.success(&format!("Generated file {:?}", generated_file));
                     }
                 }
@@ -254,28 +309,42 @@ impl ClientSdkGenerator {
     }
 
     /// Process all multivariate metrics in the schema.
-    fn process_multivariate_metrics(&self, log: &mut Logger, tmpl_file: &str, schema_path: &PathBuf, schema: &TelemetrySchema, output_dir: &PathBuf) -> Result<(), crate::Error> {
+    fn process_multivariate_metrics(
+        &self,
+        log: &mut Logger,
+        tmpl_file: &str,
+        schema_path: &PathBuf,
+        schema: &TelemetrySchema,
+        output_dir: &PathBuf,
+    ) -> Result<(), crate::Error> {
         if let Some(schema_spec) = &schema.schema {
             if let Some(metrics) = schema_spec.resource_metrics.as_ref() {
                 for metric in metrics.metric_groups.iter() {
-                    let context = &Context::from_serialize(metric).map_err(|e| {
-                        InvalidTelemetrySchema {
+                    let context =
+                        &Context::from_serialize(metric).map_err(|e| InvalidTelemetrySchema {
                             schema: schema_path.clone(),
                             error: format!("{}", e),
-                        }
-                    })?;
+                        })?;
 
                     // Reset the config
                     {
-                        self.config.lock().map_err(|e| InternalError(e.to_string()))?.reset();
+                        self.config
+                            .lock()
+                            .map_err(|e| InternalError(e.to_string()))?
+                            .reset();
                     }
 
-                    log.loading(&format!("Generating code for multivariate metric `{}`", metric.id));
+                    log.loading(&format!(
+                        "Generating code for multivariate metric `{}`",
+                        metric.id
+                    ));
                     let generated_code = self.generate_code(log, tmpl_file, context)?;
 
                     // Retrieve the file name from the config
                     let relative_path = {
-                        let mutex_guard = self.config.lock()
+                        let mutex_guard = self
+                            .config
+                            .lock()
                             .map_err(|e| InternalError(e.to_string()))?;
                         match &mutex_guard.file_name {
                             None => {
@@ -283,14 +352,13 @@ impl ClientSdkGenerator {
                                     template: PathBuf::from(tmpl_file),
                                 });
                             }
-                            Some(file_name) => {
-                                PathBuf::from(file_name.clone())
-                            }
+                            Some(file_name) => PathBuf::from(file_name.clone()),
                         }
                     };
 
                     // Save the generated code to the output directory
-                    let generated_file = Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                    let generated_file =
+                        Self::save_generated_code(&output_dir, relative_path, generated_code)?;
                     log.success(&format!("Generated file {:?}", generated_file));
                 }
             }
@@ -299,7 +367,14 @@ impl ClientSdkGenerator {
     }
 
     /// Process all logs in the schema.
-    fn process_logs(&self, log: &mut Logger, tmpl_file: &str, schema_path: &PathBuf, schema: &TelemetrySchema, output_dir: &PathBuf) -> Result<(), crate::Error> {
+    fn process_logs(
+        &self,
+        log: &mut Logger,
+        tmpl_file: &str,
+        schema_path: &PathBuf,
+        schema: &TelemetrySchema,
+        output_dir: &PathBuf,
+    ) -> Result<(), crate::Error> {
         if let Some(schema_spec) = &schema.schema {
             if let Some(logs) = schema_spec.resource_events.as_ref() {
                 for log_record in logs.events.iter() {
@@ -312,15 +387,23 @@ impl ClientSdkGenerator {
 
                     // Reset the config
                     {
-                        self.config.lock().map_err(|e| InternalError(e.to_string()))?.reset();
+                        self.config
+                            .lock()
+                            .map_err(|e| InternalError(e.to_string()))?
+                            .reset();
                     }
 
-                    log.loading(&format!("Generating code for log `{}`", log_record.event_name));
+                    log.loading(&format!(
+                        "Generating code for log `{}`",
+                        log_record.event_name
+                    ));
                     let generated_code = self.generate_code(log, tmpl_file, context)?;
 
                     // Retrieve the file name from the config
                     let relative_path = {
-                        let mutex_guard = self.config.lock()
+                        let mutex_guard = self
+                            .config
+                            .lock()
                             .map_err(|e| InternalError(e.to_string()))?;
                         match &mutex_guard.file_name {
                             None => {
@@ -328,14 +411,13 @@ impl ClientSdkGenerator {
                                     template: PathBuf::from(tmpl_file),
                                 });
                             }
-                            Some(file_name) => {
-                                PathBuf::from(file_name.clone())
-                            }
+                            Some(file_name) => PathBuf::from(file_name.clone()),
                         }
                     };
 
                     // Save the generated code to the output directory
-                    let generated_file = Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                    let generated_file =
+                        Self::save_generated_code(&output_dir, relative_path, generated_code)?;
                     log.success(&format!("Generated file {:?}", generated_file));
                 }
             }
@@ -344,20 +426,29 @@ impl ClientSdkGenerator {
     }
 
     /// Process all spans in the schema.
-    fn process_spans(&self, log: &mut Logger, tmpl_file: &str, schema_path: &PathBuf, schema: &TelemetrySchema, output_dir: &PathBuf) -> Result<(), crate::Error> {
+    fn process_spans(
+        &self,
+        log: &mut Logger,
+        tmpl_file: &str,
+        schema_path: &PathBuf,
+        schema: &TelemetrySchema,
+        output_dir: &PathBuf,
+    ) -> Result<(), crate::Error> {
         if let Some(schema_spec) = &schema.schema {
             if let Some(spans) = schema_spec.resource_spans.as_ref() {
                 for span in spans.spans.iter() {
-                    let context = &Context::from_serialize(span).map_err(|e| {
-                        InvalidTelemetrySchema {
+                    let context =
+                        &Context::from_serialize(span).map_err(|e| InvalidTelemetrySchema {
                             schema: schema_path.clone(),
                             error: format!("{}", e),
-                        }
-                    })?;
+                        })?;
 
                     // Reset the config
                     {
-                        self.config.lock().map_err(|e| InternalError(e.to_string()))?.reset();
+                        self.config
+                            .lock()
+                            .map_err(|e| InternalError(e.to_string()))?
+                            .reset();
                     }
 
                     log.loading(&format!("Generating code for span `{}`", span.span_name));
@@ -365,7 +456,9 @@ impl ClientSdkGenerator {
 
                     // Retrieve the file name from the config
                     let relative_path = {
-                        let mutex_guard = self.config.lock()
+                        let mutex_guard = self
+                            .config
+                            .lock()
                             .map_err(|e| InternalError(e.to_string()))?;
                         match &mutex_guard.file_name {
                             None => {
@@ -373,14 +466,13 @@ impl ClientSdkGenerator {
                                     template: PathBuf::from(tmpl_file),
                                 });
                             }
-                            Some(file_name) => {
-                                PathBuf::from(file_name.clone())
-                            }
+                            Some(file_name) => PathBuf::from(file_name.clone()),
                         }
                     };
 
                     // Save the generated code to the output directory
-                    let generated_file = Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                    let generated_file =
+                        Self::save_generated_code(&output_dir, relative_path, generated_code)?;
                     log.success(&format!("Generated file {:?}", generated_file));
                 }
             }

@@ -84,35 +84,52 @@ pub struct Group {
 fn validate_group(group: &Group) -> Result<(), ValidationError> {
     // If deprecated is present and stability differs from deprecated, this
     // will result in an error.
-    if group.deprecated.is_some() && group.stability.is_some() && group.stability != Some(Stability::Deprecated) {
-        return Err(ValidationError::new("This group contains a deprecated field but the stability is not set to deprecated."));
+    if group.deprecated.is_some()
+        && group.stability.is_some()
+        && group.stability != Some(Stability::Deprecated)
+    {
+        return Err(ValidationError::new(
+            "This group contains a deprecated field but the stability is not set to deprecated.",
+        ));
     }
 
     // Fields span_kind and events are only valid if type is span (the default).
     if group.r#type != ConvType::Span {
         if group.span_kind.is_some() {
-            return Err(ValidationError::new("This group contains a span_kind field but the type is not set to span."));
+            return Err(ValidationError::new(
+                "This group contains a span_kind field but the type is not set to span.",
+            ));
         }
         if !group.events.is_empty() {
-            return Err(ValidationError::new("This group contains an events field but the type is not set to span."));
+            return Err(ValidationError::new(
+                "This group contains an events field but the type is not set to span.",
+            ));
         }
     }
 
     // Field name is required if prefix is empty and if type is event.
     if group.r#type == ConvType::Event && group.prefix.is_empty() && group.name.is_none() {
-        return Err(ValidationError::new("This group contains an event type but the prefix is empty and the name is not set."));
+        return Err(ValidationError::new(
+            "This group contains an event type but the prefix is empty and the name is not set.",
+        ));
     }
 
     // Fields metric_name, instrument and unit are required if type is metric.
     if group.r#type == ConvType::Metric {
         if group.metric_name.is_none() {
-            return Err(ValidationError::new("This group contains a metric type but the metric_name is not set."));
+            return Err(ValidationError::new(
+                "This group contains a metric type but the metric_name is not set.",
+            ));
         }
         if group.instrument.is_none() {
-            return Err(ValidationError::new("This group contains a metric type but the instrument is not set."));
+            return Err(ValidationError::new(
+                "This group contains a metric type but the instrument is not set.",
+            ));
         }
         if group.unit.is_none() {
-            return Err(ValidationError::new("This group contains a metric type but the unit is not set."));
+            return Err(ValidationError::new(
+                "This group contains a metric type but the unit is not set.",
+            ));
         }
     }
 
@@ -121,24 +138,43 @@ fn validate_group(group: &Group) -> Result<(), ValidationError> {
         // If deprecated is present and stability differs from deprecated, this
         // will result in an error.
         match attribute {
-            Attribute::Id { stability, deprecated, .. } | Attribute::Ref { stability, deprecated, .. } => {
-                if deprecated.is_some() && stability.is_some() && *stability != Some(Stability::Deprecated) {
+            Attribute::Id {
+                stability,
+                deprecated,
+                ..
+            }
+            | Attribute::Ref {
+                stability,
+                deprecated,
+                ..
+            } => {
+                if deprecated.is_some()
+                    && stability.is_some()
+                    && *stability != Some(Stability::Deprecated)
+                {
                     return Err(ValidationError::new("This attribute contains a deprecated field but the stability is not set to deprecated."));
                 }
             }
         }
 
         // Examples are required only for string and string array attributes.
-        if let Attribute::Id { r#type, examples, .. } = attribute {
+        if let Attribute::Id {
+            r#type, examples, ..
+        } = attribute
+        {
             if examples.is_some() {
                 continue;
             }
 
             if *r#type == AttributeType::PrimitiveOrArray(PrimitiveOrArrayType::String) {
-                return Err(ValidationError::new("This attribute is a string but it does not contain any examples."));
+                return Err(ValidationError::new(
+                    "This attribute is a string but it does not contain any examples.",
+                ));
             }
             if *r#type == AttributeType::PrimitiveOrArray(PrimitiveOrArrayType::Strings) {
-                return Err(ValidationError::new("This attribute is a string array but it does not contain any examples."));
+                return Err(ValidationError::new(
+                    "This attribute is a string array but it does not contain any examples.",
+                ));
             }
         }
     }

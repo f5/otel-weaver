@@ -2,11 +2,11 @@
 
 //! Manage command line arguments
 
-use std::path::PathBuf;
-use clap::{Parser, Subcommand};
 use crate::gen_client_sdk::GenClientSdkParams;
 use crate::languages::LanguagesParams;
 use crate::resolve::ResolveParams;
+use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 /// Command line arguments.
 #[derive(Parser)]

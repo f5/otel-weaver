@@ -7,13 +7,13 @@
 //! can be found [here](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md).
 
 #![deny(
-missing_docs,
-clippy::print_stdout,
-unstable_features,
-unused_import_braces,
-unused_qualifications,
-unused_results,
-unused_extern_crates,
+    missing_docs,
+    clippy::print_stdout,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications,
+    unused_results,
+    unused_extern_crates
 )]
 
 use std::collections::{HashMap, HashSet};
@@ -263,9 +263,12 @@ impl SemConvCatalog {
             for group in spec.groups.iter() {
                 // Process attributes
                 match group.r#type {
-                    group::ConvType::AttributeGroup | group::ConvType::Span
-                    | group::ConvType::Resource | group::ConvType::Metric
-                    | group::ConvType::Event | group::ConvType::MetricGroup => {
+                    group::ConvType::AttributeGroup
+                    | group::ConvType::Span
+                    | group::ConvType::Resource
+                    | group::ConvType::Metric
+                    | group::ConvType::Event
+                    | group::ConvType::MetricGroup => {
                         let attributes_in_group = self.process_attributes(
                             path_or_url.to_string(),
                             group.id.clone(),
@@ -275,13 +278,17 @@ impl SemConvCatalog {
                         )?;
 
                         let group_attributes = match group.r#type {
-                            group::ConvType::AttributeGroup => { Some(&mut self.attr_grp_group_attributes) }
-                            group::ConvType::Span => { Some(&mut self.span_group_attributes) }
-                            group::ConvType::Resource => { Some(&mut self.resource_group_attributes) }
-                            group::ConvType::Metric => { Some(&mut self.metric_group_attributes) }
-                            group::ConvType::Event => { Some(&mut self.event_group_attributes) }
-                            group::ConvType::MetricGroup => { Some(&mut self.metric_group_group_attributes) }
-                            _ => { None }
+                            group::ConvType::AttributeGroup => {
+                                Some(&mut self.attr_grp_group_attributes)
+                            }
+                            group::ConvType::Span => Some(&mut self.span_group_attributes),
+                            group::ConvType::Resource => Some(&mut self.resource_group_attributes),
+                            group::ConvType::Metric => Some(&mut self.metric_group_attributes),
+                            group::ConvType::Event => Some(&mut self.event_group_attributes),
+                            group::ConvType::MetricGroup => {
+                                Some(&mut self.metric_group_group_attributes)
+                            }
+                            _ => None,
                         };
 
                         if let Some(group_attributes) = group_attributes {
@@ -289,15 +296,22 @@ impl SemConvCatalog {
                                 Self::detect_duplicated_group(
                                     path_or_url.to_string(),
                                     group.id.clone(),
-                                    group_attributes.insert(group.id.clone(), GroupIds {
-                                        origin: path_or_url.to_string(),
-                                        ids: attributes_in_group,
-                                    }))?;
+                                    group_attributes.insert(
+                                        group.id.clone(),
+                                        GroupIds {
+                                            origin: path_or_url.to_string(),
+                                            ids: attributes_in_group,
+                                        },
+                                    ),
+                                )?;
                             }
                         }
                     }
                     _ => {
-                        eprintln!("Warning: group type `{:?}` not implemented yet", group.r#type);
+                        eprintln!(
+                            "Warning: group type `{:?}` not implemented yet",
+                            group.r#type
+                        );
                     }
                 }
 
@@ -314,14 +328,17 @@ impl SemConvCatalog {
                             });
                         };
 
-                        let prev_val = self.all_metrics.insert(metric_name.clone(), Metric {
-                            name: metric_name.clone(),
-                            brief: group.brief.clone(),
-                            note: group.note.clone(),
-                            attributes: group.attributes.clone(),
-                            instrument: group.instrument.clone(),
-                            unit: group.unit.clone(),
-                        });
+                        let prev_val = self.all_metrics.insert(
+                            metric_name.clone(),
+                            Metric {
+                                name: metric_name.clone(),
+                                brief: group.brief.clone(),
+                                note: group.note.clone(),
+                                attributes: group.attributes.clone(),
+                                instrument: group.instrument.clone(),
+                                unit: group.unit.clone(),
+                            },
+                        );
                         if prev_val.is_some() {
                             return Err(Error::DuplicateMetricName {
                                 path_or_url: path_or_url.to_string(),
@@ -330,7 +347,8 @@ impl SemConvCatalog {
                         }
 
                         if let Some(r#ref) = group.extends.as_ref() {
-                            let prev_val = metrics_to_resolve.insert(metric_name.clone(), r#ref.clone());
+                            let prev_val =
+                                metrics_to_resolve.insert(metric_name.clone(), r#ref.clone());
                             if prev_val.is_some() {
                                 return Err(Error::DuplicateMetricName {
                                     path_or_url: path_or_url.to_string(),
@@ -362,9 +380,7 @@ impl SemConvCatalog {
                 if config.error_when_attribute_ref_not_found {
                     return Err(err);
                 } else {
-                    warnings.push(ResolverWarning {
-                        error: err,
-                    });
+                    warnings.push(ResolverWarning { error: err });
                 }
             }
         }
@@ -374,7 +390,9 @@ impl SemConvCatalog {
             let referenced_metric = self.all_metrics.get(&r#ref).cloned();
             if let Some(referenced_metric) = referenced_metric {
                 let _ = self.all_metrics.get_mut(&metric_name).map(|metric| {
-                    metric.attributes.extend(referenced_metric.attributes.iter().cloned());
+                    metric
+                        .attributes
+                        .extend(referenced_metric.attributes.iter().cloned());
                 });
             }
         }
@@ -392,7 +410,11 @@ impl SemConvCatalog {
 
     /// Returns a map id -> attribute definition from an attribute group reference.
     /// Or an error if the reference does not exist.
-    pub fn get_attributes(&self, r#ref: &str, r#type: group::ConvType) -> Result<HashMap<&String, &Attribute>, Error> {
+    pub fn get_attributes(
+        &self,
+        r#ref: &str,
+        r#type: group::ConvType,
+    ) -> Result<HashMap<&String, &Attribute>, Error> {
         let mut attributes = HashMap::new();
         let group_ids = match r#type {
             group::ConvType::AttributeGroup => self.attr_grp_group_attributes.get(r#ref),
@@ -414,7 +436,7 @@ impl SemConvCatalog {
         } else {
             return Err(Error::AttributeNotFound {
                 r#ref: r#ref.to_string(),
-            })
+            });
         }
         Ok(attributes)
     }
@@ -426,7 +448,11 @@ impl SemConvCatalog {
     }
 
     /// Returns an error if prev_group_ids is not `None`.
-    fn detect_duplicated_group(path_or_url: String, group_id: String, prev_group_ids: Option<GroupIds>) -> Result<(), Error> {
+    fn detect_duplicated_group(
+        path_or_url: String,
+        group_id: String,
+        prev_group_ids: Option<GroupIds>,
+    ) -> Result<(), Error> {
         if let Some(group_ids) = prev_group_ids.as_ref() {
             return Err(Error::DuplicateGroupId {
                 path_or_url,

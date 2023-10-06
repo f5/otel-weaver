@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-pub mod sdkgen;
+mod config;
 mod filters;
 mod functions;
-mod config;
+pub mod sdkgen;
 mod testers;
 
 /// An error that can occur while generating a client SDK.
@@ -19,7 +19,9 @@ pub enum Error {
     },
 
     /// Language not found.
-    #[error("Language `{0}` is not supported. Use the command `languages` to list supported languages.")]
+    #[error(
+        "Language `{0}` is not supported. Use the command `languages` to list supported languages."
+    )]
     LanguageNotSupported(String),
 
     /// Invalid template directory.

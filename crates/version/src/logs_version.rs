@@ -2,8 +2,8 @@
 
 //! Logs version.
 
-use serde::{Deserialize, Serialize};
 use crate::logs_change::LogsChange;
+use serde::{Deserialize, Serialize};
 
 /// Changes to apply to the logs for a specific version.
 #[derive(Serialize, Deserialize, Debug, Default)]

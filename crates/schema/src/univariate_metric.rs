@@ -3,9 +3,9 @@
 //! A univariate metric specification.
 
 use crate::attribute::Attribute;
-use serde::{Deserialize, Serialize};
-use semconv::group::Instrument;
 use crate::tags::Tags;
+use semconv::group::Instrument;
+use serde::{Deserialize, Serialize};
 
 /// A univariate metric specification.
 #[derive(Serialize, Deserialize, Debug)]

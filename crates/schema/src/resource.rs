@@ -3,8 +3,8 @@
 //! A common resource specification.
 
 use crate::attribute::Attribute;
-use serde::{Deserialize, Serialize};
 use crate::tags::Tags;
+use serde::{Deserialize, Serialize};
 
 /// A common resource specification.
 /// All the attributes mentioned in this specification will be inherited by all

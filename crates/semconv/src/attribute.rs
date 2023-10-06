@@ -2,8 +2,8 @@
 
 //! Attribute specification.
 
-use serde::{Deserialize, Serialize};
 use crate::stability::Stability;
+use serde::{Deserialize, Serialize};
 
 /// An attribute specification.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -127,7 +127,7 @@ pub enum AttributeType {
     Enum {
         /// Set to false to not accept values other than the specified members.
         /// It defaults to true.
-        #[serde(default="default_as_true")]
+        #[serde(default = "default_as_true")]
         allow_custom_values: bool,
         /// List of enum entries.
         members: Vec<EnumEntries>,

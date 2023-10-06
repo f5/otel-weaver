@@ -2,10 +2,10 @@
 
 //! A resource spans specification.
 
-use crate::span::Span;
 use crate::attribute::Attribute;
-use serde::{Deserialize, Serialize};
+use crate::span::Span;
 use crate::tags::Tags;
+use serde::{Deserialize, Serialize};
 
 /// A resource spans specification.
 #[derive(Serialize, Deserialize, Debug)]

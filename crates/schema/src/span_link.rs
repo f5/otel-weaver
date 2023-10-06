@@ -3,8 +3,8 @@
 //! Event specification.
 
 use crate::attribute::Attribute;
-use serde::{Deserialize, Serialize};
 use crate::tags::Tags;
+use serde::{Deserialize, Serialize};
 
 /// A span link specification.
 #[derive(Serialize, Deserialize, Debug)]

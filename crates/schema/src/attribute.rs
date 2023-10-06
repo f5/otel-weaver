@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 use semconv::attribute::{AttributeType, Examples, RequirementLevel, Value};
 use semconv::stability::Stability;
 
-use crate::Error;
 use crate::tags::Tags;
+use crate::Error;
 
 /// An attribute specification.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -188,10 +188,15 @@ impl From<&semconv::attribute::Attribute> for Attribute {
     fn from(attr: &semconv::attribute::Attribute) -> Self {
         match attr.clone() {
             semconv::attribute::Attribute::Ref {
-                r#ref, brief,
-                examples, tag,
-                requirement_level, sampling_relevant,
-                note, stability, deprecated
+                r#ref,
+                brief,
+                examples,
+                tag,
+                requirement_level,
+                sampling_relevant,
+                note,
+                stability,
+                deprecated,
             } => Attribute::Ref {
                 r#ref,
                 brief,
@@ -206,10 +211,16 @@ impl From<&semconv::attribute::Attribute> for Attribute {
                 value: None,
             },
             semconv::attribute::Attribute::Id {
-                id, r#type, brief,
-                examples, tag,
-                requirement_level, sampling_relevant,
-                note, stability, deprecated
+                id,
+                r#type,
+                brief,
+                examples,
+                tag,
+                requirement_level,
+                sampling_relevant,
+                note,
+                stability,
+                deprecated,
             } => Attribute::Id {
                 id,
                 r#type,
@@ -243,10 +254,15 @@ impl Attribute {
             Attribute::Id { tags: tags_id, .. } => {
                 *tags_id = tags.clone();
             }
-            Attribute::AttributeGroupRef { tags: tags_group, .. } => {
+            Attribute::AttributeGroupRef {
+                tags: tags_group, ..
+            } => {
                 *tags_group = tags.clone();
             }
-            Attribute::ResourceRef { tags: tags_resource, .. } => {
+            Attribute::ResourceRef {
+                tags: tags_resource,
+                ..
+            } => {
                 *tags_resource = tags.clone();
             }
             Attribute::SpanRef { tags, .. } => {
@@ -261,7 +277,10 @@ impl Attribute {
     /// Returns a resolved attribute. The current attribute is expected to be a reference to another
     /// attribute. The semantic convention attribute provided as argument is used to resolve the
     /// reference. The semantic attribute must be an `Attribute::Id` otherwise an error is returned.
-    pub fn resolve_from(&self, sem_conv_attr: Option<&semconv::attribute::Attribute>) -> Result<Attribute, Error> {
+    pub fn resolve_from(
+        &self,
+        sem_conv_attr: Option<&semconv::attribute::Attribute>,
+    ) -> Result<Attribute, Error> {
         match self {
             Attribute::Ref {
                 r#ref,
@@ -277,17 +296,18 @@ impl Attribute {
                 value: value_from_ref,
             } => {
                 if let Some(semconv::attribute::Attribute::Id {
-                                id,
-                                r#type,
-                                brief,
-                                examples,
-                                tag,
-                                requirement_level,
-                                sampling_relevant,
-                                note,
-                                stability,
-                                deprecated,
-                            }) = sem_conv_attr {
+                    id,
+                    r#type,
+                    brief,
+                    examples,
+                    tag,
+                    requirement_level,
+                    sampling_relevant,
+                    note,
+                    stability,
+                    deprecated,
+                }) = sem_conv_attr
+                {
                     let id = id.clone();
                     let r#type = r#type.clone();
                     let mut brief = brief.clone();
@@ -347,36 +367,29 @@ impl Attribute {
                     });
                 }
             }
-            Attribute::Id { id, .. } => {
-                Err(Error::InvalidAttribute {
-                    id: id.clone(),
-                    error: "Cannot resolve an attribute from a non-reference attribute.".into(),
-                })
-            }
-            Attribute::AttributeGroupRef { attribute_group_ref, .. } => {
-                Err(Error::InvalidAttribute {
-                    id: attribute_group_ref.clone(),
-                    error: "Cannot resolve an attribute from an attribute group reference.".into(),
-                })
-            }
-            Attribute::SpanRef { span_ref, .. } => {
-                Err(Error::InvalidAttribute {
-                    id: span_ref.clone(),
-                    error: "Cannot resolve an attribute from a span reference.".into(),
-                })
-            }
-            Attribute::ResourceRef { resource_ref, .. } => {
-                Err(Error::InvalidAttribute {
-                    id: resource_ref.clone(),
-                    error: "Cannot resolve an attribute from a resource reference.".into(),
-                })
-            }
-            Attribute::EventRef { event_ref, .. } => {
-                Err(Error::InvalidAttribute {
-                    id: event_ref.clone(),
-                    error: "Cannot resolve an attribute from an event reference.".into(),
-                })
-            }
+            Attribute::Id { id, .. } => Err(Error::InvalidAttribute {
+                id: id.clone(),
+                error: "Cannot resolve an attribute from a non-reference attribute.".into(),
+            }),
+            Attribute::AttributeGroupRef {
+                attribute_group_ref,
+                ..
+            } => Err(Error::InvalidAttribute {
+                id: attribute_group_ref.clone(),
+                error: "Cannot resolve an attribute from an attribute group reference.".into(),
+            }),
+            Attribute::SpanRef { span_ref, .. } => Err(Error::InvalidAttribute {
+                id: span_ref.clone(),
+                error: "Cannot resolve an attribute from a span reference.".into(),
+            }),
+            Attribute::ResourceRef { resource_ref, .. } => Err(Error::InvalidAttribute {
+                id: resource_ref.clone(),
+                error: "Cannot resolve an attribute from a resource reference.".into(),
+            }),
+            Attribute::EventRef { event_ref, .. } => Err(Error::InvalidAttribute {
+                id: event_ref.clone(),
+                error: "Cannot resolve an attribute from an event reference.".into(),
+            }),
         }
     }
 }

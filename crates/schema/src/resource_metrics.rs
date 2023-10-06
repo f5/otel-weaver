@@ -2,11 +2,11 @@
 
 //! A resource metrics specification.
 
-use crate::metric_group::MetricGroup;
-use crate::univariate_metric::UnivariateMetric;
 use crate::attribute::Attribute;
-use serde::{Deserialize, Serialize};
+use crate::metric_group::MetricGroup;
 use crate::tags::Tags;
+use crate::univariate_metric::UnivariateMetric;
+use serde::{Deserialize, Serialize};
 
 /// A resource metrics specification.
 #[derive(Serialize, Deserialize, Debug)]

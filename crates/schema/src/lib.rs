@@ -12,12 +12,12 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 use url::Url;
-use version::{Versions};
+use version::Versions;
 
+pub mod attribute;
 pub mod event;
 pub mod instrumentation_library;
-pub mod span_link;
-pub mod span_event;
+pub mod log;
 pub mod metric_group;
 pub mod resource;
 pub mod resource_events;
@@ -25,10 +25,10 @@ pub mod resource_metrics;
 pub mod resource_spans;
 pub mod schema_spec;
 pub mod span;
-pub mod univariate_metric;
-pub mod attribute;
-pub mod log;
+pub mod span_event;
+pub mod span_link;
 pub mod tags;
+pub mod univariate_metric;
 
 /// An error that can occur while loading a telemetry schema.
 #[derive(thiserror::Error, Debug)]
@@ -39,7 +39,7 @@ pub enum Error {
         /// The path or URL of the telemetry schema.
         path_or_url: String,
         /// The error that occurred.
-        error: String
+        error: String,
     },
 
     /// The telemetry schema is invalid.
@@ -62,7 +62,7 @@ pub enum Error {
         id: String,
         /// The error that occurred.
         error: String,
-    }
+    },
 }
 
 /// A telemetry schema.
@@ -153,12 +153,10 @@ impl TelemetrySchema {
                 println!("Loading schema from file: {}", path);
                 Self::load_from_file(path)
             }
-            _ => {
-                Err(Error::SchemaNotFound {
-                    path_or_url: schema_url.to_string(),
-                    error: format!("Unsupported URL scheme: {}", schema_url.scheme()),
-                })
-            }
+            _ => Err(Error::SchemaNotFound {
+                path_or_url: schema_url.to_string(),
+                error: format!("Unsupported URL scheme: {}", schema_url.scheme()),
+            }),
         }
     }
 }

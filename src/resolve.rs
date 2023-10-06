@@ -2,12 +2,12 @@
 
 //! Resolve a schema file and print the result
 
+use clap::Parser;
 use std::path::PathBuf;
 use std::process::exit;
-use clap::Parser;
 
 use logger::Logger;
-use resolver::{SchemaResolver};
+use resolver::SchemaResolver;
 
 /// Parameters for the `resolve` command
 #[derive(Parser)]
@@ -41,7 +41,11 @@ pub fn command_resolve(log: &mut Logger, params: &ResolveParams) {
                 Ok(yaml) => {
                     if let Some(output) = &params.output {
                         if let Err(e) = std::fs::write(output, &yaml) {
-                            log.error(&format!("Failed to write to {}: {}", output.to_str().unwrap(), e));
+                            log.error(&format!(
+                                "Failed to write to {}: {}",
+                                output.to_str().unwrap(),
+                                e
+                            ));
                             exit(1)
                         }
                     } else {

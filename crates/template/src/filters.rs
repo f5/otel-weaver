@@ -4,8 +4,8 @@
 
 use std::collections::HashMap;
 
-use tera::{Filter, Result, try_get_value, Value};
-use textwrap::{Options, wrap};
+use tera::{try_get_value, Filter, Result, Value};
+use textwrap::{wrap, Options};
 
 use crate::config::CaseConvention;
 
@@ -18,10 +18,7 @@ pub struct CaseConverter {
 impl CaseConverter {
     /// Create a new case converter filter.
     pub fn new(case: CaseConvention, filter_name: &'static str) -> Self {
-        CaseConverter {
-            filter_name,
-            case,
-        }
+        CaseConverter { filter_name, case }
     }
 }
 
@@ -40,10 +37,18 @@ pub fn instrument(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
         match metric_type.as_str() {
             "counter" | "gauge" | "histogram" => return Ok(Value::String(metric_type.clone())),
             "updowncounter" => return Ok(Value::String("up_down_counter".to_string())),
-            _ => return Err(tera::Error::msg(format!("Filter instrument: unknown metric instrument {}", metric_type)))
+            _ => {
+                return Err(tera::Error::msg(format!(
+                    "Filter instrument: unknown metric instrument {}",
+                    metric_type
+                )))
+            }
         }
     } else {
-        return Err(tera::Error::msg(format!("Filter instrument: expected a string, got {:?}", value)));
+        return Err(tera::Error::msg(format!(
+            "Filter instrument: expected a string, got {:?}",
+            value
+        )));
     }
 }
 
@@ -75,7 +80,7 @@ pub fn unique_attributes(value: &Value, _: &HashMap<String, Value>) -> Result<Va
                 }
             }
         }
-        _ => return Ok(value.clone())
+        _ => return Ok(value.clone()),
     }
     let mut attributes = vec![];
     for attribute in unique_attributes.into_values() {
@@ -98,11 +103,11 @@ pub fn required(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
                             }
                         }
                     }
-                    _ => required_values.push(value.clone())
+                    _ => required_values.push(value.clone()),
                 }
             }
         }
-        _ => return Ok(value.clone())
+        _ => return Ok(value.clone()),
     }
     Ok(Value::Array(required_values))
 }
@@ -123,11 +128,11 @@ pub fn not_required(value: &Value, _: &HashMap<String, Value>) -> Result<Value> 
                             required_values.push(value.clone());
                         }
                     }
-                    _ => required_values.push(value.clone())
+                    _ => required_values.push(value.clone()),
                 }
             }
         }
-        _ => return Ok(value.clone())
+        _ => return Ok(value.clone()),
     }
     Ok(Value::Array(required_values))
 }
@@ -156,13 +161,13 @@ pub fn comment(value: &Value, ctx: &HashMap<String, Value>) -> Result<Value> {
     fn wrap_comment(comment: &str, prefix: &str, lines: &mut Vec<String>) {
         wrap(comment.trim_end(), Options::new(80))
             .into_iter()
-            .map(|s| format!("{}{}",prefix, s.trim_end()))
+            .map(|s| format!("{}{}", prefix, s.trim_end()))
             .for_each(|s| lines.push(s));
     }
 
     let prefix = match ctx.get("prefix") {
         Some(Value::String(prefix)) => prefix.clone(),
-        _ => { "".to_string() }
+        _ => "".to_string(),
     };
 
     let mut lines = vec![];
@@ -189,7 +194,7 @@ pub fn comment(value: &Value, ctx: &HashMap<String, Value>) -> Result<Value> {
 
     let mut comments = String::new();
     for (i, line) in lines.into_iter().enumerate() {
-        if i >0 {
+        if i > 0 {
             comments.push_str(format!("\n{}", prefix).as_ref());
         }
         comments.push_str(line.as_ref());

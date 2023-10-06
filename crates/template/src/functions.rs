@@ -2,12 +2,11 @@
 
 //! Custom Tera functions
 
+use crate::config::DynamicGlobalConfig;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tera::{Function, Value};
 use tera::Result;
-use crate::config::DynamicGlobalConfig;
-
+use tera::{Function, Value};
 
 #[derive(Debug)]
 pub struct FunctionConfig {
@@ -16,9 +15,7 @@ pub struct FunctionConfig {
 
 impl FunctionConfig {
     pub fn new(config: Arc<Mutex<DynamicGlobalConfig>>) -> Self {
-        FunctionConfig {
-            config,
-        }
+        FunctionConfig { config }
     }
 }
 

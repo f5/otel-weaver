@@ -2,9 +2,9 @@
 
 //! Metric specification.
 
-use serde::{Deserialize, Serialize};
 use crate::attribute::Attribute;
 use crate::group::Instrument;
+use serde::{Deserialize, Serialize};
 
 /// A metric specification.
 #[derive(Serialize, Deserialize, Debug, Clone)]

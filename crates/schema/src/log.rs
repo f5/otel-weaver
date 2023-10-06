@@ -2,9 +2,9 @@
 
 //! Log record specification.
 
-use serde::{Deserialize, Serialize};
 use crate::attribute::Attribute;
 use crate::tags::Tags;
+use serde::{Deserialize, Serialize};
 
 /// A log record specification.
 #[derive(Serialize, Deserialize, Debug)]
