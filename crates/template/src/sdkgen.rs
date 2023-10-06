@@ -83,7 +83,7 @@ impl ClientSdkGenerator {
         // Register custom functions
         tera.register_function("config", functions::FunctionConfig::new(config.clone()));
 
-        /// Register custom testers
+        // Register custom testers
         tera.register_tester("required", testers::is_required);
         tera.register_tester("not_required", testers::is_not_required);
 

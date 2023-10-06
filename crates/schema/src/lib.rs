@@ -11,7 +11,6 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use url::quirks::host;
 use url::Url;
 use version::{Versions};
 
@@ -150,9 +149,7 @@ impl TelemetrySchema {
                 Ok(schema)
             }
             "file" => {
-                let domain = schema_url.domain();
                 let path = schema_url.path();
-                let host = schema_url.host();
                 println!("Loading schema from file: {}", path);
                 Self::load_from_file(path)
             }

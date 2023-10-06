@@ -249,10 +249,10 @@ impl Attribute {
             Attribute::ResourceRef { tags: tags_resource, .. } => {
                 *tags_resource = tags.clone();
             }
-            Attribute::SpanRef { span_ref, tags } => {
+            Attribute::SpanRef { tags, .. } => {
                 *tags = tags.clone();
             }
-            Attribute::EventRef { event_ref, tags } => {
+            Attribute::EventRef { tags, .. } => {
                 *tags = tags.clone();
             }
         }
@@ -349,7 +349,7 @@ impl Attribute {
             }
             Attribute::Id { id, .. } => {
                 Err(Error::InvalidAttribute {
-                    id: "".into(),
+                    id: id.clone(),
                     error: "Cannot resolve an attribute from a non-reference attribute.".into(),
                 })
             }

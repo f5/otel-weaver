@@ -212,7 +212,6 @@ struct AttributeToResolve {
     path_or_url: String,
     group_id: String,
     r#ref: String,
-    attribute: Attribute,
 }
 
 impl SemConvCatalog {
@@ -482,7 +481,6 @@ impl SemConvCatalog {
                         path_or_url: path_or_url.clone(),
                         group_id: group_id.clone(),
                         r#ref: r#ref.clone(),
-                        attribute: attr.clone(),
                     });
                     let _ = attributes_in_group.insert(r#ref.clone());
                 }

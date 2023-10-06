@@ -2,8 +2,6 @@
 
 //! Custom Tera filters
 
-use std::borrow::Cow;
-use std::clone;
 use std::collections::HashMap;
 
 use tera::{Filter, Result, try_get_value, Value};
@@ -30,7 +28,7 @@ impl CaseConverter {
 /// Filter to convert a string to a specific case.
 impl Filter for CaseConverter {
     /// Convert a string to a specific case.
-    fn filter(&self, value: &Value, args: &HashMap<String, Value>) -> Result<Value> {
+    fn filter(&self, value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
         let text = try_get_value!(self.filter_name, "value", String, value);
         Ok(Value::String(self.case.convert(&text)))
     }
@@ -141,7 +139,7 @@ pub struct TypeMapping {
 
 impl Filter for TypeMapping {
     /// Map an OTel type to a language type.
-    fn filter(&self, value: &Value, args: &HashMap<String, Value>) -> Result<Value> {
+    fn filter(&self, value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
         let otel_type = try_get_value!("type_mapping", "value", String, value);
 
         match self.type_mapping.get(&otel_type) {
@@ -197,14 +195,4 @@ pub fn comment(value: &Value, ctx: &HashMap<String, Value>) -> Result<Value> {
         comments.push_str(line.as_ref());
     }
     Ok(Value::String(comments))
-}
-
-
-
-fn uppercase_first_letter(s: &str) -> String {
-    let mut c = s.chars();
-    match c.next() {
-        None => String::new(),
-        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-    }
 }

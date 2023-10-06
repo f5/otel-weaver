@@ -6,7 +6,6 @@
 #![deny(clippy::print_stdout)]
 #![deny(clippy::print_stderr)]
 
-use std::{clone, iter};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 

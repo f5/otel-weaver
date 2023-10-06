@@ -2,9 +2,8 @@
 
 //! Custom Tera functions
 
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::sync::{Arc, LockResult, Mutex};
+use std::sync::{Arc, Mutex};
 use tera::{Function, Value};
 use tera::Result;
 use crate::config::DynamicGlobalConfig;
