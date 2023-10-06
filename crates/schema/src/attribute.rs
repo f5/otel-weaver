@@ -240,7 +240,7 @@ impl From<&semconv::attribute::Attribute> for Attribute {
 }
 
 /// Convert a slice of semantic convention attributes to a vector of schema attributes.
-pub fn from_semconv_attributes(attrs: &[semconv::attribute::Attribute]) -> Vec<Attribute> {
+pub fn to_schema_attributes(attrs: &[semconv::attribute::Attribute]) -> Vec<Attribute> {
     attrs.iter().map(|attr| attr.into()).collect()
 }
 

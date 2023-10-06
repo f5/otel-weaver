@@ -5,7 +5,7 @@
 use crate::attribute::{merge_attributes, resolve_attributes};
 use crate::Error;
 use logger::Logger;
-use schema::attribute::from_semconv_attributes;
+use schema::attribute::to_schema_attributes;
 use schema::metric_group::Metric;
 use schema::schema_spec::SchemaSpec;
 use schema::univariate_metric::UnivariateMetric;
@@ -39,7 +39,7 @@ pub fn resolve_metrics(
                 )?;
                 if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
                     let mut inherited_attrs =
-                        from_semconv_attributes(&referenced_metric.attributes);
+                        to_schema_attributes(&referenced_metric.attributes);
                     inherited_attrs = resolve_attributes(
                         &inherited_attrs,
                         &sem_conv_catalog,

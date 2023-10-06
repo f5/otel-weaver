@@ -7,13 +7,13 @@
 //! can be found [here](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md).
 
 #![deny(
-    missing_docs,
-    clippy::print_stdout,
-    unstable_features,
-    unused_import_braces,
-    unused_qualifications,
-    unused_results,
-    unused_extern_crates
+missing_docs,
+clippy::print_stdout,
+unstable_features,
+unused_import_braces,
+unused_qualifications,
+unused_results,
+unused_extern_crates
 )]
 
 use std::collections::{HashMap, HashSet};
@@ -208,7 +208,15 @@ pub struct ResolverWarning {
     pub error: Error,
 }
 
+/// Structure to keep track of the source of the attribute to resolve.
 struct AttributeToResolve {
+    path_or_url: String,
+    group_id: String,
+    r#ref: String,
+}
+
+/// Structure to keep track of the source of the metric to resolve.
+struct MetricToResolve {
     path_or_url: String,
     group_id: String,
     r#ref: String,
@@ -348,7 +356,11 @@ impl SemConvCatalog {
 
                         if let Some(r#ref) = group.extends.as_ref() {
                             let prev_val =
-                                metrics_to_resolve.insert(metric_name.clone(), r#ref.clone());
+                                metrics_to_resolve.insert(metric_name.clone(), MetricToResolve {
+                                    path_or_url: path_or_url.to_string(),
+                                    group_id: group.id.clone(),
+                                    r#ref: r#ref.clone(),
+                                });
                             if prev_val.is_some() {
                                 return Err(Error::DuplicateMetricName {
                                     path_or_url: path_or_url.to_string(),
@@ -386,13 +398,31 @@ impl SemConvCatalog {
         }
 
         // Resolve all the metrics with an `extends` field.
-        for (metric_name, r#ref) in metrics_to_resolve {
-            let referenced_metric = self.all_metrics.get(&r#ref).cloned();
-            if let Some(referenced_metric) = referenced_metric {
-                let _ = self.all_metrics.get_mut(&metric_name).map(|metric| {
-                    metric
-                        .attributes
-                        .extend(referenced_metric.attributes.iter().cloned());
+        for (metric_name, metric_to_resolve) in metrics_to_resolve {
+            let group_ids = self.attr_grp_group_attributes.get(&metric_to_resolve.r#ref);
+            if let Some(group_ids) = group_ids {
+                if let Some(metric) = self.all_metrics.get_mut(&metric_name) {
+                    let mut inherited_attributes = vec![];
+                    for attr_id in group_ids.ids.iter() {
+                        if let Some(attr) = self.all_attributes.get(attr_id) {
+                            // Note: we only keep the last attribute definition for attributes that
+                            // are defined multiple times in the group.
+                            inherited_attributes.push(attr.clone());
+                        }
+                    }
+                    metric.attributes.extend(inherited_attributes.iter().cloned());
+                } else {
+                    return Err(Error::InvalidMetric {
+                        path_or_url: metric_to_resolve.path_or_url,
+                        group_id: metric_to_resolve.group_id,
+                        error: format!("The metric '{}' doesn't exist", metric_name),
+                    });
+                }
+            } else {
+                return Err(Error::InvalidMetric {
+                    path_or_url: metric_to_resolve.path_or_url,
+                    group_id: metric_to_resolve.group_id,
+                    error: format!("The reference `{}` specified in the `extends` field of the '{}' metric could not be resolved", metric_to_resolve.r#ref, metric_name),
                 });
             }
         }
