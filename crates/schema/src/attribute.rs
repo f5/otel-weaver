@@ -90,6 +90,39 @@ pub enum Attribute {
         #[serde(skip_serializing_if = "Option::is_none")]
         tags: Option<Tags>,
     },
+    /// Reference to a span group, i.e. a group of attributes used in the context of
+    /// a span.
+    ///
+    /// `span_ref` MUST have an id of an existing span.
+    SpanRef {
+        /// Reference an existing span.
+        span_ref: String,
+        /// A set of tags for the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
+    },
+    /// Reference to a resource group, i.e. a group of attributes used in the context of
+    /// a resource.
+    ///
+    /// `resource_ref` MUST have an id of an existing resource.
+    ResourceRef {
+        /// Reference an existing resource.
+        resource_ref: String,
+        /// A set of tags for the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
+    },
+    /// Reference to an event group, i.e. a group of attributes used in the context of
+    /// an event.
+    ///
+    /// `event_ref` MUST have an id of an existing event.
+    EventRef {
+        /// Reference an existing event.
+        event_ref: String,
+        /// A set of tags for the attribute.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tags: Option<Tags>,
+    },
     /// Attribute definition.
     Id {
         /// String that uniquely identifies the attribute.
@@ -213,6 +246,15 @@ impl Attribute {
             Attribute::AttributeGroupRef { tags: tags_group, .. } => {
                 *tags_group = tags.clone();
             }
+            Attribute::ResourceRef { tags: tags_resource, .. } => {
+                *tags_resource = tags.clone();
+            }
+            Attribute::SpanRef { span_ref, tags } => {
+                *tags = tags.clone();
+            }
+            Attribute::EventRef { event_ref, tags } => {
+                *tags = tags.clone();
+            }
         }
     }
 
@@ -315,6 +357,24 @@ impl Attribute {
                 Err(Error::InvalidAttribute {
                     id: attribute_group_ref.clone(),
                     error: "Cannot resolve an attribute from an attribute group reference.".into(),
+                })
+            }
+            Attribute::SpanRef { span_ref, .. } => {
+                Err(Error::InvalidAttribute {
+                    id: span_ref.clone(),
+                    error: "Cannot resolve an attribute from a span reference.".into(),
+                })
+            }
+            Attribute::ResourceRef { resource_ref, .. } => {
+                Err(Error::InvalidAttribute {
+                    id: resource_ref.clone(),
+                    error: "Cannot resolve an attribute from a resource reference.".into(),
+                })
+            }
+            Attribute::EventRef { event_ref, .. } => {
+                Err(Error::InvalidAttribute {
+                    id: event_ref.clone(),
+                    error: "Cannot resolve an attribute from an event reference.".into(),
                 })
             }
         }

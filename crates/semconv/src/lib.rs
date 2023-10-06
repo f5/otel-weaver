@@ -98,6 +98,13 @@ pub enum Error {
         error: String,
     },
 
+    /// The attribute reference is not found.
+    #[error("Attribute reference `{r#ref}` not found.")]
+    AttributeNotFound {
+        /// The attribute reference.
+        r#ref: String,
+    },
+
     /// The semantic convention asset contains an invalid metric definition.
     #[error("Invalid metric definition detected while resolving {path_or_url:?}, group_id=`{group_id}`.\n{error:?}")]
     InvalidMetric {
@@ -385,9 +392,19 @@ impl SemConvCatalog {
     }
 
     /// Returns a map id -> attribute definition from an attribute group reference.
-    pub fn get_attributes(&self, attr_group_ref: &str) -> HashMap<&String, &Attribute> {
+    /// Or an error if the reference does not exist.
+    pub fn get_attributes(&self, r#ref: &str, r#type: group::ConvType) -> Result<HashMap<&String, &Attribute>, Error> {
         let mut attributes = HashMap::new();
-        if let Some(group_ids) = self.attr_grp_group_attributes.get(attr_group_ref) {
+        let group_ids = match r#type {
+            group::ConvType::AttributeGroup => self.attr_grp_group_attributes.get(r#ref),
+            group::ConvType::Span => self.span_group_attributes.get(r#ref),
+            group::ConvType::Event => self.event_group_attributes.get(r#ref),
+            group::ConvType::Metric => self.metric_group_attributes.get(r#ref),
+            group::ConvType::MetricGroup => self.metric_group_group_attributes.get(r#ref),
+            group::ConvType::Resource => self.resource_group_attributes.get(r#ref),
+            group::ConvType::Scope => panic!("Scope not implemented yet"),
+        };
+        if let Some(group_ids) = group_ids {
             for attr_id in group_ids.ids.iter() {
                 if let Some(attr) = self.all_attributes.get(attr_id) {
                     // Note: we only keep the last attribute definition for attributes that
@@ -395,8 +412,12 @@ impl SemConvCatalog {
                     _ = attributes.insert(attr_id, attr);
                 }
             }
+        } else {
+            return Err(Error::AttributeNotFound {
+                r#ref: r#ref.to_string(),
+            })
         }
-        attributes
+        Ok(attributes)
     }
 
     /// Returns a metric definition from its name or `None` if the

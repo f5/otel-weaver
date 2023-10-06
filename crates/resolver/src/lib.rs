@@ -16,8 +16,10 @@ use url::Url;
 use logger::Logger;
 use schema::attribute::{Attribute, from_semconv_attributes};
 use schema::metric_group::Metric;
+use schema::tags::Tags;
 pub use schema::TelemetrySchema;
 use schema::univariate_metric::UnivariateMetric;
+use semconv::group::ConvType;
 use semconv::ResolverConfig;
 use version::{VersionAttributeChanges, VersionChanges};
 
@@ -116,6 +118,11 @@ impl SchemaResolver {
         // Resolve the references to the semantic conventions.
         log.loading("Solving semantic convention references");
         if let Some(schema) = schema.schema.as_mut() {
+            // Resolve resource attributes
+            if let Some(res) = schema.resource.as_mut() {
+                res.attributes = Self::resolve_attributes(res.attributes.as_ref(), &sem_conv_catalog, version_changes.log_attribute_changes())?;
+            }
+
             // Resolve metrics and their attributes
             if let Some(metrics) = schema.resource_metrics.as_mut() {
                 metrics.attributes = Self::resolve_attributes(metrics.attributes.as_ref(), &sem_conv_catalog, version_changes.metric_attribute_changes())?;
@@ -187,11 +194,6 @@ impl SchemaResolver {
                     for link in span.links.iter_mut() {
                         link.attributes = Self::resolve_attributes(link.attributes.as_ref(), &sem_conv_catalog, version_changes.span_attribute_changes())?;
                     }
-                }
-            }
-            if let Some(events) = schema.resource_events.as_mut() {
-                for event in events.events.iter_mut() {
-                    event.attributes = Self::resolve_attributes(event.attributes.as_ref(), &sem_conv_catalog, version_changes.resource_attribute_changes())?;
                 }
             }
         }
@@ -270,13 +272,15 @@ impl SchemaResolver {
         Ok(sem_conv_catalog)
     }
 
-    /// Resolves a collection of attributes (i.e. `Attribute::Ref` and `Attribute::AttributeGroupRef`)
-    /// from the given semantic convention catalog and local attributes (i.e. `Attribute::Id`).
-    /// `Attribute::AttributeGroupRef` are first resolved, then `Attribute::Ref`, and finally
-    /// `Attribute::Id` are added.
-    /// An `Attribute::Ref` can override an attribute contains in an `Attribute::AttributeGroupRef`.
-    /// An `Attribute::Id` can override an attribute contains in an `Attribute::Ref` or an
-    /// `Attribute::AttributeGroupRef`.
+    /// Resolves a collection of attributes (i.e. `Attribute::Ref`, `Attribute::AttributeGroupRef`,
+    /// and `Attribute::SpanRef`) from the given semantic convention catalog and local attributes
+    /// (i.e. `Attribute::Id`).
+    /// `Attribute::AttributeGroupRef` are first resolved, then `Attribute::SpanRef`, then
+    /// `Attribute::Ref`, and finally `Attribute::Id` are added.
+    /// An `Attribute::Ref` can override an attribute contained in an `Attribute::AttributeGroupRef`
+    /// or an `Attribute::SpanRef`.
+    /// An `Attribute::Id` can override an attribute contains in an `Attribute::Ref`, an
+    /// `Attribute::AttributeGroupRef`, or an `Attribute::SpanRef`.
     ///
     /// Note: Version changes are used during the resolution process to determine the names of the
     /// attributes.
@@ -285,16 +289,56 @@ impl SchemaResolver {
         sem_conv_catalog: &semconv::SemConvCatalog,
         version_changes: impl VersionAttributeChanges,
     ) -> Result<Vec<Attribute>, Error> {
-        let mut resolved_attributes = HashMap::new();
+        let mut resolved_attrs = HashMap::new();
+        let mut copy_into_resolved_attrs = |attrs: HashMap<&String, &semconv::attribute::Attribute>, tags: &Option<Tags>| {
+            for (attr_id, attr) in attrs {
+                let mut attr: Attribute = attr.into();
+                attr.set_tags(tags);
+                resolved_attrs.insert(attr_id.clone(), attr);
+            }
+        };
 
         // Resolve `Attribute::AttributeGroupRef`
         for attribute in attributes.iter() {
             if let Attribute::AttributeGroupRef { attribute_group_ref, tags } = attribute {
-                for (attr_id, attr) in sem_conv_catalog.get_attributes(&attribute_group_ref) {
-                    let mut attr: Attribute = attr.into();
-                    attr.set_tags(tags);
-                    resolved_attributes.insert(attr_id.clone(), attr);
-                }
+                let attrs = sem_conv_catalog.get_attributes(&attribute_group_ref, ConvType::AttributeGroup).map_err(|e| Error::FailToResolveAttribute {
+                    id: attribute_group_ref.clone(),
+                    error: e.to_string(),
+                })?;
+                copy_into_resolved_attrs(attrs, tags);
+            }
+        }
+
+        // Resolve `Attribute::ResourceRef`
+        for attribute in attributes.iter() {
+            if let Attribute::ResourceRef { resource_ref, tags } = attribute {
+                let attrs = sem_conv_catalog.get_attributes(&resource_ref, ConvType::Resource).map_err(|e| Error::FailToResolveAttribute {
+                    id: resource_ref.clone(),
+                    error: e.to_string(),
+                })?;
+                copy_into_resolved_attrs(attrs, tags);
+            }
+        }
+
+        // Resolve `Attribute::SpanRef`
+        for attribute in attributes.iter() {
+            if let Attribute::SpanRef { span_ref, tags } = attribute {
+                let attrs = sem_conv_catalog.get_attributes(&span_ref, ConvType::Span).map_err(|e| Error::FailToResolveAttribute {
+                    id: span_ref.clone(),
+                    error: e.to_string(),
+                })?;
+                copy_into_resolved_attrs(attrs, tags);
+            }
+        }
+
+        // Resolve `Attribute::EventRef`
+        for attribute in attributes.iter() {
+            if let Attribute::EventRef { event_ref, tags } = attribute {
+                let attrs = sem_conv_catalog.get_attributes(&event_ref, ConvType::Event).map_err(|e| Error::FailToResolveAttribute {
+                    id: event_ref.clone(),
+                    error: e.to_string(),
+                })?;
+                copy_into_resolved_attrs(attrs, tags);
             }
         }
 
@@ -307,7 +351,7 @@ impl SchemaResolver {
                     id: r#ref.clone(),
                     error: e.to_string(),
                 })?;
-                resolved_attributes.insert(normalized_ref, resolved_attribute);
+                resolved_attrs.insert(normalized_ref, resolved_attribute);
             }
         }
 
@@ -315,11 +359,11 @@ impl SchemaResolver {
         // Note: any resolved attributes with the same id will be overridden.
         for attribute in attributes.iter() {
             if let Attribute::Id { id, .. } = attribute {
-                resolved_attributes.insert(id.clone(), attribute.clone());
+                resolved_attrs.insert(id.clone(), attribute.clone());
             }
         }
 
-        Ok(resolved_attributes.into_values().collect())
+        Ok(resolved_attrs.into_values().collect())
     }
 
     /// Merges the given main attributes with the inherited attributes.
@@ -331,6 +375,15 @@ impl SchemaResolver {
             Attribute::Id { id, .. } => id.clone(),
             Attribute::AttributeGroupRef { .. } => {
                 panic!("Attribute groups are not supported yet")
+            }
+            Attribute::SpanRef { .. } => {
+                panic!("Span references are not supported yet")
+            }
+            Attribute::ResourceRef { .. } => {
+                panic!("Resource references are not supported yet")
+            }
+            Attribute::EventRef { .. } => {
+                panic!("Event references are not supported yet")
             }
         }).collect::<HashSet<_>>();
 
@@ -348,6 +401,15 @@ impl SchemaResolver {
                 }
                 Attribute::AttributeGroupRef { .. } => {
                     panic!("Attribute groups are not supported yet")
+                }
+                Attribute::SpanRef { .. } => {
+                    panic!("Span references are not supported yet")
+                }
+                Attribute::ResourceRef { .. } => {
+                    panic!("Resource references are not supported yet")
+                }
+                Attribute::EventRef { .. } => {
+                    panic!("Event references are not supported yet")
                 }
             }
             merged_attrs.push(inherited_attr.clone());

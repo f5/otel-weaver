@@ -81,6 +81,8 @@ weaver languages
 - [OpenTelemetry Semantic Convention File Format](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md)
 
 ## ToDo
+- [ ] Support local/enterprise semantic convention.
+- [ ] Support multiple level of telemetry schema inheritance.
 - [ ] Generate code from the resolved schema.
 - [ ] Add support for group of attributes (in general and for metrics).
 - [ ] Generate a "transferable" schema from the resolved schema removing all redundancy and unused definitions. More specifically an attribute used multiple times in the schema must be defined globally at the top level of the schema and referenced from the places where it is used.
