@@ -37,12 +37,10 @@ pub fn instrument(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
         match metric_type.as_str() {
             "counter" | "gauge" | "histogram" => Ok(Value::String(metric_type.clone())),
             "updowncounter" => Ok(Value::String("up_down_counter".to_string())),
-            _ => {
-                Err(tera::Error::msg(format!(
-                    "Filter instrument: unknown metric instrument {}",
-                    metric_type
-                )))
-            }
+            _ => Err(tera::Error::msg(format!(
+                "Filter instrument: unknown metric instrument {}",
+                metric_type
+            ))),
         }
     } else {
         Err(tera::Error::msg(format!(
@@ -58,25 +56,22 @@ pub fn unique_attributes(value: &Value, _: &HashMap<String, Value>) -> Result<Va
     match value {
         Value::Array(values) => {
             for value in values {
-                match value {
-                    Value::Object(map) => {
-                        let attributes = map.get("attributes");
-                        if let Some(Value::Array(objects)) = attributes {
-                            for object in objects {
-                                if let Value::Object(map) = object {
-                                    let id = map.get("id");
-                                    if let Some(Value::String(id)) = id {
-                                        if unique_attributes.contains_key(id) {
-                                            // attribute already exists
-                                            continue;
-                                        }
-                                        unique_attributes.insert(id, object.clone());
+                if let Value::Object(map) = value {
+                    let attributes = map.get("attributes");
+                    if let Some(Value::Array(objects)) = attributes {
+                        for object in objects {
+                            if let Value::Object(map) = object {
+                                let id = map.get("id");
+                                if let Some(Value::String(id)) = id {
+                                    if unique_attributes.contains_key(id) {
+                                        // attribute already exists
+                                        continue;
                                     }
+                                    unique_attributes.insert(id, object.clone());
                                 }
                             }
                         }
                     }
-                    _ => {}
                 }
             }
         }
@@ -179,9 +174,8 @@ pub fn comment(value: &Value, ctx: &HashMap<String, Value>) -> Result<Value> {
                     Value::String(value) => wrap_comment(value, "", &mut lines),
                     Value::Array(values) => {
                         for value in values {
-                            match value {
-                                Value::String(value) => wrap_comment(value, "- ", &mut lines),
-                                _ => {}
+                            if let Value::String(value) = value {
+                                wrap_comment(value, "- ", &mut lines)
                             }
                         }
                     }

@@ -140,10 +140,10 @@ impl SchemaResolver {
         // Resolve the references to the semantic conventions.
         log.loading("Solving semantic convention references");
         if let Some(schema) = schema.schema.as_mut() {
-            resolve_resource(schema, &mut sem_conv_catalog, &version_changes)?;
-            resolve_metrics(schema, &mut sem_conv_catalog, &version_changes)?;
-            resolve_events(schema, &mut sem_conv_catalog, &version_changes)?;
-            resolve_spans(schema, &mut sem_conv_catalog, version_changes)?;
+            resolve_resource(schema, &sem_conv_catalog, &version_changes)?;
+            resolve_metrics(schema, &sem_conv_catalog, &version_changes)?;
+            resolve_events(schema, &sem_conv_catalog, &version_changes)?;
+            resolve_spans(schema, &sem_conv_catalog, version_changes)?;
         }
         log.success(&format!(
             "Resolved schema '{}'",

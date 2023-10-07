@@ -118,9 +118,8 @@ pub fn resolve_metrics(
                             return Err(Error::IncompatibleMetricAttributes {
                                 metric_group_ref: metrics.id.clone(),
                                 metric_ref: referenced_metric.name.clone(),
-                                error: format!(
-                                    "Some required attributes are missing in this metric"
-                                ),
+                                error: "Some required attributes are missing in this metric"
+                                    .to_string(),
                             });
                         }
 
@@ -150,7 +149,7 @@ pub fn resolve_metrics(
                 .into_iter()
                 .for_each(|attr| _ = metric_group_attrs.insert(attr.id(), attr));
 
-            metrics.attributes = metric_group_attrs.into_values().map(|attr| attr).collect();
+            metrics.attributes = metric_group_attrs.into_values().collect();
         }
     }
     Ok(())

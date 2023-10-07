@@ -118,13 +118,16 @@ pub enum Attribute {
 impl Attribute {
     /// Returns true if the attribute is required.
     pub fn is_required(&self) -> bool {
-        matches!(self, Attribute::Ref {
-                 requirement_level: Some(RequirementLevel::Basic(BasicRequirementLevel::Required)),
-                 ..
-             } | Attribute::Id {
-                 requirement_level: RequirementLevel::Basic(BasicRequirementLevel::Required),
-                 ..
-             })
+        matches!(
+            self,
+            Attribute::Ref {
+                requirement_level: Some(RequirementLevel::Basic(BasicRequirementLevel::Required)),
+                ..
+            } | Attribute::Id {
+                requirement_level: RequirementLevel::Basic(BasicRequirementLevel::Required),
+                ..
+            }
+        )
     }
 
     /// Returns the id of the attribute.

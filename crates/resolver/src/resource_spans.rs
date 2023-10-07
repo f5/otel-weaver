@@ -17,26 +17,26 @@ pub fn resolve_spans(
     if let Some(spans) = schema.resource_spans.as_mut() {
         spans.attributes = resolve_attributes(
             spans.attributes.as_ref(),
-            &sem_conv_catalog,
+            sem_conv_catalog,
             version_changes.span_attribute_changes(),
         )?;
         for span in spans.spans.iter_mut() {
             span.attributes = resolve_attributes(
                 span.attributes.as_ref(),
-                &sem_conv_catalog,
+                sem_conv_catalog,
                 version_changes.span_attribute_changes(),
             )?;
             for event in span.events.iter_mut() {
                 event.attributes = resolve_attributes(
                     event.attributes.as_ref(),
-                    &sem_conv_catalog,
+                    sem_conv_catalog,
                     version_changes.span_attribute_changes(),
                 )?;
             }
             for link in span.links.iter_mut() {
                 link.attributes = resolve_attributes(
                     link.attributes.as_ref(),
-                    &sem_conv_catalog,
+                    sem_conv_catalog,
                     version_changes.span_attribute_changes(),
                 )?;
             }

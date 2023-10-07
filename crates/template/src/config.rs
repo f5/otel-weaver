@@ -3,7 +3,7 @@
 //! Configuration for the template crate.
 
 use std::collections::HashMap;
-use std::path::{Path};
+use std::path::Path;
 
 use convert_case::{Case, Casing};
 use serde::Deserialize;
@@ -13,6 +13,7 @@ use crate::Error::InvalidConfigFile;
 
 /// Case convention for naming of functions and structs.
 #[derive(Deserialize, Debug)]
+#[allow(clippy::enum_variant_names)]
 pub enum CaseConvention {
     #[serde(rename = "lowercase")]
     LowerCase,

@@ -154,7 +154,7 @@ impl ClientSdkGenerator {
                     .to_str()
                     .ok_or(InvalidTemplateFile(tmpl_file_path.clone()))?;
 
-                match tmpl_file_path.file_stem().map(|s| s.to_str()).flatten() {
+                match tmpl_file_path.file_stem().and_then(|s| s.to_str()) {
                     Some("univariate_metric") => {
                         self.process_univariate_metrics(
                             log,

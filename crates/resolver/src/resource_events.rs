@@ -11,7 +11,7 @@ use version::VersionChanges;
 /// Resolves resource events and their attributes.
 pub fn resolve_events(
     schema: &mut SchemaSpec,
-    sem_conv_catalog: &mut SemConvCatalog,
+    sem_conv_catalog: &SemConvCatalog,
     version_changes: &VersionChanges,
 ) -> Result<(), Error> {
     if let Some(events) = schema.resource_events.as_mut() {
