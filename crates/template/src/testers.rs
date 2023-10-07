@@ -5,29 +5,23 @@
 use tera::Value;
 
 pub fn is_required(value: Option<&Value>, _args: &[Value]) -> tera::Result<bool> {
-    match value {
-        Some(Value::Object(map)) => {
-            if let Some(Value::String(req_level)) = map.get("requirement_level") {
-                if req_level == "required" {
-                    return Ok(true);
-                }
+    if let Some(Value::Object(map)) = value {
+        if let Some(Value::String(req_level)) = map.get("requirement_level") {
+            if req_level == "required" {
+                return Ok(true);
             }
         }
-        _ => {}
     }
-    return Ok(false);
+    Ok(false)
 }
 
 pub fn is_not_required(value: Option<&Value>, _args: &[Value]) -> tera::Result<bool> {
-    match value {
-        Some(Value::Object(map)) => {
-            if let Some(Value::String(req_level)) = map.get("requirement_level") {
-                if req_level == "required" {
-                    return Ok(false);
-                }
+    if let Some(Value::Object(map)) = value {
+        if let Some(Value::String(req_level)) = map.get("requirement_level") {
+            if req_level == "required" {
+                return Ok(false);
             }
         }
-        _ => {}
     }
-    return Ok(true);
+    Ok(true)
 }

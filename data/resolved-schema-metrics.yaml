@@ -4,22 +4,13 @@ schema_url: https://mycompany.com/schemas/1.0.0
 schema:
   resource:
     attributes:
-    - id: os.name
+    - id: os.build_id
       type: string
-      brief: Human readable operating system name.
+      brief: Unique identifier for a particular build or compilation of the operating system.
       examples:
-      - iOS
-      - Android
-      - Ubuntu
-      requirement_level: recommended
-      note: ''
-    - id: os.description
-      type: string
-      brief: |
-        Human readable (not intended to be parsed) OS version information, like e.g. reported by `ver` or `lsb_release -a` commands.
-      examples:
-      - Microsoft Windows [Version 10.0.18363.778]
-      - Ubuntu 18.04.1 LTS
+      - TQ3C.230805.001.B2
+      - '20E247'
+      - '22621'
       requirement_level: recommended
       note: ''
     - id: os.version
@@ -29,15 +20,6 @@ schema:
       examples:
       - 14.2.1
       - 18.04.1
-      requirement_level: recommended
-      note: ''
-    - id: os.build_id
-      type: string
-      brief: Unique identifier for a particular build or compilation of the operating system.
-      examples:
-      - TQ3C.230805.001.B2
-      - '20E247'
-      - '22621'
       requirement_level: recommended
       note: ''
     - id: os.type
@@ -91,6 +73,24 @@ schema:
       brief: The operating system type.
       requirement_level: required
       note: ''
+    - id: os.name
+      type: string
+      brief: Human readable operating system name.
+      examples:
+      - iOS
+      - Android
+      - Ubuntu
+      requirement_level: recommended
+      note: ''
+    - id: os.description
+      type: string
+      brief: |
+        Human readable (not intended to be parsed) OS version information, like e.g. reported by `ver` or `lsb_release -a` commands.
+      examples:
+      - Microsoft Windows [Version 10.0.18363.778]
+      - Ubuntu 18.04.1 LTS
+      requirement_level: recommended
+      note: ''
   instrumentation_library:
     name: my-service
     version: 1.0.0
@@ -107,6 +107,22 @@ schema:
       brief: Duration of HTTP server requests.
       note: ''
       attributes:
+      - id: network.protocol.version
+        type: string
+        brief: Version of the protocol specified in `network.protocol.name`.
+        examples: 3.1.1
+        requirement_level: recommended
+        note: |
+          `network.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
+      - id: server.address
+        type: string
+        brief: Server address - domain name if available without reverse DNS lookup, otherwise IP address or Unix domain socket name.
+        examples:
+        - example.com
+        requirement_level: recommended
+        note: |
+          When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent
+          the server address behind any intermediaries (e.g. proxies) if it's available.
       - id: network.protocol.name
         type: string
         brief: '[OSI application layer](https://osi-model.com/application-layer/) or non-OSI equivalent.'
@@ -116,21 +132,6 @@ schema:
         - mqtt
         requirement_level: recommended
         note: The value SHOULD be normalized to lowercase.
-      - id: http.response.status_code
-        type: int
-        brief: '[HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).'
-        examples:
-        - 200
-        requirement_level:
-          conditionally_required: If and only if one was received/sent.
-        note: ''
-      - id: network.protocol.version
-        type: string
-        brief: Version of the protocol specified in `network.protocol.name`.
-        examples: 3.1.1
-        requirement_level: recommended
-        note: |
-          `network.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
       - id: server.port
         type: int
         brief: Server port number
@@ -141,6 +142,14 @@ schema:
         requirement_level: recommended
         note: |
           When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries (e.g. proxies) if it's available.
+      - id: http.response.status_code
+        type: int
+        brief: '[HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).'
+        examples:
+        - 200
+        requirement_level:
+          conditionally_required: If and only if one was received/sent.
+        note: ''
       - id: http.request.method
         type:
           allow_custom_values: true
@@ -206,30 +215,20 @@ schema:
           HTTP method names are case-sensitive and `http.request.method` attribute value MUST match a known HTTP method name exactly.
           Instrumentations for specific web frameworks that consider HTTP methods to be case insensitive, SHOULD populate a canonical equivalent.
           Tracing instrumentations that do so, MUST also set `http.request.method_original` to the original value.
-      - id: server.address
-        type: string
-        brief: Server address - domain name if available without reverse DNS lookup, otherwise IP address or Unix domain socket name.
-        examples:
-        - example.com
-        requirement_level: recommended
-        note: |
-          When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent
-          the server address behind any intermediaries (e.g. proxies) if it's available.
       instrument: histogram
       unit: s
     metric_groups:
     - id: http
       attributes:
-      - id: server.port
-        type: int
-        brief: Server port number
+      - id: server.address
+        type: string
+        brief: Server address - domain name if available without reverse DNS lookup, otherwise IP address or Unix domain socket name.
         examples:
-        - 80
-        - 8080
-        - 443
+        - example.com
         requirement_level: recommended
         note: |
-          When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries (e.g. proxies) if it's available.
+          When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent
+          the server address behind any intermediaries (e.g. proxies) if it's available.
       - id: http.response.status_code
         type: int
         brief: '[HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).'
@@ -238,15 +237,6 @@ schema:
         requirement_level:
           conditionally_required: If and only if one was received/sent.
         note: ''
-      - id: network.protocol.name
-        type: string
-        brief: '[OSI application layer](https://osi-model.com/application-layer/) or non-OSI equivalent.'
-        examples:
-        - amqp
-        - http
-        - mqtt
-        requirement_level: recommended
-        note: The value SHOULD be normalized to lowercase.
       - id: http.request.method
         type:
           allow_custom_values: true
@@ -319,15 +309,25 @@ schema:
         requirement_level: recommended
         note: |
           `network.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
-      - id: server.address
-        type: string
-        brief: Server address - domain name if available without reverse DNS lookup, otherwise IP address or Unix domain socket name.
+      - id: server.port
+        type: int
+        brief: Server port number
         examples:
-        - example.com
+        - 80
+        - 8080
+        - 443
         requirement_level: recommended
         note: |
-          When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent
-          the server address behind any intermediaries (e.g. proxies) if it's available.
+          When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries (e.g. proxies) if it's available.
+      - id: network.protocol.name
+        type: string
+        brief: '[OSI application layer](https://osi-model.com/application-layer/) or non-OSI equivalent.'
+        examples:
+        - amqp
+        - http
+        - mqtt
+        requirement_level: recommended
+        note: The value SHOULD be normalized to lowercase.
       metrics:
       - name: http.server.request.duration
         brief: Duration of HTTP server requests.
@@ -436,24 +436,24 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            messaging.message_payload_size_bytes: messaging.message.payload_size_bytes
-            messaging.rocketmq.message_keys: messaging.rocketmq.message.keys
-            messaging.kafka.consumer_group: messaging.kafka.consumer.group
-            messaging.protocol_version: net.app.protocol.version
-            messaging.consumer_id: messaging.consumer.id
-            messaging.message_payload_compressed_size_bytes: messaging.message.payload_compressed_size_bytes
-            messaging.temp_destination: messaging.destination.temporary
-            messaging.destination: messaging.destination.name
-            messaging.rabbitmq.routing_key: messaging.rabbitmq.destination.routing_key
-            messaging.protocol: net.app.protocol.name
             messaging.kafka.tombstone: messaging.kafka.message.tombstone
-            messaging.kafka.partition: messaging.kafka.destination.partition
-            messaging.rocketmq.message_tag: messaging.rocketmq.message.tag
+            messaging.rabbitmq.routing_key: messaging.rabbitmq.destination.routing_key
             messaging.rocketmq.message_type: messaging.rocketmq.message.type
-            messaging.destination_kind: messaging.destination.kind
+            messaging.destination: messaging.destination.name
+            messaging.message_payload_size_bytes: messaging.message.payload_size_bytes
+            messaging.protocol_version: net.app.protocol.version
+            messaging.message_payload_compressed_size_bytes: messaging.message.payload_compressed_size_bytes
+            messaging.rocketmq.message_keys: messaging.rocketmq.message.keys
+            messaging.temp_destination: messaging.destination.temporary
+            messaging.protocol: net.app.protocol.name
+            messaging.consumer_id: messaging.consumer.id
+            messaging.kafka.consumer_group: messaging.kafka.consumer.group
             messaging.kafka.message_key: messaging.kafka.message.key
+            messaging.destination_kind: messaging.destination.kind
+            messaging.rocketmq.message_tag: messaging.rocketmq.message.tag
             messaging.message_id: messaging.message.id
             messaging.conversation_id: messaging.message.conversation_id
+            messaging.kafka.partition: messaging.kafka.destination.partition
     resources: null
   1.18.0:
     metrics: null
@@ -486,8 +486,8 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            net.app.protocol.name: net.protocol.name
             net.app.protocol.version: net.protocol.version
+            net.app.protocol.name: net.protocol.name
     resources: null
   1.21.0:
     metrics:
@@ -506,27 +506,27 @@ versions:
       - rename_attributes:
           attribute_map:
             net.host.port: server.port
+            net.sock.host.addr: server.socket.address
             net.sock.host.port: server.socket.port
             net.sock.peer.name: server.socket.domain
-            net.host.name: server.address
             http.client_ip: client.address
-            net.sock.host.addr: server.socket.address
+            net.host.name: server.address
       - rename_attributes:
           attribute_map:
-            net.host.carrier.mnc: network.carrier.mnc
-            net.protocol.name: network.protocol.name
-            net.host.carrier.icc: network.carrier.icc
             net.host.connection.subtype: network.connection.subtype
             net.host.connection.type: network.connection.type
             net.host.carrier.mcc: network.carrier.mcc
+            net.host.carrier.mnc: network.carrier.mnc
             net.host.carrier.name: network.carrier.name
             net.protocol.version: network.protocol.version
+            net.protocol.name: network.protocol.name
+            net.host.carrier.icc: network.carrier.icc
       - rename_attributes:
           attribute_map:
             http.scheme: url.scheme
             http.url: url.full
             http.request_content_length: http.request.body.size
-            http.response_content_length: http.response.body.size
-            http.status_code: http.response.status_code
             http.method: http.request.method
+            http.status_code: http.response.status_code
+            http.response_content_length: http.response.body.size
     resources: null

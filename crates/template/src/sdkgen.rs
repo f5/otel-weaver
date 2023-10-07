@@ -3,7 +3,7 @@
 //! Client SDK generator
 
 use std::error::Error;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::{fs, process};
 
@@ -208,7 +208,7 @@ impl ClientSdkGenerator {
         tmpl_file: &str,
         context: &Context,
     ) -> Result<String, crate::Error> {
-        let generated_code = self.tera.render(tmpl_file, &context).unwrap_or_else(|err| {
+        let generated_code = self.tera.render(tmpl_file, context).unwrap_or_else(|err| {
             log.newline(1);
             log.error(&format!("{}", err));
             let mut cause = err.source();
@@ -224,7 +224,7 @@ impl ClientSdkGenerator {
 
     /// Save the generated code to the output directory.
     fn save_generated_code(
-        output_dir: &PathBuf,
+        output_dir: &Path,
         relative_path: PathBuf,
         generated_code: String,
     ) -> Result<PathBuf, crate::Error> {
@@ -255,9 +255,9 @@ impl ClientSdkGenerator {
         &self,
         log: &mut Logger,
         tmpl_file: &str,
-        schema_path: &PathBuf,
+        schema_path: &Path,
         schema: &TelemetrySchema,
-        output_dir: &PathBuf,
+        output_dir: &Path,
     ) -> Result<(), crate::Error> {
         if let Some(schema_spec) = &schema.schema {
             if let Some(metrics) = schema_spec.resource_metrics.as_ref() {
@@ -265,7 +265,7 @@ impl ClientSdkGenerator {
                     if let UnivariateMetric::Metric { name, .. } = metric {
                         let context = &Context::from_serialize(metric).map_err(|e| {
                             InvalidTelemetrySchema {
-                                schema: schema_path.clone(),
+                                schema: schema_path.to_path_buf(),
                                 error: format!("{}", e),
                             }
                         })?;
@@ -299,7 +299,7 @@ impl ClientSdkGenerator {
 
                         // Save the generated code to the output directory
                         let generated_file =
-                            Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                            Self::save_generated_code(output_dir, relative_path, generated_code)?;
                         log.success(&format!("Generated file {:?}", generated_file));
                     }
                 }
@@ -313,16 +313,16 @@ impl ClientSdkGenerator {
         &self,
         log: &mut Logger,
         tmpl_file: &str,
-        schema_path: &PathBuf,
+        schema_path: &Path,
         schema: &TelemetrySchema,
-        output_dir: &PathBuf,
+        output_dir: &Path,
     ) -> Result<(), crate::Error> {
         if let Some(schema_spec) = &schema.schema {
             if let Some(metrics) = schema_spec.resource_metrics.as_ref() {
                 for metric in metrics.metric_groups.iter() {
                     let context =
                         &Context::from_serialize(metric).map_err(|e| InvalidTelemetrySchema {
-                            schema: schema_path.clone(),
+                            schema: schema_path.to_path_buf(),
                             error: format!("{}", e),
                         })?;
 
@@ -358,7 +358,7 @@ impl ClientSdkGenerator {
 
                     // Save the generated code to the output directory
                     let generated_file =
-                        Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                        Self::save_generated_code(output_dir, relative_path, generated_code)?;
                     log.success(&format!("Generated file {:?}", generated_file));
                 }
             }
@@ -371,16 +371,16 @@ impl ClientSdkGenerator {
         &self,
         log: &mut Logger,
         tmpl_file: &str,
-        schema_path: &PathBuf,
+        schema_path: &Path,
         schema: &TelemetrySchema,
-        output_dir: &PathBuf,
+        output_dir: &Path,
     ) -> Result<(), crate::Error> {
         if let Some(schema_spec) = &schema.schema {
             if let Some(logs) = schema_spec.resource_events.as_ref() {
                 for log_record in logs.events.iter() {
                     let context = &Context::from_serialize(log_record).map_err(|e| {
                         InvalidTelemetrySchema {
-                            schema: schema_path.clone(),
+                            schema: schema_path.to_path_buf(),
                             error: format!("{}", e),
                         }
                     })?;
@@ -417,7 +417,7 @@ impl ClientSdkGenerator {
 
                     // Save the generated code to the output directory
                     let generated_file =
-                        Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                        Self::save_generated_code(output_dir, relative_path, generated_code)?;
                     log.success(&format!("Generated file {:?}", generated_file));
                 }
             }
@@ -430,16 +430,16 @@ impl ClientSdkGenerator {
         &self,
         log: &mut Logger,
         tmpl_file: &str,
-        schema_path: &PathBuf,
+        schema_path: &Path,
         schema: &TelemetrySchema,
-        output_dir: &PathBuf,
+        output_dir: &Path,
     ) -> Result<(), crate::Error> {
         if let Some(schema_spec) = &schema.schema {
             if let Some(spans) = schema_spec.resource_spans.as_ref() {
                 for span in spans.spans.iter() {
                     let context =
                         &Context::from_serialize(span).map_err(|e| InvalidTelemetrySchema {
-                            schema: schema_path.clone(),
+                            schema: schema_path.to_path_buf(),
                             error: format!("{}", e),
                         })?;
 
@@ -472,7 +472,7 @@ impl ClientSdkGenerator {
 
                     // Save the generated code to the output directory
                     let generated_file =
-                        Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                        Self::save_generated_code(output_dir, relative_path, generated_code)?;
                     log.success(&format!("Generated file {:?}", generated_file));
                 }
             }

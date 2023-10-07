@@ -11,7 +11,7 @@ use version::VersionChanges;
 /// Resolves resource spans in the given schema.
 pub fn resolve_spans(
     schema: &mut SchemaSpec,
-    sem_conv_catalog: &mut SemConvCatalog,
+    sem_conv_catalog: &SemConvCatalog,
     version_changes: VersionChanges,
 ) -> Result<(), Error> {
     if let Some(spans) = schema.resource_spans.as_mut() {

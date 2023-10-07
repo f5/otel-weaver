@@ -18,7 +18,7 @@ pub fn resolve_resource(
     if let Some(res) = schema.resource.as_mut() {
         res.attributes = resolve_attributes(
             res.attributes.as_ref(),
-            &sem_conv_catalog,
+            sem_conv_catalog,
             version_changes.log_attribute_changes(),
         )?;
     }

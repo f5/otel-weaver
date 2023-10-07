@@ -3,7 +3,7 @@
 //! Configuration for the template crate.
 
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path};
 
 use convert_case::{Case, Casing};
 use serde::Deserialize;
@@ -71,7 +71,7 @@ impl Default for CaseConvention {
 
 impl CaseConvention {
     pub fn convert(&self, text: &str) -> String {
-        let text = text.replace(".", "_");
+        let text = text.replace('.', "_");
         match self {
             CaseConvention::LowerCase => text.to_case(Case::Lower),
             CaseConvention::UpperCase => text.to_case(Case::Upper),
@@ -86,7 +86,7 @@ impl CaseConvention {
 }
 
 impl LanguageConfig {
-    pub fn try_new(lang_path: &PathBuf) -> Result<LanguageConfig, Error> {
+    pub fn try_new(lang_path: &Path) -> Result<LanguageConfig, Error> {
         let config_file = lang_path.join("config.yaml");
         if config_file.exists() {
             let reader =

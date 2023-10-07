@@ -35,20 +35,20 @@ impl Filter for CaseConverter {
 pub fn instrument(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
     if let Value::String(metric_type) = value {
         match metric_type.as_str() {
-            "counter" | "gauge" | "histogram" => return Ok(Value::String(metric_type.clone())),
-            "updowncounter" => return Ok(Value::String("up_down_counter".to_string())),
+            "counter" | "gauge" | "histogram" => Ok(Value::String(metric_type.clone())),
+            "updowncounter" => Ok(Value::String("up_down_counter".to_string())),
             _ => {
-                return Err(tera::Error::msg(format!(
+                Err(tera::Error::msg(format!(
                     "Filter instrument: unknown metric instrument {}",
                     metric_type
                 )))
             }
         }
     } else {
-        return Err(tera::Error::msg(format!(
+        Err(tera::Error::msg(format!(
             "Filter instrument: expected a string, got {:?}",
             value
-        )));
+        )))
     }
 }
 

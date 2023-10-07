@@ -15,13 +15,13 @@ use version::VersionChanges;
 /// Resolves metrics and their attributes.
 pub fn resolve_metrics(
     schema: &mut SchemaSpec,
-    sem_conv_catalog: &mut SemConvCatalog,
+    sem_conv_catalog: &SemConvCatalog,
     version_changes: &VersionChanges,
 ) -> Result<(), Error> {
     if let Some(metrics) = schema.resource_metrics.as_mut() {
         metrics.attributes = resolve_attributes(
             metrics.attributes.as_ref(),
-            &sem_conv_catalog,
+            sem_conv_catalog,
             version_changes.metric_attribute_changes(),
         )?;
 
@@ -35,14 +35,14 @@ pub fn resolve_metrics(
             {
                 *attributes = resolve_attributes(
                     attributes,
-                    &sem_conv_catalog,
+                    sem_conv_catalog,
                     version_changes.metric_attribute_changes(),
                 )?;
                 if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
                     let mut inherited_attrs = to_schema_attributes(&referenced_metric.attributes);
                     inherited_attrs = resolve_attributes(
                         &inherited_attrs,
-                        &sem_conv_catalog,
+                        sem_conv_catalog,
                         version_changes.metric_attribute_changes(),
                     )?;
                     let merged_attrs = merge_attributes(attributes, &inherited_attrs);
@@ -74,7 +74,7 @@ pub fn resolve_metrics(
             // Resolve metric group attributes
             resolve_attributes(
                 metrics.attributes.as_ref(),
-                &sem_conv_catalog,
+                sem_conv_catalog,
                 version_changes.metric_attribute_changes(),
             )?
             .into_iter()
@@ -143,7 +143,7 @@ pub fn resolve_metrics(
 
             let all_shared_attributes = resolve_attributes(
                 &to_schema_attributes(&all_shared_attributes),
-                &sem_conv_catalog,
+                sem_conv_catalog,
                 version_changes.metric_attribute_changes(),
             )?;
             all_shared_attributes

@@ -17,13 +17,13 @@ pub fn resolve_events(
     if let Some(events) = schema.resource_events.as_mut() {
         events.attributes = resolve_attributes(
             events.attributes.as_ref(),
-            &sem_conv_catalog,
+            sem_conv_catalog,
             version_changes.log_attribute_changes(),
         )?;
         for event in events.events.iter_mut() {
             event.attributes = resolve_attributes(
                 event.attributes.as_ref(),
-                &sem_conv_catalog,
+                sem_conv_catalog,
                 version_changes.log_attribute_changes(),
             )?;
         }
