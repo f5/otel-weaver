@@ -6,6 +6,8 @@ _A Schema-Driven Client SDK Generator for OpenTelemetry_
 >
 > This project is a work in progress and is not ready for production use.
 
+![OTel Weaver Overview](docs/images/otel-weaver-overview.png)
+
 ## Usage
 
 Resolve a schema and display the result on the standard output or write it to a file
@@ -83,16 +85,15 @@ weaver languages
 ## ToDo
 - [ ] Support local/enterprise semantic convention.
 - [ ] Support multiple level of telemetry schema inheritance.
-- [ ] Detect unused semantic convention import.
+- [ ] Report unused semantic convention import.
 - [ ] Generate code from the resolved schema.
-- [ ] Add support for group of attributes (in general and for metrics).
+- [X] Add support for group of attributes (in general and for metrics).
 - [ ] Generate a "transferable" schema from the resolved schema removing all redundancy and unused definitions. More specifically an attribute used multiple times in the schema must be defined globally at the top level of the schema and referenced from the places where it is used.
 - [ ] Add support for `all` in telemetry schema versions section.
 - [ ] Add support for `span_events` in telemetry schema versions section.
 - [ ] Add support for `apply_to_spans` in telemetry schema versions section.
 - [ ] Add support for `apply_to_metrics` in telemetry schema metrics versions section.
 - [ ] Add support for `split` in telemetry schema metrics versions section.
-- [ ] Add support for group extends.
+- [X] Add support for group extends.
 - [ ] Add support for group constraints `any_of`, ...
-- [ ] Report unused semantic convention import.
 - [ ] Search engine for semantic convention catalog.

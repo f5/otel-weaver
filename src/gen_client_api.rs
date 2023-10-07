@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! Generate a client API (third party)
+//! Command to generate a client API (third party)
 
 use logger::Logger;
 use std::path::Path;

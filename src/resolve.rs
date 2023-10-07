@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! Resolve a schema file and print the result
+//! Command to resolve a schema file, then output and display the results on the console.
 
 use clap::Parser;
 use std::path::PathBuf;

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! A resolver that can be used to resolve telemetry schemas.
+//! This crate implements the process of reference resolution for telemetry schemas.
 
 #![deny(missing_docs)]
 #![deny(clippy::print_stdout)]

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! List of supported languages
+//! Command to list the supported languages
 
 use clap::Parser;
 use std::path::PathBuf;
