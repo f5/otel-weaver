@@ -130,7 +130,7 @@ impl TelemetrySchema {
         match schema_url.scheme() {
             "http" | "https" => {
                 // Create a content reader from the schema URL
-                let reader = ureq::get(&schema_url.to_string())
+                let reader = ureq::get(schema_url.as_ref())
                     .call()
                     .map_err(|e| Error::SchemaNotFound {
                         path_or_url: schema_url.to_string(),
@@ -150,7 +150,6 @@ impl TelemetrySchema {
             }
             "file" => {
                 let path = schema_url.path();
-                println!("Loading schema from file: {}", path);
                 Self::load_from_file(path)
             }
             _ => Err(Error::SchemaNotFound {

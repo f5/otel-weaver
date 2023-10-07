@@ -69,6 +69,17 @@ pub enum Error {
         /// The reference to the metric.
         r#ref: String,
     },
+
+    /// Metric attributes are incompatible within the metric group.
+    #[error("Metric attributes are incompatible within the metric group '{metric_group_ref}' for metric '{metric_ref}' (error: {error})")]
+    IncompatibleMetricAttributes {
+        /// The metric group reference.
+        metric_group_ref: String,
+        /// The reference to the metric.
+        metric_ref: String,
+        /// The error that occurred.
+        error: String,
+    },
 }
 
 impl SchemaResolver {
@@ -130,7 +141,7 @@ impl SchemaResolver {
         log.loading("Solving semantic convention references");
         if let Some(schema) = schema.schema.as_mut() {
             resolve_resource(schema, &mut sem_conv_catalog, &version_changes)?;
-            resolve_metrics(log, schema, &mut sem_conv_catalog, &version_changes)?;
+            resolve_metrics(schema, &mut sem_conv_catalog, &version_changes)?;
             resolve_events(schema, &mut sem_conv_catalog, &version_changes)?;
             resolve_spans(schema, &mut sem_conv_catalog, version_changes)?;
         }

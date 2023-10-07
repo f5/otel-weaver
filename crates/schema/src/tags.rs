@@ -54,7 +54,7 @@ impl Tags {
 /// is used to override the tag from `parent_tags`.
 pub fn merge_with_override(tags: Option<&Tags>, parent_tags: Option<&Tags>) -> Option<Tags> {
     match (tags, parent_tags) {
-        (Some(tags), Some(parent_tags)) => Some(tags.merge_with_override(&parent_tags)),
+        (Some(tags), Some(parent_tags)) => Some(tags.merge_with_override(parent_tags)),
         (Some(tags), None) => Some(tags.clone()),
         (None, Some(parent_tags)) => Some(parent_tags.clone()),
         (None, None) => None,

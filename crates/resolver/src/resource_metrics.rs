@@ -4,17 +4,16 @@
 
 use crate::attribute::{merge_attributes, resolve_attributes};
 use crate::Error;
-use logger::Logger;
 use schema::attribute::to_schema_attributes;
 use schema::metric_group::Metric;
 use schema::schema_spec::SchemaSpec;
 use schema::univariate_metric::UnivariateMetric;
 use semconv::SemConvCatalog;
+use std::collections::{HashMap, HashSet};
 use version::VersionChanges;
 
 /// Resolves metrics and their attributes.
 pub fn resolve_metrics(
-    log: &mut Logger,
     schema: &mut SchemaSpec,
     sem_conv_catalog: &mut SemConvCatalog,
     version_changes: &VersionChanges,
@@ -25,6 +24,8 @@ pub fn resolve_metrics(
             &sem_conv_catalog,
             version_changes.metric_attribute_changes(),
         )?;
+
+        // Resolve metrics (univariate)
         for metric in metrics.metrics.iter_mut() {
             if let UnivariateMetric::Ref {
                 r#ref,
@@ -38,8 +39,7 @@ pub fn resolve_metrics(
                     version_changes.metric_attribute_changes(),
                 )?;
                 if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
-                    let mut inherited_attrs =
-                        to_schema_attributes(&referenced_metric.attributes);
+                    let mut inherited_attrs = to_schema_attributes(&referenced_metric.attributes);
                     inherited_attrs = resolve_attributes(
                         &inherited_attrs,
                         &sem_conv_catalog,
@@ -62,24 +62,73 @@ pub fn resolve_metrics(
                 }
             }
         }
+
+        // Resolve metric groups (multivariate metrics).
+        // Attributes handling for the metrics present in the metric group:
+        // - If the metrics share the same set of require attributes then all the attributes are
+        // merged into the metric group attributes.
+        // - Otherwise, an error is returned.
         for metrics in metrics.metric_groups.iter_mut() {
-            metrics.attributes = resolve_attributes(
+            let mut metric_group_attrs = HashMap::new();
+
+            // Resolve metric group attributes
+            resolve_attributes(
                 metrics.attributes.as_ref(),
                 &sem_conv_catalog,
                 version_changes.metric_attribute_changes(),
-            )?;
-            for metric in metrics.metrics.iter_mut() {
+            )?
+            .into_iter()
+            .for_each(|attr| {
+                metric_group_attrs.insert(attr.id(), attr);
+            });
+
+            // Process each metric defined in the metric group.
+            let mut all_shared_attributes = vec![];
+            let mut required_shared_attributes = HashSet::new();
+            for (i, metric) in metrics.metrics.iter_mut().enumerate() {
                 if let Metric::Ref { r#ref, tags } = metric {
                     if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
                         let inherited_attrs = referenced_metric.attributes.clone();
-                        if !inherited_attrs.is_empty() {
-                            log.warn(&format!("Attributes inherited from the '{}' metric will be disregarded. Instead, the common attributes specified for the metric group '{}' will be utilized.", r#ref, metrics.id));
+
+                        // Initialize all/required_shared_attributes only if first metric.
+                        if i == 0 {
+                            all_shared_attributes = inherited_attrs.clone();
+                            all_shared_attributes
+                                .iter()
+                                .filter(|attr| attr.is_required())
+                                .for_each(|attr| {
+                                    required_shared_attributes.insert(attr.id());
+                                });
                         }
+
+                        let mut required_count = 0;
+                        for attr in inherited_attrs.iter() {
+                            if attr.is_required() {
+                                required_count += 1;
+                                if !required_shared_attributes.contains(&attr.id()) {
+                                    return Err(Error::IncompatibleMetricAttributes {
+                                        metric_group_ref: metrics.id.clone(),
+                                        metric_ref: referenced_metric.name.clone(),
+                                        error: format!("The attribute '{}' is required but not required in other metrics", attr.id()),
+                                    });
+                                }
+                            }
+                        }
+                        if required_count != required_shared_attributes.len() {
+                            return Err(Error::IncompatibleMetricAttributes {
+                                metric_group_ref: metrics.id.clone(),
+                                metric_ref: referenced_metric.name.clone(),
+                                error: format!(
+                                    "Some required attributes are missing in this metric"
+                                ),
+                            });
+                        }
+
                         *metric = Metric::Metric {
                             name: referenced_metric.name.clone(),
                             brief: referenced_metric.brief.clone(),
                             note: referenced_metric.note.clone(),
-                            attributes: metrics.attributes.clone(),
+                            attributes: vec![],
                             instrument: referenced_metric.instrument.clone(),
                             unit: referenced_metric.unit.clone(),
                             tags: tags.clone(),
@@ -91,6 +140,17 @@ pub fn resolve_metrics(
                     }
                 }
             }
+
+            let all_shared_attributes = resolve_attributes(
+                &to_schema_attributes(&all_shared_attributes),
+                &sem_conv_catalog,
+                version_changes.metric_attribute_changes(),
+            )?;
+            all_shared_attributes
+                .into_iter()
+                .for_each(|attr| _ = metric_group_attrs.insert(attr.id(), attr));
+
+            metrics.attributes = metric_group_attrs.into_values().map(|attr| attr).collect();
         }
     }
     Ok(())

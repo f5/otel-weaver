@@ -245,6 +245,21 @@ pub fn to_schema_attributes(attrs: &[semconv::attribute::Attribute]) -> Vec<Attr
 }
 
 impl Attribute {
+    /// Returns the id or the reference of the attribute.
+    pub fn id(&self) -> String {
+        match self {
+            Attribute::Ref { r#ref, .. } => r#ref.clone(),
+            Attribute::AttributeGroupRef {
+                attribute_group_ref,
+                ..
+            } => attribute_group_ref.clone(),
+            Attribute::SpanRef { span_ref, .. } => span_ref.clone(),
+            Attribute::ResourceRef { resource_ref, .. } => resource_ref.clone(),
+            Attribute::EventRef { event_ref, .. } => event_ref.clone(),
+            Attribute::Id { id, .. } => id.clone(),
+        }
+    }
+
     /// Sets the tags of the attribute.
     pub fn set_tags(&mut self, tags: &Option<Tags>) {
         match self {
@@ -314,7 +329,7 @@ impl Attribute {
                     let mut examples = examples.clone();
                     let mut requirement_level = requirement_level.clone();
                     let mut tag = tag.clone();
-                    let mut sampling_relevant = sampling_relevant.clone();
+                    let mut sampling_relevant = *sampling_relevant;
                     let mut note = note.clone();
                     let mut stability = stability.clone();
                     let mut deprecated = deprecated.clone();
@@ -334,7 +349,7 @@ impl Attribute {
                         tag = Some(tag_from_ref.clone());
                     }
                     if let Some(sampling_from_ref) = sampling_from_ref {
-                        sampling_relevant = Some(sampling_from_ref.clone());
+                        sampling_relevant = Some(*sampling_from_ref);
                     }
                     if let Some(note_from_ref) = note_from_ref {
                         note = note_from_ref.clone();
@@ -361,10 +376,10 @@ impl Attribute {
                         value: value_from_ref.clone(),
                     })
                 } else {
-                    return Err(Error::InvalidAttribute {
+                    Err(Error::InvalidAttribute {
                         id: r#ref.clone(),
                         error: "Cannot resolve an attribute from a semantic convention attribute reference.".into(),
-                    });
+                    })
                 }
             }
             Attribute::Id { id, .. } => Err(Error::InvalidAttribute {

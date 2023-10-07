@@ -44,7 +44,7 @@ pub fn resolve_attributes(
         } = attribute
         {
             let attrs = sem_conv_catalog
-                .get_attributes(&attribute_group_ref, ConvType::AttributeGroup)
+                .get_attributes(attribute_group_ref, ConvType::AttributeGroup)
                 .map_err(|e| Error::FailToResolveAttribute {
                     id: attribute_group_ref.clone(),
                     error: e.to_string(),
@@ -57,7 +57,7 @@ pub fn resolve_attributes(
     for attribute in attributes.iter() {
         if let Attribute::ResourceRef { resource_ref, tags } = attribute {
             let attrs = sem_conv_catalog
-                .get_attributes(&resource_ref, ConvType::Resource)
+                .get_attributes(resource_ref, ConvType::Resource)
                 .map_err(|e| Error::FailToResolveAttribute {
                     id: resource_ref.clone(),
                     error: e.to_string(),
@@ -70,7 +70,7 @@ pub fn resolve_attributes(
     for attribute in attributes.iter() {
         if let Attribute::SpanRef { span_ref, tags } = attribute {
             let attrs = sem_conv_catalog
-                .get_attributes(&span_ref, ConvType::Span)
+                .get_attributes(span_ref, ConvType::Span)
                 .map_err(|e| Error::FailToResolveAttribute {
                     id: span_ref.clone(),
                     error: e.to_string(),
@@ -83,7 +83,7 @@ pub fn resolve_attributes(
     for attribute in attributes.iter() {
         if let Attribute::EventRef { event_ref, tags } = attribute {
             let attrs = sem_conv_catalog
-                .get_attributes(&event_ref, ConvType::Event)
+                .get_attributes(event_ref, ConvType::Event)
                 .map_err(|e| Error::FailToResolveAttribute {
                     id: event_ref.clone(),
                     error: e.to_string(),

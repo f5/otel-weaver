@@ -2,8 +2,9 @@
 
 //! Attribute specification.
 
-use crate::stability::Stability;
 use serde::{Deserialize, Serialize};
+
+use crate::stability::Stability;
 
 /// An attribute specification.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -112,6 +113,27 @@ pub enum Attribute {
         #[serde(skip_serializing_if = "Option::is_none")]
         deprecated: Option<String>,
     },
+}
+
+impl Attribute {
+    /// Returns true if the attribute is required.
+    pub fn is_required(&self) -> bool {
+        matches!(self, Attribute::Ref {
+                 requirement_level: Some(RequirementLevel::Basic(BasicRequirementLevel::Required)),
+                 ..
+             } | Attribute::Id {
+                 requirement_level: RequirementLevel::Basic(BasicRequirementLevel::Required),
+                 ..
+             })
+    }
+
+    /// Returns the id of the attribute.
+    pub fn id(&self) -> String {
+        match self {
+            Attribute::Ref { r#ref, .. } => r#ref.clone(),
+            Attribute::Id { id, .. } => id.clone(),
+        }
+    }
 }
 
 /// The different types of attributes.

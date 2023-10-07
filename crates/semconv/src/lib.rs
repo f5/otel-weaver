@@ -7,13 +7,13 @@
 //! can be found [here](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md).
 
 #![deny(
-missing_docs,
-clippy::print_stdout,
-unstable_features,
-unused_import_braces,
-unused_qualifications,
-unused_results,
-unused_extern_crates
+    missing_docs,
+    clippy::print_stdout,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications,
+    unused_results,
+    unused_extern_crates
 )]
 
 use std::collections::{HashMap, HashSet};
@@ -355,12 +355,14 @@ impl SemConvCatalog {
                         }
 
                         if let Some(r#ref) = group.extends.as_ref() {
-                            let prev_val =
-                                metrics_to_resolve.insert(metric_name.clone(), MetricToResolve {
+                            let prev_val = metrics_to_resolve.insert(
+                                metric_name.clone(),
+                                MetricToResolve {
                                     path_or_url: path_or_url.to_string(),
                                     group_id: group.id.clone(),
                                     r#ref: r#ref.clone(),
-                                });
+                                },
+                            );
                             if prev_val.is_some() {
                                 return Err(Error::DuplicateMetricName {
                                     path_or_url: path_or_url.to_string(),
@@ -399,18 +401,20 @@ impl SemConvCatalog {
 
         // Resolve all the metrics with an `extends` field.
         for (metric_name, metric_to_resolve) in metrics_to_resolve {
-            let group_ids = self.attr_grp_group_attributes.get(&metric_to_resolve.r#ref);
-            if let Some(group_ids) = group_ids {
+            let attribute_group = self.attr_grp_group_attributes.get(&metric_to_resolve.r#ref);
+            if let Some(attr_grp) = attribute_group {
                 if let Some(metric) = self.all_metrics.get_mut(&metric_name) {
                     let mut inherited_attributes = vec![];
-                    for attr_id in group_ids.ids.iter() {
+                    for attr_id in attr_grp.ids.iter() {
                         if let Some(attr) = self.all_attributes.get(attr_id) {
                             // Note: we only keep the last attribute definition for attributes that
                             // are defined multiple times in the group.
                             inherited_attributes.push(attr.clone());
                         }
                     }
-                    metric.attributes.extend(inherited_attributes.iter().cloned());
+                    metric
+                        .attributes
+                        .extend(inherited_attributes.iter().cloned());
                 } else {
                     return Err(Error::InvalidMetric {
                         path_or_url: metric_to_resolve.path_or_url,

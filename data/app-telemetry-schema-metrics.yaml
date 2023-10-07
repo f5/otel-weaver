@@ -37,8 +37,8 @@ schema:
 #          - ref: network.protocol.name
 #          - ref: network.protocol.version
 #          - ref: url.scheme
-#    metric_groups:
-#      - id: http
+    metric_groups:
+      - id: http
 #        attributes:
 #          - attribute_group_ref: server
 #          - ref: http.request.method
@@ -46,6 +46,11 @@ schema:
 #          - ref: network.protocol.name
 #          - ref: network.protocol.version
 #          - ref: url.scheme
+        metrics:
+          - ref: http.server.request.duration
+          - ref: http.server.request.body.size
+          - ref: http.server.response.body.size
+#      - id: another_http
 #        metrics:
 #          - ref: http.server.request.duration
 #          - ref: http.server.active_requests
