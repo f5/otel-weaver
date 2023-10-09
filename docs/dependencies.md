@@ -2,14 +2,7 @@
 
 ## Overview
 
-```mermaid
-flowchart TB
-    resolver --> logger 
-    resolver --> semconv 
-    resolver --> schema     
-    schema --> semconv
-    schema --> version
-    
-    main --> logger 
-    main --> resolver
-```
+![Dependencies](./images/dependencies.svg)
+
+> To update this diagram, run `cargo depgraph  --workspace-only | dot -Tsvg > docs/images/dependencies.svg` from the
+> root of the repository.

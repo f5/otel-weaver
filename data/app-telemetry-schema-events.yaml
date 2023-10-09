@@ -1,13 +1,6 @@
 file_format: 1.2.0
 parent_schema_url: https://opentelemetry.io/schemas/1.21.0
 schema_url: https://mycompany.com/schemas/1.0.0
-semantic_conventions:
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/url.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/http-common.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/network.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/server.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/error.yaml
-
 schema:
   resource:
     attributes:
