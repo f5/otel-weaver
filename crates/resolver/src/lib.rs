@@ -22,6 +22,7 @@ use crate::resource_events::resolve_events;
 use crate::resource_metrics::resolve_metrics;
 use crate::resource_spans::resolve_spans;
 use logger::Logger;
+use schema::SemConvImport;
 pub use schema::TelemetrySchema;
 use semconv::ResolverConfig;
 use version::VersionChanges;
@@ -105,24 +106,14 @@ impl SchemaResolver {
         ));
 
         let parent_schema = Self::load_parent_schema(&schema, log)?;
-        let mut sem_conv_catalog = Self::create_semantic_convention_catalog(&schema, log)?;
+        schema.set_parent_schema(parent_schema);
+        let mut sem_conv_catalog = Self::create_semantic_convention_catalog(&schema.merged_semantic_conventions(), log)?;
         let _ = sem_conv_catalog
             .resolve(ResolverConfig::default())
             .map_err(Error::SemConvError)?;
 
         // Merges the versions of the parent schema into the current schema.
-        if let Some(parent_schema) = parent_schema {
-            match schema.versions {
-                Some(ref mut versions) => {
-                    if let Some(parent_versions) = parent_schema.versions {
-                        versions.extend(parent_versions);
-                    }
-                }
-                None => {
-                    schema.versions = parent_schema.versions;
-                }
-            }
-        }
+        schema.merge_versions();
 
         // Generates version changes
         let version_changes = schema
@@ -204,16 +195,16 @@ impl SchemaResolver {
 
     /// Creates a semantic convention catalog from the given telemetry schema.
     fn create_semantic_convention_catalog(
-        schema: &TelemetrySchema,
+        sem_convs: &[SemConvImport],
         log: &mut Logger,
     ) -> Result<semconv::SemConvCatalog, Error> {
         // Load all the semantic convention catalogs.
         let mut sem_conv_catalog = semconv::SemConvCatalog::default();
         log.loading(&format!(
             "Loading {} semantic convention catalogs",
-            schema.semantic_conventions.len()
+            sem_convs.len()
         ));
-        for sem_conv_import in schema.semantic_conventions.iter() {
+        for sem_conv_import in sem_convs {
             sem_conv_catalog
                 .load_from_url(&sem_conv_import.url)
                 .map_err(|e| {
@@ -223,7 +214,7 @@ impl SchemaResolver {
         }
         log.success(&format!(
             "Loaded {} semantic convention catalogs",
-            schema.semantic_conventions.len()
+            sem_convs.len()
         ));
 
         Ok(sem_conv_catalog)

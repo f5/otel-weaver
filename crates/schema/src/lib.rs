@@ -6,13 +6,16 @@
 #![deny(clippy::print_stdout)]
 #![deny(clippy::print_stderr)]
 
-use crate::schema_spec::SchemaSpec;
-use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+
+use serde::{Deserialize, Serialize};
 use url::Url;
+
 use version::Versions;
+
+use crate::schema_spec::SchemaSpec;
 
 pub mod attribute;
 pub mod event;
@@ -95,10 +98,14 @@ pub struct TelemetrySchema {
     /// https://github.com/open-telemetry/oteps/blob/main/text/0152-telemetry-schemas.md
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versions: Option<Versions>,
+
+    /// The parent schema.
+    #[serde(skip)]
+    parent_schema: Option<Box<TelemetrySchema>>,
 }
 
 /// A semantic convention import.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct SemConvImport {
     /// The URL of the semantic convention.
@@ -122,6 +129,7 @@ impl TelemetrySchema {
                 column: e.location().map(|loc| loc.column()),
                 error: e.to_string(),
             })?;
+
         Ok(schema)
     }
 
@@ -156,6 +164,37 @@ impl TelemetrySchema {
                 path_or_url: schema_url.to_string(),
                 error: format!("Unsupported URL scheme: {}", schema_url.scheme()),
             }),
+        }
+    }
+
+    /// Sets the parent schema.
+    pub fn set_parent_schema(&mut self, parent_schema: Option<TelemetrySchema>) {
+        self.parent_schema = parent_schema.map(Box::new);
+    }
+
+    /// Returns the semantic conventions for the schema and its parent schemas.
+    pub fn merged_semantic_conventions(&self) -> Vec<SemConvImport> {
+        let mut result = vec![];
+        if let Some(parent_schema) = self.parent_schema.as_ref() {
+            result.extend(parent_schema.merged_semantic_conventions().iter().cloned());
+        }
+        result.extend(self.semantic_conventions.iter().cloned());
+        result
+    }
+
+    /// Merges versions from the parent schema into the current schema.
+    pub fn merge_versions(&mut self) {
+        if let Some(parent_schema) = &self.parent_schema {
+            match self.versions {
+                Some(ref mut versions) => {
+                    if let Some(parent_versions) = parent_schema.versions.as_ref() {
+                        versions.extend(parent_versions.clone());
+                    }
+                }
+                None => {
+                    self.versions = parent_schema.versions.clone();
+                }
+            }
         }
     }
 }
