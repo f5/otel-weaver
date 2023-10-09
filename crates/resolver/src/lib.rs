@@ -12,6 +12,7 @@ mod resource_events;
 mod resource_metrics;
 mod resource_spans;
 
+use std::iter;
 use std::path::Path;
 
 use regex::Regex;
@@ -200,11 +201,8 @@ impl SchemaResolver {
     ) -> Result<semconv::SemConvCatalog, Error> {
         // Load all the semantic convention catalogs.
         let mut sem_conv_catalog = semconv::SemConvCatalog::default();
-        log.loading(&format!(
-            "Loading {} semantic convention catalogs",
-            sem_convs.len()
-        ));
-        for sem_conv_import in sem_convs {
+        for (i, sem_conv_import) in sem_convs.iter().enumerate() {
+            log.loading(&format!("Loading semantic convention file '{}' ({}/{})", sem_conv_import.url, i, sem_convs.len()));
             sem_conv_catalog
                 .load_from_url(&sem_conv_import.url)
                 .map_err(|e| {
@@ -213,7 +211,7 @@ impl SchemaResolver {
                 })?;
         }
         log.success(&format!(
-            "Loaded {} semantic convention catalogs",
+            "Loaded {} semantic convention files",
             sem_convs.len()
         ));
 
