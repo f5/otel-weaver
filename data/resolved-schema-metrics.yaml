@@ -1,16 +1,34 @@
 file_format: 1.2.0
-parent_schema_url: https://opentelemetry.io/schemas/1.21.0
+parent_schema_url: data/open-telemetry-schema.1.22.0.yaml
 schema_url: https://mycompany.com/schemas/1.0.0
 schema:
   resource:
     attributes:
-    - id: os.description
+    - id: os.name
+      type: string
+      brief: Human readable operating system name.
+      examples:
+      - iOS
+      - Android
+      - Ubuntu
+      requirement_level: recommended
+      note: ''
+    - id: os.version
       type: string
       brief: |
-        Human readable (not intended to be parsed) OS version information, like e.g. reported by `ver` or `lsb_release -a` commands.
+        The version string of the operating system as defined in [Version Attributes](/docs/resource/README.md#version-attributes).
       examples:
-      - Microsoft Windows [Version 10.0.18363.778]
-      - Ubuntu 18.04.1 LTS
+      - 14.2.1
+      - 18.04.1
+      requirement_level: recommended
+      note: ''
+    - id: os.build_id
+      type: string
+      brief: Unique identifier for a particular build or compilation of the operating system.
+      examples:
+      - TQ3C.230805.001.B2
+      - '20E247'
+      - '22621'
       requirement_level: recommended
       note: ''
     - id: os.type
@@ -64,31 +82,13 @@ schema:
       brief: The operating system type.
       requirement_level: required
       note: ''
-    - id: os.name
-      type: string
-      brief: Human readable operating system name.
-      examples:
-      - iOS
-      - Android
-      - Ubuntu
-      requirement_level: recommended
-      note: ''
-    - id: os.build_id
-      type: string
-      brief: Unique identifier for a particular build or compilation of the operating system.
-      examples:
-      - TQ3C.230805.001.B2
-      - '20E247'
-      - '22621'
-      requirement_level: recommended
-      note: ''
-    - id: os.version
+    - id: os.description
       type: string
       brief: |
-        The version string of the operating system as defined in [Version Attributes](/docs/resource/README.md#version-attributes).
+        Human readable (not intended to be parsed) OS version information, like e.g. reported by `ver` or `lsb_release -a` commands.
       examples:
-      - 14.2.1
-      - 18.04.1
+      - Microsoft Windows [Version 10.0.18363.778]
+      - Ubuntu 18.04.1 LTS
       requirement_level: recommended
       note: ''
   instrumentation_library:
@@ -107,6 +107,35 @@ schema:
       brief: Duration of HTTP server requests.
       note: ''
       attributes:
+      - id: error.type
+        type:
+          allow_custom_values: true
+          members:
+          - id: other
+            value: _OTHER
+            brief: A fallback error value to be used when the instrumentation does not define a custom value for it.
+            note: null
+        brief: Describes a class of error the operation ended with.
+        examples:
+        - timeout
+        - java.net.UnknownHostException
+        - server_certificate_invalid
+        - '500'
+        requirement_level: recommended
+        note: |
+          The `error.type` SHOULD be predictable and SHOULD have low cardinality.
+          Instrumentations SHOULD document the list of errors they report.
+
+          The cardinality of `error.type` within one instrumentation library SHOULD be low, but
+          telemetry consumers that aggregate data from multiple instrumentation libraries and applications
+          should be prepared for `error.type` to have high cardinality at query time, when no
+          additional filters are applied.
+
+          If the operation has completed successfully, instrumentations SHOULD NOT set `error.type`.
+
+          If a specific domain defines its own set of error codes (such as HTTP or gRPC status codes),
+          it's RECOMMENDED to use a domain-specific attribute and also set `error.type` to capture
+          all errors, regardless of whether they are defined within the domain-specific set or not.
       - id: server.port
         type: int
         brief: Server port number
@@ -117,13 +146,6 @@ schema:
         requirement_level: recommended
         note: |
           When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries (e.g. proxies) if it's available.
-      - id: network.protocol.version
-        type: string
-        brief: Version of the protocol specified in `network.protocol.name`.
-        examples: 3.1.1
-        requirement_level: recommended
-        note: |
-          `network.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
       - id: server.address
         type: string
         brief: Server address - domain name if available without reverse DNS lookup, otherwise IP address or Unix domain socket name.
@@ -142,20 +164,18 @@ schema:
         - mqtt
         requirement_level: recommended
         note: The value SHOULD be normalized to lowercase.
+      - id: network.protocol.version
+        type: string
+        brief: Version of the protocol specified in `network.protocol.name`.
+        examples: 3.1.1
+        requirement_level: recommended
+        note: |
+          `network.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
       instrument: histogram
       unit: s
     metric_groups:
     - id: http
       attributes:
-      - id: network.protocol.name
-        type: string
-        brief: '[OSI application layer](https://osi-model.com/application-layer/) or non-OSI equivalent.'
-        examples:
-        - amqp
-        - http
-        - mqtt
-        requirement_level: recommended
-        note: The value SHOULD be normalized to lowercase.
       - id: server.address
         type: string
         brief: Server address - domain name if available without reverse DNS lookup, otherwise IP address or Unix domain socket name.
@@ -165,13 +185,15 @@ schema:
         note: |
           When observed from the client side, and when communicating through an intermediary, `server.address` SHOULD represent
           the server address behind any intermediaries (e.g. proxies) if it's available.
-      - id: network.protocol.version
+      - id: network.protocol.name
         type: string
-        brief: Version of the protocol specified in `network.protocol.name`.
-        examples: 3.1.1
+        brief: '[OSI application layer](https://osi-model.com/application-layer/) or non-OSI equivalent.'
+        examples:
+        - amqp
+        - http
+        - mqtt
         requirement_level: recommended
-        note: |
-          `network.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
+        note: The value SHOULD be normalized to lowercase.
       - id: server.port
         type: int
         brief: Server port number
@@ -182,6 +204,42 @@ schema:
         requirement_level: recommended
         note: |
           When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries (e.g. proxies) if it's available.
+      - id: network.protocol.version
+        type: string
+        brief: Version of the protocol specified in `network.protocol.name`.
+        examples: 3.1.1
+        requirement_level: recommended
+        note: |
+          `network.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client used has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.
+      - id: error.type
+        type:
+          allow_custom_values: true
+          members:
+          - id: other
+            value: _OTHER
+            brief: A fallback error value to be used when the instrumentation does not define a custom value for it.
+            note: null
+        brief: Describes a class of error the operation ended with.
+        examples:
+        - timeout
+        - java.net.UnknownHostException
+        - server_certificate_invalid
+        - '500'
+        requirement_level: recommended
+        note: |
+          The `error.type` SHOULD be predictable and SHOULD have low cardinality.
+          Instrumentations SHOULD document the list of errors they report.
+
+          The cardinality of `error.type` within one instrumentation library SHOULD be low, but
+          telemetry consumers that aggregate data from multiple instrumentation libraries and applications
+          should be prepared for `error.type` to have high cardinality at query time, when no
+          additional filters are applied.
+
+          If the operation has completed successfully, instrumentations SHOULD NOT set `error.type`.
+
+          If a specific domain defines its own set of error codes (such as HTTP or gRPC status codes),
+          it's RECOMMENDED to use a domain-specific attribute and also set `error.type` to capture
+          all errors, regardless of whether they are defined within the domain-specific set or not.
       metrics:
       - name: http.server.request.duration
         brief: Duration of HTTP server requests.
@@ -290,24 +348,24 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            messaging.message_payload_compressed_size_bytes: messaging.message.payload_compressed_size_bytes
             messaging.destination_kind: messaging.destination.kind
-            messaging.temp_destination: messaging.destination.temporary
-            messaging.protocol_version: net.app.protocol.version
-            messaging.destination: messaging.destination.name
-            messaging.protocol: net.app.protocol.name
-            messaging.rabbitmq.routing_key: messaging.rabbitmq.destination.routing_key
-            messaging.message_payload_size_bytes: messaging.message.payload_size_bytes
-            messaging.kafka.consumer_group: messaging.kafka.consumer.group
-            messaging.rocketmq.message_tag: messaging.rocketmq.message.tag
-            messaging.kafka.tombstone: messaging.kafka.message.tombstone
-            messaging.message_id: messaging.message.id
-            messaging.conversation_id: messaging.message.conversation_id
-            messaging.kafka.partition: messaging.kafka.destination.partition
             messaging.kafka.message_key: messaging.kafka.message.key
-            messaging.rocketmq.message_type: messaging.rocketmq.message.type
+            messaging.message_payload_compressed_size_bytes: messaging.message.payload_compressed_size_bytes
+            messaging.rabbitmq.routing_key: messaging.rabbitmq.destination.routing_key
+            messaging.temp_destination: messaging.destination.temporary
+            messaging.protocol: net.app.protocol.name
+            messaging.message_id: messaging.message.id
+            messaging.rocketmq.message_tag: messaging.rocketmq.message.tag
             messaging.consumer_id: messaging.consumer.id
+            messaging.kafka.consumer_group: messaging.kafka.consumer.group
+            messaging.rocketmq.message_type: messaging.rocketmq.message.type
             messaging.rocketmq.message_keys: messaging.rocketmq.message.keys
+            messaging.kafka.tombstone: messaging.kafka.message.tombstone
+            messaging.message_payload_size_bytes: messaging.message.payload_size_bytes
+            messaging.protocol_version: net.app.protocol.version
+            messaging.kafka.partition: messaging.kafka.destination.partition
+            messaging.destination: messaging.destination.name
+            messaging.conversation_id: messaging.message.conversation_id
     resources: null
   1.18.0:
     metrics: null
@@ -340,8 +398,8 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            net.app.protocol.name: net.protocol.name
             net.app.protocol.version: net.protocol.version
+            net.app.protocol.name: net.protocol.name
     resources: null
   1.21.0:
     metrics:
@@ -355,32 +413,175 @@ versions:
       changes:
       - rename_attributes:
           attribute_map:
-            messaging.kafka.client_id: messaging.client_id
             messaging.rocketmq.client_id: messaging.client_id
+            messaging.kafka.client_id: messaging.client_id
       - rename_attributes:
           attribute_map:
+            net.sock.host.addr: server.socket.address
             http.client_ip: client.address
             net.sock.peer.name: server.socket.domain
             net.host.name: server.address
             net.host.port: server.port
-            net.sock.host.addr: server.socket.address
             net.sock.host.port: server.socket.port
       - rename_attributes:
           attribute_map:
             net.host.connection.type: network.connection.type
-            net.protocol.version: network.protocol.version
-            net.host.carrier.mnc: network.carrier.mnc
-            net.host.carrier.name: network.carrier.name
-            net.host.carrier.mcc: network.carrier.mcc
             net.protocol.name: network.protocol.name
-            net.host.connection.subtype: network.connection.subtype
+            net.host.carrier.mnc: network.carrier.mnc
+            net.protocol.version: network.protocol.version
+            net.host.carrier.name: network.carrier.name
             net.host.carrier.icc: network.carrier.icc
+            net.host.connection.subtype: network.connection.subtype
+            net.host.carrier.mcc: network.carrier.mcc
       - rename_attributes:
           attribute_map:
-            http.method: http.request.method
-            http.url: url.full
-            http.scheme: url.scheme
-            http.response_content_length: http.response.body.size
-            http.request_content_length: http.request.body.size
             http.status_code: http.response.status_code
+            http.response_content_length: http.response.body.size
+            http.scheme: url.scheme
+            http.url: url.full
+            http.method: http.request.method
+            http.request_content_length: http.request.body.size
+    resources: null
+  1.22.0:
+    metrics:
+      changes:
+      - rename_attributes:
+          attribute_map:
+            messaging.message.payload_size_bytes: messaging.message.body.size
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map: {}
+        rename_metrics:
+          http.server.duration: http.server.request.duration
+          http.client.duration: http.client.request.duration
+      - rename_attributes:
+          attribute_map: {}
+        rename_metrics:
+          process.runtime.jvm.classes.current_loaded: jvm.class.count
+          process.runtime.jvm.cpu.time: jvm.cpu.time
+          process.runtime.jvm.memory.usage: jvm.memory.usage
+          process.runtime.jvm.cpu.recent_utilization: jvm.cpu.recent_utilization
+          process.runtime.jvm.gc.duration: jvm.gc.duration
+          process.runtime.jvm.memory.usage_after_last_gc: jvm.memory.usage_after_last_gc
+          process.runtime.jvm.memory.committed: jvm.memory.committed
+          process.runtime.jvm.memory.limit: jvm.memory.limit
+          process.runtime.jvm.classes.loaded: jvm.class.loaded
+          process.runtime.jvm.system.cpu.utilization: jvm.system.cpu.utilization
+          process.runtime.jvm.system.cpu.load_1m: jvm.system.cpu.load_1m
+          process.runtime.jvm.buffer.usage: jvm.buffer.memory.usage
+          process.runtime.jvm.buffer.limit: jvm.buffer.memory.limit
+          process.runtime.jvm.memory.init: jvm.memory.init
+          process.runtime.jvm.buffer.count: jvm.buffer.count
+          process.runtime.jvm.threads.count: jvm.thread.count
+          process.runtime.jvm.classes.unloaded: jvm.class.unloaded
+      - rename_attributes:
+          attribute_map:
+            type: jvm.memory.type
+            pool: jvm.memory.pool.name
+          apply_to_metrics:
+          - jvm.memory.usage
+          - jvm.memory.committed
+          - jvm.memory.limit
+          - jvm.memory.usage_after_last_gc
+          - jvm.memory.init
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map:
+            name: jvm.gc.name
+            action: jvm.gc.action
+          apply_to_metrics:
+          - jvm.gc.duration
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map:
+            daemon: thread.daemon
+          apply_to_metrics:
+          - jvm.threads.count
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map:
+            pool: jvm.buffer.pool.name
+          apply_to_metrics:
+          - jvm.buffer.usage
+          - jvm.buffer.limit
+          - jvm.buffer.count
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map:
+            state: system.cpu.state
+            cpu: system.cpu.logical_number
+          apply_to_metrics:
+          - system.cpu.time
+          - system.cpu.utilization
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map:
+            state: system.memory.state
+          apply_to_metrics:
+          - system.memory.usage
+          - system.memory.utilization
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map:
+            state: system.paging.state
+          apply_to_metrics:
+          - system.paging.usage
+          - system.paging.utilization
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map:
+            type: system.paging.type
+            direction: system.paging.direction
+          apply_to_metrics:
+          - system.paging.faults
+          - system.paging.operations
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map:
+            direction: system.disk.direction
+            device: system.device
+          apply_to_metrics:
+          - system.disk.io
+          - system.disk.operations
+          - system.disk.io_time
+          - system.disk.operation_time
+          - system.disk.merged
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map:
+            state: system.filesystem.state
+            mode: system.filesystem.mode
+            type: system.filesystem.type
+            device: system.device
+            mountpoint: system.filesystem.mountpoint
+          apply_to_metrics:
+          - system.filesystem.usage
+          - system.filesystem.utilization
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map:
+            device: system.device
+            state: system.network.state
+            protocol: network.protocol
+            direction: system.network.direction
+          apply_to_metrics:
+          - system.network.dropped
+          - system.network.packets
+          - system.network.errors
+          - system.network.io
+          - system.network.connections
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map:
+            status: system.processes.status
+          apply_to_metrics:
+          - system.processes.count
+        rename_metrics: {}
+      - rename_attributes:
+          attribute_map: {}
+        rename_metrics:
+          http.server.response.size: http.server.response.body.size
+          http.server.request.size: http.server.request.body.size
+    logs: null
+    spans: null
     resources: null

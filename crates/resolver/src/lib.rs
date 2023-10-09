@@ -112,6 +112,14 @@ impl SchemaResolver {
         let _ = sem_conv_catalog
             .resolve(ResolverConfig::default())
             .map_err(Error::SemConvError)?;
+        log.indent(1).info(&format!(
+            "{} attributes defined in the semantic convention catalog",
+            sem_conv_catalog.attribute_count()
+        ));
+        log.indent(1).info(&format!(
+            "{} metrics defined in the semantic convention catalog",
+            sem_conv_catalog.metric_count()
+        ));
 
         // Merges the versions of the parent schema into the current schema.
         schema.merge_versions();

@@ -445,6 +445,16 @@ impl SemConvCatalog {
         Ok(warnings)
     }
 
+    /// Returns the number of unique attributes defined in the catalog.
+    pub fn attribute_count(&self) -> usize {
+        self.all_attributes.len()
+    }
+
+    /// Returns the number of unique metrics defined in the catalog.
+    pub fn metric_count(&self) -> usize {
+        self.all_metrics.len()
+    }
+
     /// Returns an attribute definition from its reference or `None` if the
     /// reference does not exist.
     pub fn get_attribute(&self, attr_ref: &str) -> Option<&Attribute> {

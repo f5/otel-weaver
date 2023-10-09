@@ -30,8 +30,45 @@ semantic_conventions:
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/metrics/rpc-metrics.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/metrics/system-metrics.yaml
     # resources
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/android.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/browser.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/cloud.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/container.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/deployment_environment.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/device.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/faas.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/host.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/k8s.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/oci.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/os.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/process.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/service.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/service_experimental.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/telemetry.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/telemetry_experimental.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/webengine.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/cloud_provider/aws/ecs.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/cloud_provider/aws/eks.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/cloud_provider/aws/logs.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/cloud_provider/gcp/cloud_run.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/cloud_provider/gcp/gce.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/cloud_provider/heroku.yaml
     # scope
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/scope/exporter/exporter.yaml
     # trace
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/cloudevents.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/compatibility.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/database.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/faas.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/feature-flag.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/http.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/messaging.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/rpc.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/trace-exception.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/aws/lambda.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/exporter/exporter.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/instrumentation/aws-sdk.yml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/trace/instrumentation/graphql.yml
 
 versions:
   1.22.0:
