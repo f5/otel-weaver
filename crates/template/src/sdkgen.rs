@@ -118,7 +118,7 @@ impl ClientSdkGenerator {
     /// Generate a client SDK for the given schema
     pub fn generate(
         &self,
-        log: &mut Logger,
+        log: &Logger,
         schema_path: PathBuf,
         output_dir: PathBuf,
     ) -> Result<(), crate::Error> {
@@ -204,7 +204,7 @@ impl ClientSdkGenerator {
     /// Generate code.
     fn generate_code(
         &self,
-        log: &mut Logger,
+        log: &Logger,
         tmpl_file: &str,
         context: &Context,
     ) -> Result<String, crate::Error> {
@@ -253,7 +253,7 @@ impl ClientSdkGenerator {
     /// Process all univariate metrics in the schema.
     fn process_univariate_metrics(
         &self,
-        log: &mut Logger,
+        log: &Logger,
         tmpl_file: &str,
         schema_path: &Path,
         schema: &TelemetrySchema,
@@ -311,7 +311,7 @@ impl ClientSdkGenerator {
     /// Process all multivariate metrics in the schema.
     fn process_multivariate_metrics(
         &self,
-        log: &mut Logger,
+        log: &Logger,
         tmpl_file: &str,
         schema_path: &Path,
         schema: &TelemetrySchema,
@@ -369,7 +369,7 @@ impl ClientSdkGenerator {
     /// Process all logs in the schema.
     fn process_logs(
         &self,
-        log: &mut Logger,
+        log: &Logger,
         tmpl_file: &str,
         schema_path: &Path,
         schema: &TelemetrySchema,
@@ -428,7 +428,7 @@ impl ClientSdkGenerator {
     /// Process all spans in the schema.
     fn process_spans(
         &self,
-        log: &mut Logger,
+        log: &Logger,
         tmpl_file: &str,
         schema_path: &Path,
         schema: &TelemetrySchema,
