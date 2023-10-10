@@ -467,7 +467,9 @@ impl SemConvCatalog {
     /// Returns an attribute definition from its reference or `None` if the
     /// reference does not exist.
     pub fn get_attribute(&self, attr_ref: &str) -> Option<&Attribute> {
-        self.all_attributes.get(attr_ref).map(|attr| &attr.attribute)
+        self.all_attributes
+            .get(attr_ref)
+            .map(|attr| &attr.attribute)
     }
 
     /// Returns a map id -> attribute definition from an attribute group reference.
@@ -553,10 +555,13 @@ impl SemConvCatalog {
                     if let Attribute::Id { id, .. } = &mut attr {
                         *id = fq_attr_id.clone();
                     }
-                    let prev_val = self.all_attributes.insert(fq_attr_id.clone(), AttributeWithSource {
-                        attribute: attr,
-                        path_or_url: path_or_url.clone(),
-                    });
+                    let prev_val = self.all_attributes.insert(
+                        fq_attr_id.clone(),
+                        AttributeWithSource {
+                            attribute: attr,
+                            path_or_url: path_or_url.clone(),
+                        },
+                    );
                     if let Some(prev_val) = prev_val {
                         return Err(Error::DuplicateAttributeId {
                             origin_path_or_url: prev_val.path_or_url.clone(),

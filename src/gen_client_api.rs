@@ -6,4 +6,4 @@ use logger::Logger;
 use std::path::Path;
 
 /// Generate a client API (third party)
-pub fn command_gen_client_api(_log: &mut Logger, _schema: &Path) {}
+pub fn command_gen_client_api(_log: &Logger, _schema: &Path) {}

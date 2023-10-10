@@ -23,7 +23,7 @@ pub struct ResolveParams {
 }
 
 /// Resolve a schema file and print the result
-pub fn command_resolve(log: &mut Logger, params: &ResolveParams) {
+pub fn command_resolve(log: &Logger, params: &ResolveParams) {
     let schema = params.schema.clone();
     let schema_name = match params.schema.to_str() {
         Some(name) => name,

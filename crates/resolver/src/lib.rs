@@ -113,13 +113,16 @@ impl SchemaResolver {
         let parent_schema = Self::load_parent_schema(&schema, log.clone())?;
         schema.set_parent_schema(parent_schema);
         let semantic_conventions = schema.merged_semantic_conventions();
-        let mut sem_conv_catalog = Self::create_semantic_convention_catalog(&semantic_conventions, log.clone())?;
+        let mut sem_conv_catalog =
+            Self::create_semantic_convention_catalog(&semantic_conventions, log.clone())?;
         let _ = sem_conv_catalog
             .resolve(ResolverConfig::default())
             .map_err(Error::SemConvError)?;
         log.success(&format!(
             "Loaded {} semantic convention files ({} attributes, {} metrics)",
-            semantic_conventions.len(), sem_conv_catalog.attribute_count(), sem_conv_catalog.metric_count()
+            semantic_conventions.len(),
+            sem_conv_catalog.attribute_count(),
+            sem_conv_catalog.metric_count()
         ));
 
         // Merges the versions of the parent schema into the current schema.
@@ -211,33 +214,43 @@ impl SchemaResolver {
         // Load all the semantic convention catalogs.
         let mut sem_conv_catalog = SemConvCatalog::default();
         let total_file_count = sem_convs.len();
-        let loaded_files_count= AtomicUsize::new(0);
+        let loaded_files_count = AtomicUsize::new(0);
         let error_count = AtomicUsize::new(0);
 
-        let result: Vec<Result<(String, SemConvSpec), semconv::Error>> = sem_convs.par_iter().map(|sem_conv_import| {
-            let result = SemConvCatalog::load_sem_conv_spec_from_url(&sem_conv_import.url);
-            if result.is_err() {
-                error_count.fetch_add(1, Relaxed);
-            }
-            loaded_files_count.fetch_add(1, Relaxed);
-            if error_count.load(Relaxed) == 0 {
-                log.loading(&format!("Loaded {}/{} semantic convention files (no error detected)", loaded_files_count.load(Relaxed), total_file_count));
-            } else {
-                log.loading(&format!("Loaded {}/{} semantic convention files ({} error(s) detected)", loaded_files_count.load(Relaxed), total_file_count, error_count.load(Relaxed)));
-            }
-            result
-        }).collect();
+        let result: Vec<Result<(String, SemConvSpec), semconv::Error>> = sem_convs
+            .par_iter()
+            .map(|sem_conv_import| {
+                let result = SemConvCatalog::load_sem_conv_spec_from_url(&sem_conv_import.url);
+                if result.is_err() {
+                    error_count.fetch_add(1, Relaxed);
+                }
+                loaded_files_count.fetch_add(1, Relaxed);
+                if error_count.load(Relaxed) == 0 {
+                    log.loading(&format!(
+                        "Loaded {}/{} semantic convention files (no error detected)",
+                        loaded_files_count.load(Relaxed),
+                        total_file_count
+                    ));
+                } else {
+                    log.loading(&format!(
+                        "Loaded {}/{} semantic convention files ({} error(s) detected)",
+                        loaded_files_count.load(Relaxed),
+                        total_file_count,
+                        error_count.load(Relaxed)
+                    ));
+                }
+                result
+            })
+            .collect();
 
         let mut errors = vec![];
-        result.into_iter().for_each(|result| {
-            match result {
-                Ok(sem_conv_spec) => {
-                    sem_conv_catalog.append_sem_conv_spec(sem_conv_spec);
-                }
-                Err(e) => {
-                    log.error(&e.to_string());
-                    errors.push(Error::SemConvError(e));
-                }
+        result.into_iter().for_each(|result| match result {
+            Ok(sem_conv_spec) => {
+                sem_conv_catalog.append_sem_conv_spec(sem_conv_spec);
+            }
+            Err(e) => {
+                log.error(&e.to_string());
+                errors.push(Error::SemConvError(e));
             }
         });
 

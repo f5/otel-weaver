@@ -27,7 +27,7 @@ pub struct GenClientSdkParams {
 }
 
 /// Generate a client SDK (application)
-pub fn command_gen_client_sdk(log: &mut Logger, params: &GenClientSdkParams) {
+pub fn command_gen_client_sdk(log: &Logger, params: &GenClientSdkParams) {
     log.loading(&format!(
         "Generating client SDK for language {}",
         params.language
