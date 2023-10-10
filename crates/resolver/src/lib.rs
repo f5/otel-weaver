@@ -6,27 +6,30 @@
 #![deny(clippy::print_stdout)]
 #![deny(clippy::print_stderr)]
 
-mod attribute;
-mod resource;
-mod resource_events;
-mod resource_metrics;
-mod resource_spans;
-
-use std::iter;
 use std::path::Path;
+use std::sync::Mutex;
 
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::ParallelIterator;
 use regex::Regex;
 use url::Url;
+
+use logger::Logger;
+use schema::SemConvImport;
+pub use schema::TelemetrySchema;
+use semconv::{ResolverConfig, SemConvCatalog, SemConvSpec};
+use version::VersionChanges;
 
 use crate::resource::resolve_resource;
 use crate::resource_events::resolve_events;
 use crate::resource_metrics::resolve_metrics;
 use crate::resource_spans::resolve_spans;
-use logger::Logger;
-use schema::SemConvImport;
-pub use schema::TelemetrySchema;
-use semconv::ResolverConfig;
-use version::VersionChanges;
+
+mod attribute;
+mod resource;
+mod resource_events;
+mod resource_metrics;
+mod resource_spans;
 
 /// A resolver that can be used to resolve telemetry schemas.
 /// All references to semantic conventions will be resolved.
@@ -108,17 +111,14 @@ impl SchemaResolver {
 
         let parent_schema = Self::load_parent_schema(&schema, log)?;
         schema.set_parent_schema(parent_schema);
-        let mut sem_conv_catalog = Self::create_semantic_convention_catalog(&schema.merged_semantic_conventions(), log)?;
+        let semantic_conventions = schema.merged_semantic_conventions();
+        let mut sem_conv_catalog = Self::create_semantic_convention_catalog(&semantic_conventions, log)?;
         let _ = sem_conv_catalog
             .resolve(ResolverConfig::default())
             .map_err(Error::SemConvError)?;
-        log.indent(1).info(&format!(
-            "{} attributes defined in the semantic convention catalog",
-            sem_conv_catalog.attribute_count()
-        ));
-        log.indent(1).info(&format!(
-            "{} metrics defined in the semantic convention catalog",
-            sem_conv_catalog.metric_count()
+        log.success(&format!(
+            "Loaded {} semantic convention files ({} attributes, {} metrics)",
+            semantic_conventions.len(), sem_conv_catalog.attribute_count(), sem_conv_catalog.metric_count()
         ));
 
         // Merges the versions of the parent schema into the current schema.
@@ -206,24 +206,72 @@ impl SchemaResolver {
     fn create_semantic_convention_catalog(
         sem_convs: &[SemConvImport],
         log: &mut Logger,
-    ) -> Result<semconv::SemConvCatalog, Error> {
+    ) -> Result<SemConvCatalog, Error> {
         // Load all the semantic convention catalogs.
-        let mut sem_conv_catalog = semconv::SemConvCatalog::default();
-        for (i, sem_conv_import) in sem_convs.iter().enumerate() {
-            log.loading(&format!("Loading semantic convention file '{}' ({}/{})", sem_conv_import.url, i, sem_convs.len()));
-            sem_conv_catalog
-                .load_from_url(&sem_conv_import.url)
-                .map_err(|e| {
-                    log.error(&e.to_string());
-                    Error::SemConvError(e)
-                })?;
-        }
-        log.success(&format!(
-            "Loaded {} semantic convention files",
-            sem_convs.len()
-        ));
+        let mut sem_conv_catalog = SemConvCatalog::default();
+        let sync_logger = Mutex::new(SyncLogger::new(log, sem_convs.len()));
+
+        let result: Vec<Result<(String, SemConvSpec), semconv::Error>> = sem_convs.par_iter().map(|sem_conv_import| {
+            let result = SemConvCatalog::load_sem_conv_spec_from_url(&sem_conv_import.url);
+            let mut report_progress = sync_logger.lock().expect("Failed to lock sync_logger mutex");
+
+            if result.is_err() {
+                report_progress.report_error();
+            }
+            report_progress.report_progress();
+            result
+        }).collect();
+
+        let mut errors = vec![];
+        result.into_iter().for_each(|result| {
+            match result {
+                Ok(sem_conv_spec) => {
+                    sem_conv_catalog.append_sem_conv_spec(sem_conv_spec);
+                }
+                Err(e) => {
+                    sync_logger.lock().expect("Failed to lock sync_logger mutex").error(&e.to_string());
+                    errors.push(Error::SemConvError(e));
+                }
+            }
+        });
+
+        // ToDo do something with the errors
 
         Ok(sem_conv_catalog)
+    }
+}
+
+struct SyncLogger<'a> {
+    total_file_count: usize,
+    loaded_files_count: usize,
+    error_count: usize,
+    log: &'a mut Logger<'a>,
+}
+
+impl<'a> SyncLogger<'a> {
+    fn new(log: &'a mut Logger<'a>, total_file_count: usize) -> Self {
+        Self {
+            total_file_count,
+            loaded_files_count: 0,
+            error_count: 0,
+            log,
+        }
+    }
+
+    fn error(&mut self, msg: &str) {
+        self.log.error(msg);
+    }
+    fn report_error(&mut self) {
+        self.error_count += 1;
+    }
+
+    fn report_progress(&mut self) {
+        self.loaded_files_count += 1;
+        if self.error_count == 0 {
+            self.log.loading(&format!("Loaded {}/{} semantic convention files (no error detected)", self.loaded_files_count, self.total_file_count));
+        } else {
+            self.log.loading(&format!("Loaded {}/{} semantic convention files ({} error(s) detected)", self.loaded_files_count, self.total_file_count, self.error_count));
+        }
     }
 }
 

@@ -247,19 +247,28 @@ impl SemConvCatalog {
         Ok(())
     }
 
-    /// Load and add a semantic convention URL to the catalog.
-    pub fn load_from_url(&mut self, semconv_url: &str) -> Result<(), Error> {
-        let spec = SemConvSpec::load_from_url(semconv_url)?;
+    /// Downloads and returns the semantic convention spec from an URL or an error.
+    pub fn load_sem_conv_spec_from_url(sem_conv_url: &str) -> Result<(String, SemConvSpec), Error> {
+        let spec = SemConvSpec::load_from_url(sem_conv_url)?;
         if let Err(e) = spec.validate() {
             return Err(Error::InvalidCatalog {
-                path_or_url: semconv_url.to_string(),
+                path_or_url: sem_conv_url.to_string(),
                 line: None,
                 column: None,
                 error: e.to_string(),
             });
         }
-        self.specs.push((semconv_url.to_string(), spec));
-        Ok(())
+        Ok((sem_conv_url.to_string(), spec))
+    }
+
+    /// Append a list of semantic convention specs to the catalog.
+    pub fn append_sem_conv_specs(&mut self, specs: Vec<(String, SemConvSpec)>) {
+        self.specs.extend(specs);
+    }
+
+    /// Append a semantic convention spec to the catalog.
+    pub fn append_sem_conv_spec(&mut self, spec: (String, SemConvSpec)) {
+        self.specs.push(spec);
     }
 
     /// Resolves all the references present in the semantic convention catalog.

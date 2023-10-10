@@ -13,4 +13,5 @@ regex.workspace = true
 thiserror.workspace = true
 
 url = "2.4.1"
+rayon = "1.8.0"
 
