@@ -137,7 +137,7 @@ pub enum Attribute {
         /// attributes. Example values must be of the same type of the
         /// attribute. If only a single example is provided, it can directly
         /// be reported without encapsulating it into a sequence/dictionary.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        // #[serde(skip_serializing_if = "Option::is_none")]
         examples: Option<Examples>,
         /// Associates a tag ("sub-group") to the attribute. It carries no
         /// particular semantic meaning but can be used e.g. for filtering

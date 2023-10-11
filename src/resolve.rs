@@ -25,21 +25,14 @@ pub struct ResolveParams {
 /// Resolve a schema file and print the result
 pub fn command_resolve(log: &Logger, params: &ResolveParams) {
     let schema = params.schema.clone();
-    let schema_name = match params.schema.to_str() {
-        Some(name) => name,
-        None => {
-            log.error("Invalid schema name");
-            exit(1)
-        }
-    };
     let schema = SchemaResolver::resolve_schema_file(schema, log);
 
     match schema {
         Ok(schema) => {
-            log.success(&format!("Loaded schema {}", schema_name));
             match serde_yaml::to_string(&schema) {
                 Ok(yaml) => {
                     if let Some(output) = &params.output {
+                        log.loading(&format!("Saving resolved schema to {}", output.to_str().unwrap_or("<unrepresentable-filename-not-utf8>")));
                         if let Err(e) = std::fs::write(output, &yaml) {
                             log.error(&format!(
                                 "Failed to write to {}: {}",
@@ -48,6 +41,7 @@ pub fn command_resolve(log: &Logger, params: &ResolveParams) {
                             ));
                             exit(1)
                         }
+                        log.success(&format!("Saved resolved schema to '{}'", output.to_str().unwrap_or("<unrepresentable-filename-not-utf8>")));
                     } else {
                         log.log(&yaml);
                     }

@@ -3,18 +3,6 @@ parent_schema_url: data/open-telemetry-schema.1.22.0.yaml
 # Current schema url
 schema_url: https://mycompany.com/schemas/1.0.0
 
-# Semantic Convention Imports
-semantic_conventions:
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/url.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/http-common.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/client.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/general.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/exception.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/server.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/network.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/metrics/http.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/metrics/jvm-metrics.yaml
-
 # The section below outlines the telemetry schema for a service or application.
 # This schema details all the metrics, logs, and spans specifically generated
 # by that service or application.
@@ -53,12 +41,12 @@ schema:
       - ref: jvm.thread.count
       - ref: jvm.class.loaded
       - ref: jvm.cpu.recent_utilization
-      - ref: http.server.request.duration
+#      - ref: http.server.request.duration
         attributes:
           - ref: server.address
           - ref: server.port
           #- ref: http.request.method
-          - ref: http.response.status_code
+#          - ref: http.response.status_code
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
@@ -68,7 +56,7 @@ schema:
         attributes:
           - ref: server.address
           - ref: server.port
-          - ref: http.response.status_code
+#          - ref: http.response.status_code
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
@@ -104,7 +92,7 @@ schema:
           - ref: server.address
           - ref: server.port
           # - ref: http.request.method
-          - ref: http.response.status_code
+#          - ref: http.response.status_code
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
@@ -120,12 +108,8 @@ schema:
         attributes:
           - ref: server.address
           - ref: server.port
-          - ref: server.socket.address
-          - ref: server.socket.port
           - ref: client.address
           - ref: client.port
-          - ref: client.socket.address
-          - ref: client.socket.port
           - ref: url.scheme
           - id: url.host
             type: string

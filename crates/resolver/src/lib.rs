@@ -197,7 +197,7 @@ impl SchemaResolver {
                 })?
             };
 
-            log.success(&format!("Loaded parent schema '{}'", parent_schema_url));
+            log.success(&format!("Loaded schema '{}' (parent)", parent_schema_url));
             Some(parent_schema)
         } else {
             None
