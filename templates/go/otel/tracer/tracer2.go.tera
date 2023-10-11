@@ -2,15 +2,24 @@
 
 package tracer
 
-type Status int
+import (
+    "context"
 
-const (
-    Unset Status = iota
-    Error
-    Ok
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/codes"
+    "go.opentelemetry.io/otel/trace"
+
+    client "go_test/pkg/otel"
 )
 
-{% if schema.resource_spans is defined %}
+{% if schema.resource_spans is defined -%}
+// Declaration of all attribute keys.
+var (
+{%- for attr in schema.resource_spans.spans | unique_attributes %}
+    {{ attr.id | field_name }}Key = attribute.Key("{{attr.id}}")
+{%- endfor %}
+)
+
 {% for span in schema.resource_spans.spans %}
 
 {%- set required_attrs = span.attributes | required -%}
@@ -21,14 +30,23 @@ const (
 func Start{{ span.span_name | function_name }}(
     {%- for attr in required_attrs %}
     {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,
-    {% endfor %}
+    {%- endfor %}
+    ctx context.Context,
 ) *{{span.span_name | struct_name}}Span {
+    ctx, span := client.Tracer.Start(ctx, "{{ span.span_name }}",
+    {%- for attr in required_attrs %}
+        trace.WithAttributes({{ attr.id | field_name }}Key.{{attr.type | type_mapping | function_name }}({{attr.id | field_name}}.{{attr.type | type_mapping }})),
+    {%- endfor %}
+    )
     return &{{span.span_name | struct_name}}Span {
+        ctx: ctx,
+        span: span,
         {{span.span_name | field_name}}Attrs: {{span.span_name | field_name}}Attrs {
             {%- for attr in required_attrs %}
             {{attr.id | field_name}}: {{attr.id | field_name}}.{{attr.type | type_mapping }},
-            {% endfor %}
+            {%- endfor %}
         },
+        {{span.span_name | field_name}}OptAttrs: &{{span.span_name | struct_name}}OptAttrs{},
     }
 }
 
@@ -68,6 +86,9 @@ func Start{{ span.span_name | function_name }}WithOptAttrs(
 
 // {{span.span_name | struct_name}}Span is a span for `{{ span.span_name }}`.
 type {{span.span_name | struct_name}}Span struct {
+    ctx  context.Context
+    span trace.Span
+
     {%- if required_attrs | length > 0 %}
     // Required span attributes for `{{ span.span_name }}`.
     {{span.span_name | field_name}}Attrs {{span.span_name | struct_name}}Attrs

@@ -28,30 +28,38 @@ pub fn command_resolve(log: &Logger, params: &ResolveParams) {
     let schema = SchemaResolver::resolve_schema_file(schema, log);
 
     match schema {
-        Ok(schema) => {
-            match serde_yaml::to_string(&schema) {
-                Ok(yaml) => {
-                    if let Some(output) = &params.output {
-                        log.loading(&format!("Saving resolved schema to {}", output.to_str().unwrap_or("<unrepresentable-filename-not-utf8>")));
-                        if let Err(e) = std::fs::write(output, &yaml) {
-                            log.error(&format!(
-                                "Failed to write to {}: {}",
-                                output.to_str().unwrap(),
-                                e
-                            ));
-                            exit(1)
-                        }
-                        log.success(&format!("Saved resolved schema to '{}'", output.to_str().unwrap_or("<unrepresentable-filename-not-utf8>")));
-                    } else {
-                        log.log(&yaml);
+        Ok(schema) => match serde_yaml::to_string(&schema) {
+            Ok(yaml) => {
+                if let Some(output) = &params.output {
+                    log.loading(&format!(
+                        "Saving resolved schema to {}",
+                        output
+                            .to_str()
+                            .unwrap_or("<unrepresentable-filename-not-utf8>")
+                    ));
+                    if let Err(e) = std::fs::write(output, &yaml) {
+                        log.error(&format!(
+                            "Failed to write to {}: {}",
+                            output.to_str().unwrap(),
+                            e
+                        ));
+                        exit(1)
                     }
-                }
-                Err(e) => {
-                    log.error(&format!("{}", e));
-                    exit(1)
+                    log.success(&format!(
+                        "Saved resolved schema to '{}'",
+                        output
+                            .to_str()
+                            .unwrap_or("<unrepresentable-filename-not-utf8>")
+                    ));
+                } else {
+                    log.log(&yaml);
                 }
             }
-        }
+            Err(e) => {
+                log.error(&format!("{}", e));
+                exit(1)
+            }
+        },
         Err(e) => {
             log.error(&format!("{}", e));
             exit(1)

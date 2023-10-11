@@ -38,3 +38,7 @@ clap = { version = "4.4.2", features = ["derive"] }
 # workspace dependencies
 serde.workspace = true
 serde_yaml.workspace = true
+
+[package.metadata.cargo-machete]
+# force cargo machete to ignore the following crates
+ignored = ["serde"]

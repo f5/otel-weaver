@@ -1,0 +1,73 @@
+package otel
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+    "go.opentelemetry.io/otel/sdk/resource"
+    sdktrace "go.opentelemetry.io/otel/sdk/trace"
+    "go.opentelemetry.io/otel/trace"
+)
+
+type ClientHandler struct {
+    ctx      context.Context
+    shutdown func(context.Context) error
+}
+
+const (
+    InstrumentationName    = "my-program"
+    InstrumentationVersion = "0.1.0"
+)
+
+var (
+    Tracer = otel.GetTracerProvider().Tracer(
+        InstrumentationName,
+        trace.WithInstrumentationVersion(InstrumentationVersion),
+        trace.WithSchemaURL("https://opentelemetry.io/schemas/1.21.0"),
+    )
+)
+
+func Resource() *resource.Resource {
+    return resource.NewWithAttributes(
+        "https://opentelemetry.io/schemas/1.21.0",
+        // ToDo Inject the attributes defined in the telemetry schema
+        attribute.String("service.name", "ExampleService"),
+    )
+}
+
+func InstallExportPipeline() (func(context.Context) error, error) {
+    exporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
+    if err != nil {
+        return nil, fmt.Errorf("creating stdout exporter: %w", err)
+    }
+
+    tracerProvider := sdktrace.NewTracerProvider(
+        sdktrace.WithBatcher(exporter),
+        sdktrace.WithResource(Resource()),
+    )
+    otel.SetTracerProvider(tracerProvider)
+
+    return tracerProvider.Shutdown, nil
+}
+
+func Client() *ClientHandler {
+    ctx := context.Background()
+
+    // Registers a tracer Provider globally.
+    shutdown, err := InstallExportPipeline()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    return &ClientHandler{ctx: ctx, shutdown: shutdown}
+}
+
+func (o *ClientHandler) Shutdown() {
+    if err := o.shutdown(o.ctx); err != nil {
+        log.Fatal(err)
+    }
+}

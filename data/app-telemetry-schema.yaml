@@ -29,9 +29,13 @@ schema:
   # Only used when a Client SDK is generated
   resource:
     attributes:
-      - ref: service.name
+      - id: service.name
+        type: string
+        brief: The name of the service
         value: "my-service"
-      - ref: service.version
+      - id: service.version
+        type: string
+        brief: The version of the service
         value: "{{SERVICE_VERSION}}"
     # schema url?
 
@@ -56,25 +60,14 @@ schema:
         attributes:
           - ref: server.address
           - ref: server.port
-          - ref: http.request.method
-          - ref: http.response.status_code
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
     # Declaration of all the multivariate metrics
     metric_groups:
       - id: http  # name of a multivariate metrics group
-        attributes:
-          - ref: server.address
-          - ref: server.port
-          - ref: http.request.method
-          - ref: http.response.status_code
-          - ref: network.protocol.name
-          - ref: network.protocol.version
-          - ref: url.scheme
         metrics: # metrics sharing the same attributes
           - ref: http.server.request.duration
-          - ref: http.server.active_requests
           - ref: http.server.request.body.size
           - ref: http.server.response.body.size
 
@@ -87,8 +80,6 @@ schema:
         attributes:
           - ref: server.address
           - ref: server.port
-          - ref: http.request.method
-          - ref: http.response.status_code
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
@@ -100,12 +91,8 @@ schema:
         attributes:
           - ref: server.address
           - ref: server.port
-          - ref: server.socket.address
-          - ref: server.socket.port
           - ref: client.address
           - ref: client.port
-          - ref: client.socket.address
-          - ref: client.socket.port
           - ref: url.scheme
         events:
           - event_name: error

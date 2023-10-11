@@ -50,7 +50,7 @@ pub fn instrument(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
     }
 }
 
-/// Filter ro deduplicate attributes from a list of values containing attributes.
+/// Filter to deduplicate attributes from a list of values containing attributes.
 pub fn unique_attributes(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
     let mut unique_attributes = HashMap::new();
     match value {
