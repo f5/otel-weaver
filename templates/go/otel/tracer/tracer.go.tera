@@ -31,6 +31,21 @@ func Start{{ span.span_name | function_name }}(
     {%- for attr in required_attrs %}
     {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,
     {%- endfor %}
+) *{{span.span_name | struct_name}}Span {
+    return Start{{ span.span_name | function_name }}WithContext(
+    {%- for attr in required_attrs %}
+        {{attr.id | field_name}},
+    {%- endfor %}
+        context.TODO(),
+    )
+}
+
+// Start{{ span.span_name | function_name }}WithContext starts a new `{{ span.span_name }}` span with
+// the given required attributes and context.
+func Start{{ span.span_name | function_name }}WithContext(
+    {%- for attr in required_attrs %}
+    {{attr.id | field_name}} {{attr.id | struct_name}}ReqAttr,
+    {%- endfor %}
     ctx context.Context,
 ) *{{span.span_name | struct_name}}Span {
     ctx, span := client.Tracer.Start(ctx, "{{ span.span_name }}",
@@ -131,6 +146,19 @@ func (s *{{span.span_name | struct_name}}Span) Error(err error, description stri
     s.span.SetStatus(codes.Error, description)
     s.span.RecordError(err)
     return s
+}
+
+// End ends the span with status OK.
+func (s *{{span.span_name | struct_name}}Span) EndWithOk() {
+    s.span.SetStatus(codes.Ok, "")
+    s.span.End()
+}
+
+// End ends the span with status Error and a given description.
+func (s *{{span.span_name | struct_name}}Span) EndWithError(err error, description string) {
+    s.span.SetStatus(codes.Error, description)
+    s.span.RecordError(err)
+    s.span.End()
 }
 
 // End ends the span.
