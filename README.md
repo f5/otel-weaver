@@ -87,6 +87,7 @@ weaver languages
 - [ ] Support multiple level of telemetry schema inheritance.
 - [ ] Report unused semantic convention import.
 - [ ] Generate code from the resolved schema.
+- [ ] Add Tera filter to apply obfuscation, masking, ... based on tags and language configuration.
 - [X] Add support for group of attributes (in general and for metrics).
 - [ ] Generate a "transferable" schema from the resolved schema removing all redundancy and unused definitions. More specifically an attribute used multiple times in the schema must be defined globally at the top level of the schema and referenced from the places where it is used.
 - [ ] Add support for `all` in telemetry schema versions section.

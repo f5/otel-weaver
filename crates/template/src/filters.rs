@@ -2,7 +2,7 @@
 
 //! Custom Tera filters
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use tera::{try_get_value, Filter, Result, Value};
 use textwrap::{wrap, Options};
@@ -51,32 +51,66 @@ pub fn instrument(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
 }
 
 /// Filter to deduplicate attributes from a list of values containing attributes.
-pub fn unique_attributes(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    let mut unique_attributes = HashMap::new();
-    match value {
-        Value::Array(values) => {
-            for value in values {
-                if let Value::Object(map) = value {
-                    let attributes = map.get("attributes");
-                    if let Some(Value::Array(objects)) = attributes {
-                        for object in objects {
-                            if let Value::Object(map) = object {
-                                let id = map.get("id");
-                                if let Some(Value::String(id)) = id {
-                                    if unique_attributes.contains_key(id) {
-                                        // attribute already exists
-                                        continue;
+/// The optional parameter `recursive` can be set to `true` to recursively search for attributes.
+/// The default value is `false`.
+///
+/// The result is a list of unique attributes sorted by their id or an empty list if no attributes
+/// are found.
+pub fn unique_attributes(value: &Value, ctx: &HashMap<String, Value>) -> Result<Value> {
+    let mut unique_attributes = BTreeMap::new();
+
+    let recursive = match ctx.get("recursive") {
+        Some(Value::Bool(v)) => *v,
+        _ => false,
+    };
+
+    fn visit_attributes(
+        value: &Value,
+        unique_attributes: &mut BTreeMap<String, Value>,
+        levels_to_visit: usize,
+    ) {
+        match value {
+            Value::Array(values) => {
+                if levels_to_visit == 0 {
+                    return;
+                }
+                for value in values {
+                    visit_attributes(value, unique_attributes, levels_to_visit - 1);
+                }
+            }
+            Value::Object(obj) => {
+                if levels_to_visit == 0 {
+                    return;
+                }
+                for (field, value) in obj.iter() {
+                    if field.eq("attributes") {
+                        if let Value::Array(attrs) = value {
+                            for attr in attrs {
+                                if let Value::Object(map) = attr {
+                                    let id = map.get("id");
+                                    if let Some(Value::String(id)) = id {
+                                        if unique_attributes.contains_key(id) {
+                                            // attribute already exists
+                                            continue;
+                                        }
+                                        unique_attributes.insert(id.clone(), attr.clone());
                                     }
-                                    unique_attributes.insert(id, object.clone());
                                 }
                             }
                         }
                     }
+                    visit_attributes(value, unique_attributes, levels_to_visit - 1);
                 }
             }
+            _ => {}
         }
-        _ => return Ok(value.clone()),
     }
+
+    visit_attributes(
+        value,
+        &mut unique_attributes,
+        if recursive { usize::MAX } else { 1 },
+    );
     let mut attributes = vec![];
     for attribute in unique_attributes.into_values() {
         attributes.push(attribute);

@@ -19,23 +19,28 @@ type ClientHandler struct {
 }
 
 const (
-    InstrumentationName    = "my-program"
-    InstrumentationVersion = "0.1.0"
+    InstrumentationName    = "{{ schema.instrumentation_library.name }}"
+    InstrumentationVersion = "{{ schema.instrumentation_library.version }}"
 )
 
 var (
     Tracer = otel.GetTracerProvider().Tracer(
         InstrumentationName,
         trace.WithInstrumentationVersion(InstrumentationVersion),
-        trace.WithSchemaURL("https://opentelemetry.io/schemas/1.21.0"),
+        trace.WithSchemaURL("{{ schema_url }}"),
     )
+
+{%- for attr in schema.resource.attributes %}
+    {{ attr.id | field_name }}Key = attribute.Key("{{attr.id}}")
+{%- endfor %}
 )
 
 func Resource() *resource.Resource {
     return resource.NewWithAttributes(
-        "https://opentelemetry.io/schemas/1.21.0",
-        // ToDo Inject the attributes defined in the telemetry schema
-        attribute.String("service.name", "ExampleService"),
+        "{{ schema_url }}",
+{%- for attr in schema.resource.attributes %}
+        {{ attr.id | field_name }}Key.{{ attr.type | type_mapping | function_name }}("{{ attr.value }}"),
+{%- endfor %}
     )
 }
 
