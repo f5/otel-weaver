@@ -1,0 +1,215 @@
+{# Define the file name for the generated code #}
+{%- set file_name = span_name | file_name -%}
+{{- config(file_name="otel/tracer/" ~ file_name ~ "/span.go") -}}
+// SPDX-License-Identifier: Apache-2.0
+
+package {{ span_name | file_name }}
+
+import (
+    "context"
+
+    otel_attr "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/codes"
+    "go.opentelemetry.io/otel/trace"
+
+    client "go_test/pkg/otel"
+    "go_test/pkg/otel/attribute"
+)
+
+{% set required_attrs = attributes | required -%}
+{%- set not_required_attrs = attributes | not_required -%}
+
+{%- if required_attrs | length > 0 %}
+// Start starts a new `{{ span_name }}` span with
+// the given required attributes.
+func Start(
+    {%- for attr in required_attrs %}
+    {{attr.id | field_name}} {{attr.id | struct_name}}Wrapper,
+    {%- endfor %}
+    optionalAttributes ...OptionalSpanAttribute,
+) *{{span_name | struct_name}}Span {
+    return StartWithContext(
+        context.TODO(),
+    {%- for attr in required_attrs %}
+        {{attr.id | field_name}},
+    {%- endfor %}
+        optionalAttributes...,
+    )
+}
+
+// StartWithContext starts a new `{{ span_name }}` span with
+// the given required attributes and context.
+func StartWithContext(
+    ctx context.Context,
+    {%- for attr in required_attrs %}
+    {{attr.id | field_name}} {{attr.id | struct_name}}Wrapper,
+    {%- endfor %}
+    optionalAttributes ...OptionalSpanAttribute,
+) *{{span_name | struct_name}}Span {
+    ctx, span := client.Tracer.Start(ctx, "{{ span_name }}",
+    {%- for attr in required_attrs %}
+        trace.WithAttributes({{ attr.id | field_name }}.Attribute()),
+    {%- endfor %}
+    )
+    for _, opt := range optionalAttributes {
+    	span.SetAttributes(opt.Attribute())
+    }
+    return &{{span_name | struct_name}}Span {
+        ctx: ctx,
+        span: span,
+    }
+}
+{%- else %}
+// Start{{ span_name | function_name }} starts a new named `{{ span_name }}` span.
+func Start{{ span_name | function_name }}(ctx context.Context, optionalAttributes ...OptionalSpanAttribute) *{{span_name | struct_name}}Span {
+    ctx, span := client.Tracer.Start(ctx, "{{ span_name }}")
+    for _, opt := range optionalAttributes {
+    	span.SetAttributes(opt.Attribute())
+    }
+    return &{{span_name | struct_name}}Span {
+        ctx: ctx,
+        span: span,
+    }
+}
+{%- endif %}
+
+{% if required_attrs | length > 0 -%}
+{% for attr in required_attrs %}
+// {{attr.id | struct_name}} represents a required attribute.
+// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
+func {{attr.id | struct_name}}(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}Wrapper { return {{attr.id | struct_name}}Wrapper{v} }
+// {{attr.id | struct_name}}Wrapper is a wrapper for {{attr.id | struct_name}}.
+// Use the function {{attr.id | struct_name}}(value) to create an instance.
+type {{attr.id | struct_name}}Wrapper struct { {{ attr.type | type_mapping }} }
+func (w {{attr.id | struct_name}}Wrapper) Attribute() otel_attr.KeyValue {
+    return attribute.{{ attr.id | field_name }}Key.String(w.{{ attr.type | type_mapping }})
+}
+
+{% endfor %}
+{%- endif %}
+
+{%- if not_required_attrs | length > 0 -%}
+type OptionalSpanAttribute interface {
+    Attribute() otel_attr.KeyValue
+	HttpRequestSpanMarker()
+}
+
+{% for attr in not_required_attrs %}
+// {{attr.id | struct_name}} represents an optional attribute.
+// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
+func {{attr.id | struct_name}}(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}Wrapper { return {{attr.id | struct_name}}Wrapper{v} }
+// {{attr.id | struct_name}}Wrapper is a wrapper for {{attr.id | struct_name}}.
+// Use the function {{attr.id | struct_name}}(value) to create an instance.
+type {{attr.id | struct_name}}Wrapper struct { {{ attr.type | type_mapping }} }
+func (w {{attr.id | struct_name}}Wrapper) Attribute() otel_attr.KeyValue {
+    return attribute.{{ attr.id | field_name }}Key.{{ attr.type | type_mapping | function_name }}(w.{{ attr.type | type_mapping }})
+}
+func (w {{attr.id | struct_name}}Wrapper) HttpRequestSpanMarker() {}
+
+{% endfor %}
+{%- endif -%}
+
+// {{span_name | struct_name}}Span is a span for `{{ span_name }}`.
+type {{span_name | struct_name}}Span struct {
+    ctx  context.Context
+    span trace.Span
+}
+
+{% if events | length > 0 -%}
+// {{ span_name | struct_name }}Event is interface implemented by all events for `{{ span_name }}`.
+type {{ span_name | struct_name }}Event interface {
+    EventOptions() []trace.EventOption
+}
+
+{% for event in events -%}
+
+{% for attr in event.attributes | required %}
+// Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper is a wrapper for the event `{{ event.event_name }}.{{ attr.id }}`  attribute.
+// Use the function Event{{event.event_name | function_name }}{{ attr.id | function_name}}(value) to create an instance of this type.
+type Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper struct{ {{ attr.type | type_mapping }} }
+func (w Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper) Attribute() otel_attr.KeyValue {
+	return attribute.{{ attr.id | function_name }}Key.{{ attr.type | type_mapping | function_name }}(w.{{ attr.type | type_mapping }})
+}
+func Event{{event.event_name | function_name }}{{ attr.id | function_name}}(value {{ attr.type | type_mapping }}) Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper {
+	return Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper{value}
+}
+{% endfor %}
+
+type Event{{event.event_name | function_name }}OptionalAttribute interface {
+    Attribute() otel_attr.KeyValue
+    Event{{event.event_name | function_name }}OptionalAttributeMarker()
+}
+
+{% for attr in event.attributes | not_required %}
+// Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper is a wrapper for the event `{{ event.event_name }}.{{ attr.id }}`  attribute.
+// Use the function Event{{event.event_name | function_name }}{{ attr.id | function_name}}(value) to create an instance of this type.
+type Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper struct{ {{ attr.type | type_mapping }} }
+func (w Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper) Attribute() otel_attr.KeyValue {
+	return attribute.{{ attr.id | function_name }}Key.{{ attr.type | type_mapping | function_name }}(w.{{ attr.type | type_mapping }})
+}
+func (w Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper) Event{{event.event_name | function_name }}OptionalAttributeMarker() {}
+func Event{{event.event_name | function_name }}{{ attr.id | function_name}}(value {{ attr.type | type_mapping }}) Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper {
+	return Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper{value}
+}
+{% endfor %}
+
+// Event adds an event to the span.
+func (s *{{span_name | struct_name}}Span) Event{{ event.event_name | function_name }}(
+    {%- for attr in event.attributes | required %}
+    {{attr.id | field_name}} Event{{ event.event_name | function_name }}{{attr.id | struct_name}}Wrapper,
+    {%- endfor %}
+    optionalAttributes ...Event{{ event.event_name | function_name }}OptionalAttribute,
+) *{{span_name | struct_name}}Span {
+    eventOptions := []trace.EventOption{
+    {%- for attr in event.attributes | required %}
+        trace.WithAttributes({{ attr.id | field_name }}.Attribute()),
+    {%- endfor %}
+    }
+    for _, opt := range optionalAttributes {
+    	eventOptions = append(eventOptions, trace.WithAttributes(opt.Attribute()))
+    }
+    s.span.AddEvent("{{ event.event_name }}", eventOptions...)
+    return s
+}
+{% endfor %}
+
+{%- endif %}
+
+{% for attr in not_required_attrs %}
+// Attr{{ attr.id | function_name }} sets the optional attribute `{{ attr.id }}` for the span.
+// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
+func (s *{{span_name | struct_name}}Span) Attr{{attr.id | function_name}}(value {{ attr.type | type_mapping }}) *{{span_name | struct_name}}Span {
+    s.span.SetAttributes(attribute.{{ attr.id | field_name }}Key.{{ attr.type | type_mapping | function_name }}(value))
+    return s
+}
+{% endfor %}
+
+func (s *{{span_name | struct_name}}Span) StatusOk() *{{span_name | struct_name}}Span {
+    s.span.SetStatus(codes.Ok, "")
+    return s
+}
+
+// Error sets the error for the span.
+func (s *{{span_name | struct_name}}Span) Error(err error, description string) *{{span_name | struct_name}}Span {
+    s.span.SetStatus(codes.Error, description)
+    s.span.RecordError(err)
+    return s
+}
+
+// End ends the span with status OK.
+func (s *{{span_name | struct_name}}Span) EndWithOk() {
+    s.span.SetStatus(codes.Ok, "")
+    s.span.End()
+}
+
+// End ends the span with status Error and a given description.
+func (s *{{span_name | struct_name}}Span) EndWithError(err error, description string) {
+    s.span.SetStatus(codes.Error, description)
+    s.span.RecordError(err)
+    s.span.End()
+}
+
+// End ends the span.
+func (s *{{span_name | struct_name}}Span) End() {
+    s.span.End()
+}

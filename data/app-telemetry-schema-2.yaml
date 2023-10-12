@@ -120,5 +120,24 @@ schema:
             attributes:
               - ref: exception.type
               - ref: exception.message
+                requirement_level: required
               - ref: exception.stacktrace
         # links:
+      - span_name: database.query
+        attributes:
+          - ref: server.address
+          - ref: server.port
+          - ref: client.address
+          - ref: client.port
+          - ref: url.scheme
+            requirement_level: required
+          - id: url.host
+            type: string
+            brief: The host of the request
+            requirement_level: required
+        events:
+          - event_name: error
+            attributes:
+              - ref: exception.type
+              - ref: exception.message
+              - ref: exception.stacktrace

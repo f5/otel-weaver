@@ -6,7 +6,7 @@ use crate::Error;
 use schema::attribute::Attribute;
 use schema::tags::Tags;
 use semconv::group::ConvType;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use version::VersionAttributeChanges;
 
 /// Resolves a collection of attributes (i.e. `Attribute::Ref`, `Attribute::AttributeGroupRef`,
@@ -26,7 +26,7 @@ pub fn resolve_attributes(
     sem_conv_catalog: &semconv::SemConvCatalog,
     version_changes: impl VersionAttributeChanges,
 ) -> Result<Vec<Attribute>, Error> {
-    let mut resolved_attrs = HashMap::new();
+    let mut resolved_attrs = BTreeMap::new();
     let mut copy_into_resolved_attrs =
         |attrs: HashMap<&String, &semconv::attribute::Attribute>, tags: &Option<Tags>| {
             for (attr_id, attr) in attrs {
