@@ -18,8 +18,10 @@ schema:
       - ref: service.name
         value: "my-service"
       - ref: service.version
-        value: "{{SERVICE_VERSION}}"
-    # schema url?
+        requirement_level: required
+      - id: service.instance.id
+        type: string
+        brief: The unique identifier of the service instance
 
   # Instrumentation library
   instrumentation_library:

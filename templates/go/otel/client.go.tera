@@ -5,12 +5,13 @@ import (
     "fmt"
     "log"
 
+    otel_attr "go.opentelemetry.io/otel/attribute"
     "go.opentelemetry.io/otel"
-    "go.opentelemetry.io/otel/attribute"
     "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
     "go.opentelemetry.io/otel/sdk/resource"
     sdktrace "go.opentelemetry.io/otel/sdk/trace"
     "go.opentelemetry.io/otel/trace"
+    "go_test/pkg/otel/attribute"
 )
 
 type ClientHandler struct {
@@ -29,22 +30,75 @@ var (
         trace.WithInstrumentationVersion(InstrumentationVersion),
         trace.WithSchemaURL("{{ schema_url }}"),
     )
-
-{%- for attr in schema.resource.attributes %}
-    {{ attr.id | field_name }}Key = attribute.Key("{{attr.id}}")
-{%- endfor %}
 )
 
-func Resource() *resource.Resource {
-    return resource.NewWithAttributes(
-        "{{ schema_url }}",
-{%- for attr in schema.resource.attributes %}
-        {{ attr.id | field_name }}Key.{{ attr.type | type_mapping | function_name }}("{{ attr.value }}"),
-{%- endfor %}
-    )
+{%- set required_attrs = schema.resource.attributes | required | without_value -%}
+{%- set not_required_attrs = schema.resource.attributes | not_required | without_value %}
+
+{% if required_attrs | length > 0 -%}
+{% for attr in required_attrs %}
+// {{attr.id | struct_name}} represents a required attribute.
+// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
+func {{attr.id | struct_name}}(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}Wrapper { return {{attr.id | struct_name}}Wrapper{v} }
+// {{attr.id | struct_name}}Wrapper is a wrapper for {{attr.id | struct_name}}.
+// Use the function {{attr.id | struct_name}}(value) to create an instance.
+type {{attr.id | struct_name}}Wrapper struct { {{ attr.type | type_mapping }} }
+func (w {{attr.id | struct_name}}Wrapper) Attribute() otel_attr.KeyValue {
+    return attribute.{{ attr.id | field_name }}Key.String(w.{{ attr.type | type_mapping }})
 }
 
-func InstallExportPipeline() (func(context.Context) error, error) {
+{% endfor %}
+{%- endif %}
+
+{%- if not_required_attrs | length > 0 -%}
+type OptionalResourceAttribute interface {
+    Attribute() otel_attr.KeyValue
+	ResourceMarker()
+}
+
+{% for attr in not_required_attrs %}
+// {{attr.id | struct_name}} represents an optional attribute.
+// {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
+func {{attr.id | struct_name}}(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}Wrapper { return {{attr.id | struct_name}}Wrapper{v} }
+// {{attr.id | struct_name}}Wrapper is a wrapper for {{attr.id | struct_name}}.
+// Use the function {{attr.id | struct_name}}(value) to create an instance.
+type {{attr.id | struct_name}}Wrapper struct { {{ attr.type | type_mapping }} }
+func (w {{attr.id | struct_name}}Wrapper) Attribute() otel_attr.KeyValue {
+    return attribute.{{ attr.id | field_name }}Key.{{ attr.type | type_mapping | function_name }}(w.{{ attr.type | type_mapping }})
+}
+func (w {{attr.id | struct_name}}Wrapper) ResourceMarker() {}
+
+{% endfor %}
+{%- endif -%}
+
+func Resource(
+    {%- for attr in required_attrs %}
+    {{attr.id | field_name}} {{attr.id | struct_name}}Wrapper,
+    {%- endfor %}
+    {% if not_required_attrs | length > 0 -%}optionalAttributes ...OptionalResourceAttribute,{% endif %}
+) *resource.Resource {
+    attrs := []otel_attr.KeyValue {
+        {%- for attr in schema.resource.attributes | with_value %}
+        attribute.{{ attr.id | field_name }}Key.{{ attr.type | type_mapping | function_name }}("{{ attr.value }}"),
+        {%- endfor %}
+        {%- for attr in required_attrs %}
+        {{attr.id | field_name}}.Attribute(),
+        {%- endfor %}
+    }
+    {% if not_required_attrs | length > 0 -%}
+    for _, attr := range optionalAttributes {
+        attrs = append(attrs, attr.Attribute())
+    }
+    {% endif %}
+    return resource.NewWithAttributes("{{ schema_url }}", attrs...)
+}
+
+func InstallExportPipeline(
+    {%- for attr in required_attrs %}
+    {{attr.id | field_name}} {{attr.id | struct_name}}Wrapper,
+    {%- endfor %}
+    {% if not_required_attrs | length > 0 -%}optionalAttributes ...OptionalResourceAttribute,{% endif %}
+) (func(context.Context) error, error) {
     exporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
     if err != nil {
         return nil, fmt.Errorf("creating stdout exporter: %w", err)
@@ -52,7 +106,12 @@ func InstallExportPipeline() (func(context.Context) error, error) {
 
     tracerProvider := sdktrace.NewTracerProvider(
         sdktrace.WithBatcher(exporter),
-        sdktrace.WithResource(Resource()),
+        sdktrace.WithResource(Resource(
+            {%- for attr in required_attrs %}
+            {{attr.id | field_name}},
+            {%- endfor %}
+            {% if not_required_attrs | length > 0 -%}optionalAttributes...,{% endif %}
+        )),
     )
     otel.SetTracerProvider(tracerProvider)
 
@@ -61,17 +120,39 @@ func InstallExportPipeline() (func(context.Context) error, error) {
 
 // Client returns a OTel client (generated by OTel Weaver).
 // It uses a context initialized with `context.Background()`.
-func Client() *ClientHandler {
-    return ClientWithContext(context.Background())
+func Client(
+    {%- for attr in required_attrs %}
+    {{attr.id | field_name}} {{attr.id | struct_name}}Wrapper,
+    {%- endfor %}
+    {% if not_required_attrs | length > 0 -%}optionalAttributes ...OptionalResourceAttribute,{% endif %}
+) *ClientHandler {
+    return ClientWithContext(
+        context.Background(),
+    {%- for attr in required_attrs %}
+        {{attr.id | field_name}},
+    {%- endfor %}
+    {% if not_required_attrs | length > 0 -%}optionalAttributes...,{% endif %}
+    )
 }
 
 // ClientWithContext returns a OTel client with a given context (generated by OTel Weaver).
-func ClientWithContext(ctx context.Context) *ClientHandler {
+func ClientWithContext(
+    ctx context.Context,
+    {%- for attr in required_attrs %}
+    {{attr.id | field_name}} {{attr.id | struct_name}}Wrapper,
+    {%- endfor %}
+    {% if not_required_attrs | length > 0 -%}optionalAttributes ...OptionalResourceAttribute,{% endif %}
+) *ClientHandler {
     // ToDo Globally register a meter provider.
     // ToDo Globally register an event provider.
 
     // Globally registers a tracer provider.
-    shutdown, err := InstallExportPipeline()
+    shutdown, err := InstallExportPipeline(
+        {%- for attr in required_attrs %}
+        {{attr.id | field_name}},
+        {%- endfor %}
+        {% if not_required_attrs | length > 0 -%}optionalAttributes...,{% endif %}
+    )
     if err != nil {
         log.Fatal(err)
     }

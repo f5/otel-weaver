@@ -166,6 +166,48 @@ pub fn not_required(value: &Value, _: &HashMap<String, Value>) -> Result<Value> 
     Ok(Value::Array(required_values))
 }
 
+/// Filter out attributes without value.
+pub fn with_value(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
+    let mut with_values = vec![];
+    match value {
+        Value::Array(values) => {
+            for value in values {
+                match value {
+                    Value::Object(map) => {
+                        if map.get("value").is_some() {
+                            with_values.push(value.clone());
+                        }
+                    }
+                    _ => with_values.push(value.clone()),
+                }
+            }
+        }
+        _ => return Ok(value.clone()),
+    }
+    Ok(Value::Array(with_values))
+}
+
+/// Filter out attributes with value.
+pub fn without_value(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
+    let mut without_values = vec![];
+    match value {
+        Value::Array(values) => {
+            for value in values {
+                match value {
+                    Value::Object(map) => {
+                        if map.get("value").is_none() {
+                            without_values.push(value.clone());
+                        }
+                    }
+                    _ => without_values.push(value.clone()),
+                }
+            }
+        }
+        _ => return Ok(value.clone()),
+    }
+    Ok(Value::Array(without_values))
+}
+
 /// Filter to map an OTel type to a language type.
 pub struct TypeMapping {
     pub type_mapping: HashMap<String, String>,

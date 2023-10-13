@@ -91,7 +91,7 @@ func (w {{attr.id | struct_name}}Wrapper) Attribute() otel_attr.KeyValue {
 {%- if not_required_attrs | length > 0 -%}
 type OptionalSpanAttribute interface {
     Attribute() otel_attr.KeyValue
-	HttpRequestSpanMarker()
+	{{ span_name | function_name }}SpanMarker()
 }
 
 {% for attr in not_required_attrs %}
@@ -104,7 +104,7 @@ type {{attr.id | struct_name}}Wrapper struct { {{ attr.type | type_mapping }} }
 func (w {{attr.id | struct_name}}Wrapper) Attribute() otel_attr.KeyValue {
     return attribute.{{ attr.id | field_name }}Key.{{ attr.type | type_mapping | function_name }}(w.{{ attr.type | type_mapping }})
 }
-func (w {{attr.id | struct_name}}Wrapper) HttpRequestSpanMarker() {}
+func (w {{attr.id | struct_name}}Wrapper) {{ span_name | function_name }}SpanMarker() {}
 
 {% endfor %}
 {%- endif -%}
