@@ -85,10 +85,11 @@ weaver languages
 ## ToDo
 - [ ] Support local/enterprise semantic convention.
 - [ ] Support multiple level of telemetry schema inheritance.
-- [ ] Report unused semantic convention import.
 - [ ] Generate code from the resolved schema.
 - [ ] Add Tera filter to apply obfuscation, masking, ... based on tags and language configuration.
 - [X] Add support for group of attributes (in general and for metrics).
+- [ ] Support attribute value everywhere (not only in resource).
+- [X] Support nested spans.
 - [ ] Generate a "transferable" schema from the resolved schema removing all redundancy and unused definitions. More specifically an attribute used multiple times in the schema must be defined globally at the top level of the schema and referenced from the places where it is used.
 - [ ] Add support for `all` in telemetry schema versions section.
 - [ ] Add support for `span_events` in telemetry schema versions section.
@@ -98,3 +99,6 @@ weaver languages
 - [X] Add support for group extends.
 - [ ] Add support for group constraints `any_of`, ...
 - [ ] Search engine for semantic convention catalog.
+
+## Questions
+- Should we support the equivalent of trace.SpanFromContext(context.TODO()) to get the current span? 

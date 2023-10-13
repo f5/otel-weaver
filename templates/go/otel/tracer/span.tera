@@ -196,6 +196,9 @@ func (s *{{span_name | struct_name}}Span) Error(err error, description string) *
     return s
 }
 
+// Context returns the context of the current span.
+func (s *{{span_name | struct_name }}Span) Context() context.Context { return s.ctx }
+
 // End ends the span with status OK.
 func (s *{{span_name | struct_name}}Span) EndWithOk() {
     s.span.SetStatus(codes.Ok, "")
