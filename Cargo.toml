@@ -3,6 +3,7 @@ name = "weaver"
 version = "0.1.0"
 authors = ["Laurent Querel <l.querel@f5.com>"]
 edition = "2021"
+repository = "https://github.com/f5/otel-weaver"
 description = "OTel Weaver - A Schema-Driven Client SDK Generator for OpenTelemetry"
 keywords = ["opentelemetry", "client", "schema", "arrow", "generator"]
 categories = ["command-line-utilities"]
@@ -10,10 +11,18 @@ license = "Apache-2.0"
 readme = "README.md"
 publish = false
 
+# Workspace definition ========================================================
 [workspace]
 members = [
     "crates/*",
 ]
+
+[workspace.package]
+authors = ["Laurent Querel <l.querel@f5.com>"]
+edition = "2021"
+repository = "https://github.com/f5/otel-weaver"
+license = "Apache-2.0"
+publish = false
 
 [workspace.dependencies]
 serde = { version = "1.0.188", features = ["derive"] }
@@ -22,6 +31,7 @@ thiserror = "1.0.47"
 ureq = "2.7.1"
 regex = "1.9.6"
 
+# Crate definitions ===========================================================
 [[bin]]
 bench = false
 path = "src/main.rs"
