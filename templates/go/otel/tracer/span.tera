@@ -24,14 +24,14 @@ import (
 // the given required attributes.
 func Start(
     {%- for attr in required_attrs %}
-    {{attr.id | field_name}} {{attr.id | struct_name}}Wrapper,
+    {{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper,
     {%- endfor %}
     optionalAttributes ...OptionalSpanAttribute,
 ) *{{span_name | struct_name}}Span {
     return StartWithContext(
         context.TODO(),
     {%- for attr in required_attrs %}
-        {{attr.id | field_name}},
+        {{attr.id | arg_name}},
     {%- endfor %}
         optionalAttributes...,
     )
@@ -42,13 +42,13 @@ func Start(
 func StartWithContext(
     ctx context.Context,
     {%- for attr in required_attrs %}
-    {{attr.id | field_name}} {{attr.id | struct_name}}Wrapper,
+    {{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper,
     {%- endfor %}
     optionalAttributes ...OptionalSpanAttribute,
 ) *{{span_name | struct_name}}Span {
     ctx, span := client.Tracer.Start(ctx, "{{ span_name }}",
     {%- for attr in required_attrs %}
-        trace.WithAttributes({{ attr.id | field_name }}.Attribute()),
+        trace.WithAttributes({{ attr.id | arg_name }}.Attribute()),
     {%- endfor %}
     )
     for _, opt := range optionalAttributes {
@@ -75,13 +75,13 @@ func Start{{ span_name | function_name }}(ctx context.Context, optionalAttribute
 
 {% if required_attrs | length > 0 -%}
 {% for attr in required_attrs %}
-// {{attr.id | struct_name}} represents a required attribute.
+// {{attr.id | struct_name}}ReqAttr represents a required attribute.
 // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
-func {{attr.id | struct_name}}(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}Wrapper { return {{attr.id | struct_name}}Wrapper{v} }
-// {{attr.id | struct_name}}Wrapper is a wrapper for {{attr.id | struct_name}}.
-// Use the function {{attr.id | struct_name}}(value) to create an instance.
-type {{attr.id | struct_name}}Wrapper struct { {{ attr.type | type_mapping }} }
-func (w {{attr.id | struct_name}}Wrapper) Attribute() otel_attr.KeyValue {
+func {{attr.id | struct_name}}ReqAttr(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}ReqAttrWrapper { return {{attr.id | struct_name}}ReqAttrWrapper{v} }
+// {{attr.id | struct_name}}ReqAttrWrapper is a wrapper for the attribute `{{attr.id}}`.
+// Use the function {{attr.id | struct_name}}ReqAttr(value) to create an instance.
+type {{attr.id | struct_name}}ReqAttrWrapper struct { {{ attr.type | type_mapping }} }
+func (w {{attr.id | struct_name}}ReqAttrWrapper) Attribute() otel_attr.KeyValue {
     return attribute.{{ attr.id | field_name }}Key.String(w.{{ attr.type | type_mapping }})
 }
 
@@ -89,22 +89,23 @@ func (w {{attr.id | struct_name}}Wrapper) Attribute() otel_attr.KeyValue {
 {%- endif %}
 
 {%- if not_required_attrs | length > 0 -%}
+// OptionalSpanAttribute is an interface implemented by all optional attributes of the spam.
 type OptionalSpanAttribute interface {
     Attribute() otel_attr.KeyValue
 	{{ span_name | function_name }}SpanMarker()
 }
 
 {% for attr in not_required_attrs %}
-// {{attr.id | struct_name}} represents an optional attribute.
+// {{attr.id | struct_name}}OptAttr represents an optional attribute.
 // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
-func {{attr.id | struct_name}}(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}Wrapper { return {{attr.id | struct_name}}Wrapper{v} }
-// {{attr.id | struct_name}}Wrapper is a wrapper for {{attr.id | struct_name}}.
-// Use the function {{attr.id | struct_name}}(value) to create an instance.
-type {{attr.id | struct_name}}Wrapper struct { {{ attr.type | type_mapping }} }
-func (w {{attr.id | struct_name}}Wrapper) Attribute() otel_attr.KeyValue {
+func {{attr.id | struct_name}}OptAttr(v {{ attr.type | type_mapping }}) {{attr.id | struct_name}}OptAttrWrapper { return {{attr.id | struct_name}}OptAttrWrapper{v} }
+// {{attr.id | struct_name}}OptAttrWrapper is a wrapper for the attribute `{{attr.id}}`.
+// Use the function {{attr.id | struct_name}}OptAttr(value) to create an instance.
+type {{attr.id | struct_name}}OptAttrWrapper struct { {{ attr.type | type_mapping }} }
+func (w {{attr.id | struct_name}}OptAttrWrapper) Attribute() otel_attr.KeyValue {
     return attribute.{{ attr.id | field_name }}Key.{{ attr.type | type_mapping | function_name }}(w.{{ attr.type | type_mapping }})
 }
-func (w {{attr.id | struct_name}}Wrapper) {{ span_name | function_name }}SpanMarker() {}
+func (w {{attr.id | struct_name}}OptAttrWrapper) {{ span_name | function_name }}SpanMarker() {}
 
 {% endfor %}
 {%- endif -%}
@@ -124,14 +125,14 @@ type {{ span_name | struct_name }}Event interface {
 {% for event in events -%}
 
 {% for attr in event.attributes | required %}
-// Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper is a wrapper for the event `{{ event.event_name }}.{{ attr.id }}`  attribute.
-// Use the function Event{{event.event_name | function_name }}{{ attr.id | function_name}}(value) to create an instance of this type.
-type Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper struct{ {{ attr.type | type_mapping }} }
-func (w Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper) Attribute() otel_attr.KeyValue {
+// Event{{event.event_name | function_name }}{{ attr.id | function_name}}ReqAttrWrapper is a wrapper for the event `{{ event.event_name }}.{{ attr.id }}`  attribute.
+// Use the function Event{{event.event_name | function_name }}{{ attr.id | function_name}}ReqAttr(value) to create an instance of this type.
+type Event{{event.event_name | function_name }}{{ attr.id | function_name}}ReqAttrWrapper struct{ {{ attr.type | type_mapping }} }
+func (w Event{{event.event_name | function_name }}{{ attr.id | function_name}}ReqAttrWrapper) Attribute() otel_attr.KeyValue {
 	return attribute.{{ attr.id | function_name }}Key.{{ attr.type | type_mapping | function_name }}(w.{{ attr.type | type_mapping }})
 }
-func Event{{event.event_name | function_name }}{{ attr.id | function_name}}(value {{ attr.type | type_mapping }}) Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper {
-	return Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper{value}
+func Event{{event.event_name | function_name }}{{ attr.id | function_name}}ReqAttr(value {{ attr.type | type_mapping }}) Event{{event.event_name | function_name }}{{ attr.id | function_name}}ReqAttrWrapper {
+	return Event{{event.event_name | function_name }}{{ attr.id | function_name}}ReqAttrWrapper{value}
 }
 {% endfor %}
 
@@ -141,22 +142,22 @@ type Event{{event.event_name | function_name }}OptionalAttribute interface {
 }
 
 {% for attr in event.attributes | not_required %}
-// Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper is a wrapper for the event `{{ event.event_name }}.{{ attr.id }}`  attribute.
-// Use the function Event{{event.event_name | function_name }}{{ attr.id | function_name}}(value) to create an instance of this type.
-type Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper struct{ {{ attr.type | type_mapping }} }
-func (w Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper) Attribute() otel_attr.KeyValue {
+// Event{{event.event_name | function_name }}{{ attr.id | function_name}}OptAttrWrapper is a wrapper for the event `{{ event.event_name }}.{{ attr.id }}`  attribute.
+// Use the function Event{{event.event_name | function_name }}{{ attr.id | function_name}}OptAttr(value) to create an instance of this type.
+type Event{{event.event_name | function_name }}{{ attr.id | function_name}}OptAttrWrapper struct{ {{ attr.type | type_mapping }} }
+func (w Event{{event.event_name | function_name }}{{ attr.id | function_name}}OptAttrWrapper) Attribute() otel_attr.KeyValue {
 	return attribute.{{ attr.id | function_name }}Key.{{ attr.type | type_mapping | function_name }}(w.{{ attr.type | type_mapping }})
 }
-func (w Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper) Event{{event.event_name | function_name }}OptionalAttributeMarker() {}
-func Event{{event.event_name | function_name }}{{ attr.id | function_name}}(value {{ attr.type | type_mapping }}) Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper {
-	return Event{{event.event_name | function_name }}{{ attr.id | function_name}}Wrapper{value}
+func (w Event{{event.event_name | function_name }}{{ attr.id | function_name}}OptAttrWrapper) Event{{event.event_name | function_name }}OptionalAttributeMarker() {}
+func Event{{event.event_name | function_name }}{{ attr.id | function_name}}OptAttr(value {{ attr.type | type_mapping }}) Event{{event.event_name | function_name }}{{ attr.id | function_name}}OptAttrWrapper {
+	return Event{{event.event_name | function_name }}{{ attr.id | function_name}}OptAttrWrapper{value}
 }
 {% endfor %}
 
 // Event adds an event to the span.
 func (s *{{span_name | struct_name}}Span) Event{{ event.event_name | function_name }}(
     {%- for attr in event.attributes | required %}
-    {{attr.id | field_name}} Event{{ event.event_name | function_name }}{{attr.id | struct_name}}Wrapper,
+    {{attr.id | field_name}} Event{{ event.event_name | function_name }}{{attr.id | struct_name}}ReqAttrWrapper,
     {%- endfor %}
     optionalAttributes ...Event{{ event.event_name | function_name }}OptionalAttribute,
 ) *{{span_name | struct_name}}Span {
@@ -178,7 +179,7 @@ func (s *{{span_name | struct_name}}Span) Event{{ event.event_name | function_na
 {% for attr in not_required_attrs %}
 // Attr{{ attr.id | function_name }} sets the optional attribute `{{ attr.id }}` for the span.
 // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
-func (s *{{span_name | struct_name}}Span) Attr{{attr.id | function_name}}(value {{ attr.type | type_mapping }}) *{{span_name | struct_name}}Span {
+func (s *{{span_name | struct_name}}Span) {{attr.id | function_name}}OptAttr(value {{ attr.type | type_mapping }}) *{{span_name | struct_name}}Span {
     s.span.SetAttributes(attribute.{{ attr.id | field_name }}Key.{{ attr.type | type_mapping | function_name }}(value))
     return s
 }
