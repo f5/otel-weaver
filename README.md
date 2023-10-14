@@ -83,22 +83,29 @@ weaver languages
 - [OpenTelemetry Semantic Convention File Format](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md)
 
 ## ToDo
-- [ ] Support local/enterprise semantic convention.
-- [ ] Support multiple level of telemetry schema inheritance.
-- [ ] Generate code from the resolved schema.
-- [ ] Add Tera filter to apply obfuscation, masking, ... based on tags and language configuration.
-- [X] Add support for group of attributes (in general and for metrics).
-- [X] Support attribute value everywhere (not only in resource).
-- [X] Support nested spans.
-- [ ] Generate a "transferable" schema from the resolved schema removing all redundancy and unused definitions. More specifically an attribute used multiple times in the schema must be defined globally at the top level of the schema and referenced from the places where it is used.
-- [ ] Add support for `all` in telemetry schema versions section.
-- [ ] Add support for `span_events` in telemetry schema versions section.
-- [ ] Add support for `apply_to_spans` in telemetry schema versions section.
-- [ ] Add support for `apply_to_metrics` in telemetry schema metrics versions section.
-- [ ] Add support for `split` in telemetry schema metrics versions section.
-- [X] Add support for group extends.
-- [ ] Add support for group constraints `any_of`, ...
-- [ ] Search engine for semantic convention catalog.
+- Telemetry schema improvements
+  - [ ] Support local/enterprise semantic convention.
+  - [ ] Support multiple level of telemetry schema inheritance.
+  - [ ] Add support for `all` in telemetry schema versions section.
+  - [ ] Add support for `span_events` in telemetry schema versions section.
+  - [ ] Add support for `apply_to_spans` in telemetry schema versions section.
+  - [ ] Add support for `apply_to_metrics` in telemetry schema metrics versions section.
+  - [ ] Add support for `split` in telemetry schema metrics versions section.
+  - [ ] Add support for group constraints `any_of`, ...
+  - [X] Add support for group extends.
+  - [X] Add support for group of attributes (in general and for metrics).
+  - [X] Support attribute value everywhere (not only in resource).
+  - [X] Support nested spans.
+- Client SDK/API code generation
+  - [ ] Generate Go Client SDK/API on top of the generic Go Client SDK/API.
+  - [ ] Generate Go Client SDK/API with support for OTel Arrow Protocol.
+  - [ ] Generate Rust Client SDK/API on top of the generic Go Client SDK/API.
+  - [ ] Generate Rust Client SDK/API with support for OTel Arrow Protocol.
+- Tooling and plugins
+  - [ ] Add support for WASM plugins.
+  - [ ] Add Tera filter to apply obfuscation, masking, ... based on tags and language configuration.
+  - [ ] Generate a "transferable" schema from the resolved schema removing all redundancy and unused definitions. More specifically an attribute used multiple times in the schema must be defined globally at the top level of the schema and referenced from the places where it is used.
+  - [ ] Search engine for semantic convention catalog.
 
 ## Questions
 - Should we support the equivalent of trace.SpanFromContext(context.TODO()) to get the current span? 
