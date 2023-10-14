@@ -98,7 +98,7 @@ func resourceBuilder(
 ) *resource.Resource {
     attrs := []otel_attr.KeyValue {
         {%- for attr in schema.resource.attributes | with_value %}
-        attribute.{{ attr.id | field_name }}Key.{{ attr.type | type_mapping | function_name }}("{{ attr.value }}"),
+        attribute.{{ attr.id | field_name }}Key.{{ attr.type | type_mapping | function_name }}({{ attr.value | value }}),
         {%- endfor %}
         {%- for attr in required_attrs %}
         {{attr.id | arg_name}}.Attribute(),

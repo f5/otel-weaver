@@ -1,17 +1,18 @@
 {% macro declare_args(attrs) -%}
-    {%- for attr in attrs %}
+    {%- for attr in attrs | required | without_value %}
     {{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper,
     {%- endfor %}
 {% endmacro declare_args %}
 
 
 {% macro declare_attrs(prefix="", attrs) -%}
-{% if attrs | length > 0 -%}
+{% set require_attrs = attrs | required | without_value %}
+{% if require_attrs | length > 0 -%}
 // ===============================================
 // ====== Definition of required attributes ======
 // ===============================================
 
-{% for attr in attrs %}
+{% for attr in require_attrs %}
 // {{prefix}}{{attr.id | struct_name}}ReqAttr is a wrapper for a required attribute.
 // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
 func {{prefix}}{{attr.id | struct_name}}ReqAttr(v {{ attr.type | type_mapping }}) {{prefix}}{{attr.id | struct_name}}ReqAttrWrapper {

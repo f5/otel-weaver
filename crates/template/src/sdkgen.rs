@@ -93,6 +93,7 @@ impl ClientSdkGenerator {
         tera.register_filter("instrument", filters::instrument);
         tera.register_filter("required", filters::required);
         tera.register_filter("not_required", filters::not_required);
+        tera.register_filter("value", filters::value);
         tera.register_filter("with_value", filters::with_value);
         tera.register_filter("without_value", filters::without_value);
         tera.register_filter("comment", filters::comment);

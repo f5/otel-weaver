@@ -18,19 +18,16 @@ import (
     "go_test/pkg/otel/attribute"
 )
 
-{% set required_attrs = attributes | required -%}
-{%- set not_required_attrs = attributes | not_required -%}
-
-{%- if required_attrs | length > 0 %}
+{%- if attributes | required | without_value | length > 0 %}
 // Start starts a new `{{ span_name }}` span with
 // the given required attributes.
 func Start(
-    {{- required::declare_args(attrs=required_attrs) }}
+    {{- required::declare_args(attrs=attributes) }}
     optionalAttributes ...{{ optional::attr_type(prefix="Span") }},
 ) *{{span_name | struct_name}}Span {
     return StartWithContext(
         context.TODO(),
-    {%- for attr in required_attrs %}
+    {%- for attr in attributes | required | without_value %}
         {{attr.id | arg_name}},
     {%- endfor %}
         optionalAttributes...,
@@ -41,11 +38,14 @@ func Start(
 // the given required attributes and context.
 func StartWithContext(
     ctx context.Context,
-    {{- required::declare_args(attrs=required_attrs) }}
+    {{- required::declare_args(attrs=attributes) }}
     optionalAttributes ...{{ optional::attr_type(prefix="Span") }},
 ) *{{span_name | struct_name}}Span {
     ctx, span := client.Tracer.Start(ctx, "{{ span_name }}",
-    {%- for attr in required_attrs %}
+    {%- for attr in attributes | with_value %}
+        trace.WithAttributes(attribute.{{ attr.id | function_name }}Key.{{attr.type | type_mapping | function_name}}({{attr.value | value}})),
+    {%- endfor %}
+    {%- for attr in attributes | required | without_value %}
         trace.WithAttributes({{ attr.id | arg_name }}.Attribute()),
     {%- endfor %}
     )
@@ -71,8 +71,8 @@ func Start{{ span_name | function_name }}(ctx context.Context, optionalAttribute
 }
 {%- endif %}
 
-{{ required::declare_attrs(attrs=required_attrs) }}
-{{ optional::declare_attrs(marker="Span", attrs=not_required_attrs) }}
+{{ required::declare_attrs(attrs=attributes) }}
+{{ optional::declare_attrs(marker="Span", attrs=attributes) }}
 
 // {{span_name | struct_name}}Span is a span for `{{ span_name }}`.
 type {{span_name | struct_name}}Span struct {
@@ -89,8 +89,8 @@ type {{ span_name | struct_name }}Event interface {
 {% for event in events -%}
 
 {% set event_name = event.event_name | function_name -%}
-{{ required::declare_attrs(prefix="Event" ~ event_name, attrs=event.attributes | required) }}
-{{ optional::declare_attrs(prefix="Event" ~ event_name, marker="Event" ~ event_name, attrs=event.attributes | not_required) }}
+{{ required::declare_attrs(prefix="Event" ~ event_name, attrs=event.attributes) }}
+{{ optional::declare_attrs(prefix="Event" ~ event_name, marker="Event" ~ event_name, attrs=event.attributes) }}
 
 // Event adds an event to the span.
 func (s *{{span_name | struct_name}}Span) Event{{ event.event_name | function_name }}(
@@ -100,6 +100,9 @@ func (s *{{span_name | struct_name}}Span) Event{{ event.event_name | function_na
     optionalAttributes ...{{ optional::attr_type(prefix="Event" ~ event_name) }},
 ) *{{span_name | struct_name}}Span {
     eventOptions := []trace.EventOption{
+    {%- for attr in event.attributes | with_value %}
+        trace.WithAttributes(attribute.{{ attr.id | function_name }}Key.{{attr.type | type_mapping | function_name}}({{attr.value | value}})),
+    {%- endfor %}
     {%- for attr in event.attributes | required %}
         trace.WithAttributes({{ attr.id | field_name }}.Attribute()),
     {%- endfor %}
@@ -114,7 +117,7 @@ func (s *{{span_name | struct_name}}Span) Event{{ event.event_name | function_na
 
 {%- endif %}
 
-{% for attr in not_required_attrs %}
+{% for attr in attributes | not_required | without_value %}
 // Attr{{ attr.id | function_name }} sets the optional attribute `{{ attr.id }}` for the span.
 // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
 func (s *{{span_name | struct_name}}Span) {{attr.id | function_name}}OptAttr(value {{ attr.type | type_mapping }}) *{{span_name | struct_name}}Span {

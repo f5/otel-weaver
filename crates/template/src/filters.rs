@@ -166,6 +166,16 @@ pub fn not_required(value: &Value, _: &HashMap<String, Value>) -> Result<Value> 
     Ok(Value::Array(required_values))
 }
 
+/// Transform a value into a quoted string, a number, or a boolean depending on the value type.
+pub fn value(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
+    Ok(match value {
+        Value::Bool(v) => Value::String(v.to_string()),
+        Value::Number(v) => Value::String(v.to_string()),
+        Value::String(v) => Value::String(format!("\"{}\"", v)),
+        _ => value.clone(),
+    })
+}
+
 /// Filter out attributes without value.
 pub fn with_value(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
     let mut with_values = vec![];

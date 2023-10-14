@@ -1,7 +1,8 @@
 {% macro attr_type(prefix) -%}Optional{{prefix}}Attribute{% endmacro attr_type %}
 
 {% macro declare_attrs(prefix="", marker, attrs) -%}
-{%- if attrs | length > 0 -%}
+{% set not_require_attrs = attrs | not_required | without_value %}
+{%- if not_require_attrs | length > 0 -%}
 // ===============================================
 // ====== Definition of optional attributes ======
 // ===============================================
@@ -12,7 +13,7 @@ type Optional{{marker}}Attribute interface {
 	{{ marker | function_name }}Marker()
 }
 
-{% for attr in attrs %}
+{% for attr in not_require_attrs %}
 // {{prefix}}{{attr.id | struct_name}}OptAttr represents an optional attribute.
 // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
 func {{prefix}}{{attr.id | struct_name}}OptAttr(v {{ attr.type | type_mapping }}) {{prefix}}{{attr.id | struct_name}}OptAttrWrapper { return {{prefix}}{{attr.id | struct_name}}OptAttrWrapper{v} }
