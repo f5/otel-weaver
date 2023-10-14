@@ -156,6 +156,13 @@ impl ClientSdkGenerator {
                     .to_str()
                     .ok_or(InvalidTemplateFile(tmpl_file_path.clone()))?;
 
+                if tmpl_file.ends_with(".macro.tera") {
+                    // Macro files are not templates.
+                    // They are included in other templates.
+                    // So we skip them.
+                    continue;
+                }
+
                 match tmpl_file_path.file_stem().and_then(|s| s.to_str()) {
                     Some("univariate_metric") => {
                         self.process_univariate_metrics(
