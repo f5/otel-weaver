@@ -84,6 +84,7 @@ weaver languages
 
 ## ToDo
 - Telemetry schema improvements
+  - [ ] Minimize number of declaration duplications in the resolved schema (especially for attributes).
   - [ ] Support local/enterprise semantic convention.
   - [ ] Support multiple level of telemetry schema inheritance.
   - [ ] Add support for `all` in telemetry schema versions section.
@@ -104,7 +105,6 @@ weaver languages
 - Tooling and plugins
   - [ ] Add support for WASM plugins.
   - [ ] Add Tera filter to apply obfuscation, masking, ... based on tags and language configuration.
-  - [ ] Generate a "transferable" schema from the resolved schema removing all redundancy and unused definitions. More specifically an attribute used multiple times in the schema must be defined globally at the top level of the schema and referenced from the places where it is used.
   - [ ] Search engine for semantic convention catalog.
 
 ## Questions
