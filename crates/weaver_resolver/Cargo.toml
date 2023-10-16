@@ -15,7 +15,7 @@ weaver_version = { path = "../weaver_version" }
 
 regex.workspace = true
 thiserror.workspace = true
+rayon.workspace = true
 
 url = "2.4.1"
-rayon = "1.8.0"
 

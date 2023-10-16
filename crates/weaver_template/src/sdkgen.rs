@@ -2,25 +2,27 @@
 
 //! Client SDK generator
 
+use std::{fs, process};
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::{fs, process};
 
-use glob::glob;
+use glob::{glob, Paths};
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::ParallelIterator;
 use tera::{Context, Tera};
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
-use weaver_schema::univariate_metric::UnivariateMetric;
 use weaver_schema::TelemetrySchema;
+use weaver_schema::univariate_metric::UnivariateMetric;
 
+use crate::{filters, functions, GeneratorConfig, testers};
 use crate::config::{DynamicGlobalConfig, LanguageConfig};
 use crate::Error::{
     InternalError, InvalidTelemetrySchema, InvalidTemplate, InvalidTemplateDirectory,
     InvalidTemplateFile, LanguageNotSupported, TemplateFileNameUndefined, WriteGeneratedCodeFailed,
 };
-use crate::{filters, functions, testers, GeneratorConfig};
 
 /// Client SDK generator
 pub struct ClientSdkGenerator {
@@ -32,6 +34,25 @@ pub struct ClientSdkGenerator {
 
     /// Global configuration
     config: Arc<Mutex<DynamicGlobalConfig>>,
+}
+
+enum Template {
+    Metric {
+        template: String,
+    },
+    MetricGroup {
+        template: String,
+    },
+    Event {
+        template: String,
+    },
+    Span {
+        template: String,
+    },
+    Other {
+        template: String,
+        relative_path: PathBuf,
+    },
 }
 
 impl ClientSdkGenerator {
@@ -148,6 +169,49 @@ impl ClientSdkGenerator {
             glob(lang_path.as_str()).map_err(|e| InternalError(e.to_string()))?
         };
 
+        // Process all templates in parallel.
+        self.list_all_templates(paths)?.par_iter().try_for_each(|template| {
+            match template {
+                Template::Metric { template } =>
+                    self.process_univariate_metrics(
+                        log,
+                        template,
+                        &schema_path,
+                        &schema,
+                        &output_dir,
+                    ),
+                Template::MetricGroup { template } =>
+                    self.process_multivariate_metrics(
+                        log,
+                        template,
+                        &schema_path,
+                        &schema,
+                        &output_dir,
+                    ),
+                Template::Event { template } =>
+                    self.process_events(log, template, &schema_path, &schema, &output_dir),
+                Template::Span { template } =>
+                    self.process_spans(log, template, &schema_path, &schema, &output_dir),
+                Template::Other { template, relative_path } => {
+                    // Process other templates
+                    log.loading(&format!("Generating file {}", template));
+                    let generated_code = self.generate_code(log, template, context)?;
+                    let mut relative_path = relative_path.to_path_buf();
+                    relative_path.set_extension("");
+
+                    let generated_file = Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                    log.success(&format!("Generated file {:?}", generated_file));
+                    Ok(())
+                }
+            }
+        })?;
+
+        Ok(())
+    }
+
+    /// Lists all templates in the template directory.
+    fn list_all_templates(&self, paths: Paths) -> Result<Vec<Template>, crate::Error> {
+        let mut templates = Vec::new();
         for entry in paths {
             if let Ok(tmpl_file_path) = entry {
                 if tmpl_file_path.is_dir() {
@@ -166,50 +230,23 @@ impl ClientSdkGenerator {
                 }
 
                 match tmpl_file_path.file_stem().and_then(|s| s.to_str()) {
-                    Some("univariate_metric") => {
-                        self.process_univariate_metrics(
-                            log,
-                            tmpl_file,
-                            &schema_path,
-                            &schema,
-                            &output_dir,
-                        )?;
-                    }
-                    Some("multivariate_metric") => {
-                        self.process_multivariate_metrics(
-                            log,
-                            tmpl_file,
-                            &schema_path,
-                            &schema,
-                            &output_dir,
-                        )?;
-                    }
-                    Some("log") => {
-                        self.process_logs(log, tmpl_file, &schema_path, &schema, &output_dir)?;
-                    }
-                    Some("span") => {
-                        self.process_spans(log, tmpl_file, &schema_path, &schema, &output_dir)?;
-                    }
+                    Some("metric") => templates.push(Template::Metric { template: tmpl_file.into() }),
+                    Some("metric_group") => templates.push(Template::MetricGroup { template: tmpl_file.into() }),
+                    Some("event") => templates.push(Template::Event { template: tmpl_file.into() }),
+                    Some("span") => templates.push(Template::Span { template: tmpl_file.into() }),
                     _ => {
-                        // Process other templates
-                        log.loading(&format!("Generating file {}", tmpl_file));
-                        let generated_code = self.generate_code(log, tmpl_file, context)?;
-
                         // Remove the `tera` extension from the relative path
                         let mut relative_path = relative_path.to_path_buf();
                         relative_path.set_extension("");
 
-                        let generated_file =
-                            Self::save_generated_code(&output_dir, relative_path, generated_code)?;
-                        log.success(&format!("Generated file {:?}", generated_file));
+                        templates.push(Template::Other { template: tmpl_file.into(), relative_path })
                     }
                 }
             } else {
                 return Err(InvalidTemplateDirectory(self.lang_path.clone()));
             }
         }
-
-        Ok(())
+        Ok(templates)
     }
 
     /// Generate code.
@@ -378,7 +415,7 @@ impl ClientSdkGenerator {
     }
 
     /// Process all logs in the schema.
-    fn process_logs(
+    fn process_events(
         &self,
         log: &Logger,
         tmpl_file: &str,
