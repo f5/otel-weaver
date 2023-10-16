@@ -10,6 +10,8 @@ import (
     "go.opentelemetry.io/otel"
     otel_attr "go.opentelemetry.io/otel/attribute"
     "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+    "go.opentelemetry.io/otel/metric"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
     "go.opentelemetry.io/otel/sdk/resource"
     sdktrace "go.opentelemetry.io/otel/sdk/trace"
     "go.opentelemetry.io/otel/trace"
@@ -23,6 +25,11 @@ const (
 )
 
 var (
+	Meter = otel.GetMeterProvider().Meter(
+		InstrumentationName,
+		metric.WithInstrumentationVersion(InstrumentationVersion),
+		metric.WithSchemaURL("{{ schema_url }}"),
+	)
     Tracer = otel.GetTracerProvider().Tracer(
         InstrumentationName,
         trace.WithInstrumentationVersion(InstrumentationVersion),
@@ -33,7 +40,8 @@ var (
 // ClientHandler is a handler for the OTel Weaver client.
 type ClientHandler struct {
     ctx      context.Context
-    shutdown func(context.Context) error
+	metricShutdown func(context.Context) error
+	traceShutdown  func(context.Context) error
 }
 
 {%- set required_attrs = schema.resource.attributes | required | without_value -%}
@@ -67,11 +75,7 @@ func ClientWithContext(
     {{- required::declare_args(attrs=required_attrs) }}
     {% if not_required_attrs | length > 0 -%}optionalAttributes ...OptionalResourceAttribute,{% endif %}
 ) *ClientHandler {
-    // ToDo Globally register a meter provider.
-    // ToDo Globally register an event provider.
-
-    // Globally registers a tracer provider.
-    shutdown, err := installExportPipeline(
+    metricShutdown, traceShutdown, err := installExportPipeline(
         {%- for attr in required_attrs %}
         {{attr.id | arg_name}},
         {%- endfor %}
@@ -81,13 +85,29 @@ func ClientWithContext(
         log.Fatal(err)
     }
 
-    return &ClientHandler{ctx: ctx, shutdown: shutdown}
+	return &ClientHandler{
+		ctx:            ctx,
+		metricShutdown: metricShutdown,
+		traceShutdown:  traceShutdown,
+	}
 }
 
 func (o *ClientHandler) Shutdown() {
-    if err := o.shutdown(o.ctx); err != nil {
-        log.Fatal(err)
-    }
+	metricErr := o.metricShutdown(o.ctx)
+	traceErr := o.traceShutdown(o.ctx)
+
+	mustExit := false
+	if metricErr != nil {
+		log.Println(metricErr)
+		mustExit = true
+	}
+	if traceErr != nil {
+		log.Println(traceErr)
+		mustExit = true
+	}
+	if mustExit {
+		os.Exit(1)
+	}
 }
 
 func resourceBuilder(
@@ -117,11 +137,29 @@ func installExportPipeline(
     {{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper,
     {%- endfor %}
     {% if not_required_attrs | length > 0 -%}optionalAttributes ...OptionalResourceAttribute,{% endif %}
-) (func(context.Context) error, error) {
-    exporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
-    if err != nil {
-        return nil, fmt.Errorf("creating stdout exporter: %w", err)
-    }
+) (metricShutdown func(context.Context) error, traceShutdown func(context.Context) error, err error) {
+    metricExporter, err := stdoutmetric.New(stdoutmetric.WithPrettyPrint())
+	if err != nil {
+		err = fmt.Errorf("creating metric stdout exporter: %w", err)
+		return
+	}
+
+    traceExporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
+	if err != nil {
+		err = fmt.Errorf("creating trace stdout exporter: %w", err)
+		return
+	}
+
+    metricProvider := sdkmetric.NewMetricProvider(
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter, sdkmetric.WithInterval(3*time.Second))),
+        sdktrace.WithResource(resourceBuilder(
+            {%- for attr in required_attrs %}
+            {{attr.id | arg_name}},
+            {%- endfor %}
+            {% if not_required_attrs | length > 0 -%}optionalAttributes...,{% endif %}
+        )),
+    )
+    otel.SetMeterProvider(metricProvider)
 
     tracerProvider := sdktrace.NewTracerProvider(
         sdktrace.WithBatcher(exporter),
@@ -134,5 +172,7 @@ func installExportPipeline(
     )
     otel.SetTracerProvider(tracerProvider)
 
-    return tracerProvider.Shutdown, nil
+	metricShutdown = metricProvider.Shutdown
+	traceShutdown = tracerProvider.Shutdown
+	return
 }

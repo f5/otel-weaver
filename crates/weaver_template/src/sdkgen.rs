@@ -2,10 +2,10 @@
 
 //! Client SDK generator
 
-use std::{fs, process};
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use std::{fs, process};
 
 use glob::{glob, Paths};
 use rayon::iter::IntoParallelRefIterator;
@@ -14,15 +14,15 @@ use tera::{Context, Tera};
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
-use weaver_schema::TelemetrySchema;
 use weaver_schema::univariate_metric::UnivariateMetric;
+use weaver_schema::TelemetrySchema;
 
-use crate::{filters, functions, GeneratorConfig, testers};
 use crate::config::{DynamicGlobalConfig, LanguageConfig};
 use crate::Error::{
     InternalError, InvalidTelemetrySchema, InvalidTemplate, InvalidTemplateDirectory,
     InvalidTemplateFile, LanguageNotSupported, TemplateFileNameUndefined, WriteGeneratedCodeFailed,
 };
+use crate::{filters, functions, testers, GeneratorConfig};
 
 /// Client SDK generator
 pub struct ClientSdkGenerator {
@@ -170,41 +170,43 @@ impl ClientSdkGenerator {
         };
 
         // Process all templates in parallel.
-        self.list_all_templates(paths)?.par_iter().try_for_each(|template| {
-            match template {
-                Template::Metric { template } =>
-                    self.process_univariate_metrics(
+        self.list_all_templates(paths)?
+            .par_iter()
+            .try_for_each(|template| {
+                match template {
+                    Template::Metric { template } => {
+                        self.process_metrics(log, template, &schema_path, &schema, &output_dir)
+                    }
+                    Template::MetricGroup { template } => self.process_metric_groups(
                         log,
                         template,
                         &schema_path,
                         &schema,
                         &output_dir,
                     ),
-                Template::MetricGroup { template } =>
-                    self.process_multivariate_metrics(
-                        log,
+                    Template::Event { template } => {
+                        self.process_events(log, template, &schema_path, &schema, &output_dir)
+                    }
+                    Template::Span { template } => {
+                        self.process_spans(log, template, &schema_path, &schema, &output_dir)
+                    }
+                    Template::Other {
                         template,
-                        &schema_path,
-                        &schema,
-                        &output_dir,
-                    ),
-                Template::Event { template } =>
-                    self.process_events(log, template, &schema_path, &schema, &output_dir),
-                Template::Span { template } =>
-                    self.process_spans(log, template, &schema_path, &schema, &output_dir),
-                Template::Other { template, relative_path } => {
-                    // Process other templates
-                    log.loading(&format!("Generating file {}", template));
-                    let generated_code = self.generate_code(log, template, context)?;
-                    let mut relative_path = relative_path.to_path_buf();
-                    relative_path.set_extension("");
+                        relative_path,
+                    } => {
+                        // Process other templates
+                        log.loading(&format!("Generating file {}", template));
+                        let generated_code = self.generate_code(log, template, context)?;
+                        let mut relative_path = relative_path.to_path_buf();
+                        relative_path.set_extension("");
 
-                    let generated_file = Self::save_generated_code(&output_dir, relative_path, generated_code)?;
-                    log.success(&format!("Generated file {:?}", generated_file));
-                    Ok(())
+                        let generated_file =
+                            Self::save_generated_code(&output_dir, relative_path, generated_code)?;
+                        log.success(&format!("Generated file {:?}", generated_file));
+                        Ok(())
+                    }
                 }
-            }
-        })?;
+            })?;
 
         Ok(())
     }
@@ -230,16 +232,27 @@ impl ClientSdkGenerator {
                 }
 
                 match tmpl_file_path.file_stem().and_then(|s| s.to_str()) {
-                    Some("metric") => templates.push(Template::Metric { template: tmpl_file.into() }),
-                    Some("metric_group") => templates.push(Template::MetricGroup { template: tmpl_file.into() }),
-                    Some("event") => templates.push(Template::Event { template: tmpl_file.into() }),
-                    Some("span") => templates.push(Template::Span { template: tmpl_file.into() }),
+                    Some("metric") => templates.push(Template::Metric {
+                        template: tmpl_file.into(),
+                    }),
+                    Some("metric_group") => templates.push(Template::MetricGroup {
+                        template: tmpl_file.into(),
+                    }),
+                    Some("event") => templates.push(Template::Event {
+                        template: tmpl_file.into(),
+                    }),
+                    Some("span") => templates.push(Template::Span {
+                        template: tmpl_file.into(),
+                    }),
                     _ => {
                         // Remove the `tera` extension from the relative path
                         let mut relative_path = relative_path.to_path_buf();
                         relative_path.set_extension("");
 
-                        templates.push(Template::Other { template: tmpl_file.into(), relative_path })
+                        templates.push(Template::Other {
+                            template: tmpl_file.into(),
+                            relative_path,
+                        })
                     }
                 }
             } else {
@@ -299,7 +312,7 @@ impl ClientSdkGenerator {
     }
 
     /// Process all univariate metrics in the schema.
-    fn process_univariate_metrics(
+    fn process_metrics(
         &self,
         log: &Logger,
         tmpl_file: &str,
@@ -356,8 +369,8 @@ impl ClientSdkGenerator {
         Ok(())
     }
 
-    /// Process all multivariate metrics in the schema.
-    fn process_multivariate_metrics(
+    /// Process all metric groups (multivariate) in the schema.
+    fn process_metric_groups(
         &self,
         log: &Logger,
         tmpl_file: &str,

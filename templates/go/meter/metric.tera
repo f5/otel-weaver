@@ -1,0 +1,46 @@
+{% import "required_attrs.macro.tera" as required %}
+{% import "optional_attrs.macro.tera" as optional %}
+{# Define the file name for the generated code #}
+{%- set file_name = name | file_name -%}
+{{- config(file_name="otel/meter/metric_" ~ file_name ~ "/metric.go") -}}
+// SPDX-License-Identifier: Apache-2.0
+
+package {{ name | file_name }}
+
+import (
+    "context"
+
+    otel_attr "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/metrics"
+
+    client "go_test/pkg/otel"
+    "go_test/pkg/otel/attribute"
+)
+
+// Metric records a new `{{ name }}` metric measurement with
+// the given required attributes.
+func Metric(
+
+    {{- required::declare_args(attrs=attributes) }}
+    optionalAttributes ...{{ optional::attr_type(prefix="Span") }},
+) {
+    MetricWithContext(
+        context.TODO(),
+    {%- for attr in attributes | required | without_value %}
+        {{attr.id | arg_name}},
+    {%- endfor %}
+        optionalAttributes...,
+    )
+}
+
+// MetricWithContext records a new `{{ name }}` metric measurement with
+// the given context and required attributes.
+func MetricWithContext(
+    ctx context.Context,
+    {{- required::declare_args(attrs=attributes) }}
+    optionalAttributes ...{{ optional::attr_type(prefix="Span") }},
+) {
+}
+
+{{ required::declare_attrs(attrs=attributes) }}
+{{ optional::declare_attrs(marker="Span", attrs=attributes) }}

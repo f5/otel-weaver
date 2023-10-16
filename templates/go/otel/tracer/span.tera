@@ -58,7 +58,7 @@ func StartWithContext(
     }
 }
 {%- else %}
-// Start{{ span_name | function_name }} starts a new named `{{ span_name }}` span.
+// Start starts a new named `{{ span_name }}` span.
 func Start{{ span_name | function_name }}(ctx context.Context, optionalAttributes ...{{ optional::attr_type(prefix="Span") }}) *{{span_name | struct_name}}Span {
     ctx, span := client.Tracer.Start(ctx, "{{ span_name }}")
     for _, opt := range optionalAttributes {
