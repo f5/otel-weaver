@@ -98,9 +98,9 @@ weaver languages
   - [X] Support attribute value everywhere (not only in resource).
   - [X] Support nested spans.
 - Client SDK/API code generation
-  - [ ] Generate Go Client SDK/API on top of the generic Go Client SDK/API.
+  - [partial] Generate Go Client SDK/API on top of the generic Go Client SDK/API.
   - [ ] Generate Go Client SDK/API with support for OTel Arrow Protocol.
-  - [ ] Generate Rust Client SDK/API on top of the generic Go Client SDK/API.
+  - [partial] Generate Rust Client SDK/API on top of the generic Go Client SDK/API.
   - [ ] Generate Rust Client SDK/API with support for OTel Arrow Protocol.
 - Tooling and plugins
   - [ ] Add support for WASM plugins.
