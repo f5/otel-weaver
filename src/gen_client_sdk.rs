@@ -6,9 +6,9 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
-use logger::Logger;
-use template::sdkgen::ClientSdkGenerator;
-use template::GeneratorConfig;
+use weaver_logger::Logger;
+use weaver_template::sdkgen::ClientSdkGenerator;
+use weaver_template::GeneratorConfig;
 
 /// Parameters for the `gen-client-sdk` command
 #[derive(Parser)]

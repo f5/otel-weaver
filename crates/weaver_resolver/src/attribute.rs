@@ -3,11 +3,11 @@
 //! Attribute resolution.
 
 use crate::Error;
-use schema::attribute::Attribute;
-use schema::tags::Tags;
-use semconv::group::ConvType;
 use std::collections::{BTreeMap, HashMap, HashSet};
-use version::VersionAttributeChanges;
+use weaver_schema::attribute::Attribute;
+use weaver_schema::tags::Tags;
+use weaver_semconv::group::ConvType;
+use weaver_version::VersionAttributeChanges;
 
 /// Resolves a collection of attributes (i.e. `Attribute::Ref`, `Attribute::AttributeGroupRef`,
 /// and `Attribute::SpanRef`) from the given semantic convention catalog and local attributes
@@ -23,12 +23,12 @@ use version::VersionAttributeChanges;
 /// attributes.
 pub fn resolve_attributes(
     attributes: &[Attribute],
-    sem_conv_catalog: &semconv::SemConvCatalog,
+    sem_conv_catalog: &weaver_semconv::SemConvCatalog,
     version_changes: impl VersionAttributeChanges,
 ) -> Result<Vec<Attribute>, Error> {
     let mut resolved_attrs = BTreeMap::new();
     let mut copy_into_resolved_attrs =
-        |attrs: HashMap<&String, &semconv::attribute::Attribute>, tags: &Option<Tags>| {
+        |attrs: HashMap<&String, &weaver_semconv::attribute::Attribute>, tags: &Option<Tags>| {
             for (attr_id, attr) in attrs {
                 let mut attr: Attribute = attr.into();
                 attr.set_tags(tags);

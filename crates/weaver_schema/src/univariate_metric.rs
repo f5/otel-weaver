@@ -4,8 +4,8 @@
 
 use crate::attribute::Attribute;
 use crate::tags::Tags;
-use semconv::group::Instrument;
 use serde::{Deserialize, Serialize};
+use weaver_semconv::group::Instrument;
 
 /// A univariate metric specification.
 #[derive(Serialize, Deserialize, Debug)]

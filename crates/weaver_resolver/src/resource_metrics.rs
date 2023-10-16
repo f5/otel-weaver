@@ -4,13 +4,13 @@
 
 use crate::attribute::{merge_attributes, resolve_attributes};
 use crate::Error;
-use schema::attribute::to_schema_attributes;
-use schema::metric_group::Metric;
-use schema::schema_spec::SchemaSpec;
-use schema::univariate_metric::UnivariateMetric;
-use semconv::SemConvCatalog;
 use std::collections::{HashMap, HashSet};
-use version::VersionChanges;
+use weaver_schema::attribute::to_schema_attributes;
+use weaver_schema::metric_group::Metric;
+use weaver_schema::schema_spec::SchemaSpec;
+use weaver_schema::univariate_metric::UnivariateMetric;
+use weaver_semconv::SemConvCatalog;
+use weaver_version::VersionChanges;
 
 /// Resolves metrics and their attributes.
 pub fn resolve_metrics(

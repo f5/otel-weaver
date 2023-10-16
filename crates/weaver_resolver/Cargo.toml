@@ -1,5 +1,5 @@
 [package]
-name = "resolver"
+name = "weaver_resolver"
 version = "0.1.0"
 authors.workspace = true
 repository.workspace = true
@@ -8,10 +8,10 @@ publish.workspace = true
 edition.workspace = true
 
 [dependencies]
-logger = {  path = "../logger" }
-semconv = { path = "../semconv" }
-schema = { path = "../schema" }
-version = { path = "../version" }
+weaver_logger = {  path = "../weaver_logger" }
+weaver_semconv = { path = "../weaver_semconv" }
+weaver_schema = { path = "../weaver_schema" }
+weaver_version = { path = "../weaver_version" }
 
 regex.workspace = true
 thiserror.workspace = true

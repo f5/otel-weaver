@@ -4,8 +4,8 @@
 
 use serde::{Deserialize, Serialize};
 
-use semconv::attribute::{AttributeType, Examples, RequirementLevel, Value};
-use semconv::stability::Stability;
+use weaver_semconv::attribute::{AttributeType, Examples, RequirementLevel, Value};
+use weaver_semconv::stability::Stability;
 
 use crate::tags::Tags;
 use crate::Error;
@@ -183,11 +183,11 @@ pub enum Attribute {
     },
 }
 
-impl From<&semconv::attribute::Attribute> for Attribute {
+impl From<&weaver_semconv::attribute::Attribute> for Attribute {
     /// Convert a semantic convention attribute to a schema attribute.
-    fn from(attr: &semconv::attribute::Attribute) -> Self {
+    fn from(attr: &weaver_semconv::attribute::Attribute) -> Self {
         match attr.clone() {
-            semconv::attribute::Attribute::Ref {
+            weaver_semconv::attribute::Attribute::Ref {
                 r#ref,
                 brief,
                 examples,
@@ -210,7 +210,7 @@ impl From<&semconv::attribute::Attribute> for Attribute {
                 tags: None,
                 value: None,
             },
-            semconv::attribute::Attribute::Id {
+            weaver_semconv::attribute::Attribute::Id {
                 id,
                 r#type,
                 brief,
@@ -240,7 +240,7 @@ impl From<&semconv::attribute::Attribute> for Attribute {
 }
 
 /// Convert a slice of semantic convention attributes to a vector of schema attributes.
-pub fn to_schema_attributes(attrs: &[semconv::attribute::Attribute]) -> Vec<Attribute> {
+pub fn to_schema_attributes(attrs: &[weaver_semconv::attribute::Attribute]) -> Vec<Attribute> {
     attrs.iter().map(|attr| attr.into()).collect()
 }
 
@@ -294,7 +294,7 @@ impl Attribute {
     /// reference. The semantic attribute must be an `Attribute::Id` otherwise an error is returned.
     pub fn resolve_from(
         &self,
-        sem_conv_attr: Option<&semconv::attribute::Attribute>,
+        sem_conv_attr: Option<&weaver_semconv::attribute::Attribute>,
     ) -> Result<Attribute, Error> {
         match self {
             Attribute::Ref {
@@ -310,7 +310,7 @@ impl Attribute {
                 tags: tags_from_ref,
                 value: value_from_ref,
             } => {
-                if let Some(semconv::attribute::Attribute::Id {
+                if let Some(weaver_semconv::attribute::Attribute::Id {
                     id,
                     r#type,
                     brief,

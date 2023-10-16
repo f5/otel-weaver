@@ -1,5 +1,5 @@
 [package]
-name = "version"
+name = "weaver_logger"
 version = "0.1.0"
 authors.workspace = true
 repository.workspace = true
@@ -8,8 +8,5 @@ publish.workspace = true
 edition.workspace = true
 
 [dependencies]
-serde.workspace = true
-serde_yaml.workspace = true
-thiserror.workspace = true
+paris = { version = "1.5.15", features = ["macros"] }
 
-semver = {version =  "1.0.18", features = ["serde"]}

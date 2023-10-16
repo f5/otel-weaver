@@ -15,11 +15,10 @@ use rayon::iter::ParallelIterator;
 use regex::Regex;
 use url::Url;
 
-use logger::Logger;
-use schema::SemConvImport;
-pub use schema::TelemetrySchema;
-use semconv::{ResolverConfig, SemConvCatalog, SemConvSpec};
-use version::VersionChanges;
+use weaver_logger::Logger;
+use weaver_schema::{SemConvImport, TelemetrySchema};
+use weaver_semconv::{ResolverConfig, SemConvCatalog, SemConvSpec};
+use weaver_version::VersionChanges;
 
 use crate::resource::resolve_resource;
 use crate::resource_events::resolve_events;
@@ -41,11 +40,11 @@ pub struct SchemaResolver {}
 pub enum Error {
     /// A telemetry schema error.
     #[error("Telemetry schema error (error: {0:?})")]
-    TelemetrySchemaError(schema::Error),
+    TelemetrySchemaError(weaver_schema::Error),
 
     /// A parent schema error.
     #[error("Parent schema error (error: {0:?})")]
-    ParentSchemaError(schema::Error),
+    ParentSchemaError(weaver_schema::Error),
 
     /// An invalid URL.
     #[error("Invalid URL `{url:?}`, error: {error:?})")]
@@ -58,7 +57,7 @@ pub enum Error {
 
     /// A semantic convention error.
     #[error("Semantic convention error (error: {0:?})")]
-    SemConvError(semconv::Error),
+    SemConvError(weaver_semconv::Error),
 
     /// Failed to resolve an attribute.
     #[error("Failed to resolve the attribute '{id}'")]
@@ -217,7 +216,7 @@ impl SchemaResolver {
         let loaded_files_count = AtomicUsize::new(0);
         let error_count = AtomicUsize::new(0);
 
-        let result: Vec<Result<(String, SemConvSpec), semconv::Error>> = sem_convs
+        let result: Vec<Result<(String, SemConvSpec), weaver_semconv::Error>> = sem_convs
             .par_iter()
             .map(|sem_conv_import| {
                 let result = SemConvCatalog::load_sem_conv_spec_from_url(&sem_conv_import.url);
@@ -262,7 +261,7 @@ impl SchemaResolver {
 
 #[cfg(test)]
 mod test {
-    use logger::Logger;
+    use weaver_logger::Logger;
 
     use crate::SchemaResolver;
 

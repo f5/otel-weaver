@@ -10,9 +10,10 @@ use std::{fs, process};
 use glob::glob;
 use tera::{Context, Tera};
 
-use logger::Logger;
-use resolver::{SchemaResolver, TelemetrySchema};
-use schema::univariate_metric::UnivariateMetric;
+use weaver_logger::Logger;
+use weaver_resolver::SchemaResolver;
+use weaver_schema::univariate_metric::UnivariateMetric;
+use weaver_schema::TelemetrySchema;
 
 use crate::config::{DynamicGlobalConfig, LanguageConfig};
 use crate::Error::{

@@ -4,9 +4,9 @@
 
 use crate::attribute::resolve_attributes;
 use crate::Error;
-use schema::schema_spec::SchemaSpec;
-use semconv::SemConvCatalog;
-use version::VersionChanges;
+use weaver_schema::schema_spec::SchemaSpec;
+use weaver_semconv::SemConvCatalog;
+use weaver_version::VersionChanges;
 
 /// Resolves resource spans in the given schema.
 pub fn resolve_spans(

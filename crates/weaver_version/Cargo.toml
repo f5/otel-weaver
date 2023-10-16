@@ -1,5 +1,5 @@
 [package]
-name = "schema"
+name = "weaver_version"
 version = "0.1.0"
 authors.workspace = true
 repository.workspace = true
@@ -8,12 +8,8 @@ publish.workspace = true
 edition.workspace = true
 
 [dependencies]
-semconv = { path = "../semconv" }
-version = { path = "../version" }
-
 serde.workspace = true
 serde_yaml.workspace = true
 thiserror.workspace = true
-ureq.workspace = true
 
-url = {version="2.4.1", features = ["serde"]}
+semver = {version =  "1.0.18", features = ["serde"]}

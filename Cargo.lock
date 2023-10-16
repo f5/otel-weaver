@@ -525,13 +525,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
-name = "logger"
-version = "0.1.0"
-dependencies = [
- "paris",
-]
-
-[[package]]
 name = "memchr"
 version = "2.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -802,20 +795,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dbb5fb1acd8a1a18b3dd5be62d25485eb770e05afb408a9627d14d451bae12da"
 
 [[package]]
-name = "resolver"
-version = "0.1.0"
-dependencies = [
- "logger",
- "rayon",
- "regex",
- "schema",
- "semconv",
- "thiserror",
- "url",
- "version",
-]
-
-[[package]]
 name = "ring"
 version = "0.16.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -878,19 +857,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "schema"
-version = "0.1.0"
-dependencies = [
- "semconv",
- "serde",
- "serde_yaml",
- "thiserror",
- "ureq",
- "url",
- "version",
-]
-
-[[package]]
 name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -904,17 +870,6 @@ checksum = "d53dcdb7c9f8158937a7981b48accfd39a43af418591a5d008c7b22b5e1b7ca4"
 dependencies = [
  "ring",
  "untrusted",
-]
-
-[[package]]
-name = "semconv"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_yaml",
- "thiserror",
- "ureq",
- "validator",
 ]
 
 [[package]]
@@ -1034,22 +989,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "template"
-version = "0.1.0"
-dependencies = [
- "convert_case",
- "glob",
- "logger",
- "resolver",
- "schema",
- "serde",
- "serde_yaml",
- "tera",
- "textwrap",
- "thiserror",
 ]
 
 [[package]]
@@ -1320,16 +1259,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "version"
-version = "0.1.0"
-dependencies = [
- "semver",
- "serde",
- "serde_yaml",
- "thiserror",
-]
-
-[[package]]
 name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1410,11 +1339,82 @@ name = "weaver"
 version = "0.1.0"
 dependencies = [
  "clap",
- "logger",
- "resolver",
  "serde",
  "serde_yaml",
- "template",
+ "weaver_logger",
+ "weaver_resolver",
+ "weaver_template",
+]
+
+[[package]]
+name = "weaver_logger"
+version = "0.1.0"
+dependencies = [
+ "paris",
+]
+
+[[package]]
+name = "weaver_resolver"
+version = "0.1.0"
+dependencies = [
+ "rayon",
+ "regex",
+ "thiserror",
+ "url",
+ "weaver_logger",
+ "weaver_schema",
+ "weaver_semconv",
+ "weaver_version",
+]
+
+[[package]]
+name = "weaver_schema"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_yaml",
+ "thiserror",
+ "ureq",
+ "url",
+ "weaver_semconv",
+ "weaver_version",
+]
+
+[[package]]
+name = "weaver_semconv"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_yaml",
+ "thiserror",
+ "ureq",
+ "validator",
+]
+
+[[package]]
+name = "weaver_template"
+version = "0.1.0"
+dependencies = [
+ "convert_case",
+ "glob",
+ "serde",
+ "serde_yaml",
+ "tera",
+ "textwrap",
+ "thiserror",
+ "weaver_logger",
+ "weaver_resolver",
+ "weaver_schema",
+]
+
+[[package]]
+name = "weaver_version"
+version = "0.1.0"
+dependencies = [
+ "semver",
+ "serde",
+ "serde_yaml",
+ "thiserror",
 ]
 
 [[package]]

@@ -39,9 +39,9 @@ name = "weaver"
 
 [dependencies]
 # local crates dependencies
-logger = { path = "crates/logger" }
-resolver = { path = "crates/resolver" }
-template = { path = "crates/template" }
+weaver_logger = { path = "crates/weaver_logger" }
+weaver_resolver = { path = "crates/weaver_resolver" }
+weaver_template = { path = "crates/weaver_template" }
 
 clap = { version = "4.4.2", features = ["derive"] }
 

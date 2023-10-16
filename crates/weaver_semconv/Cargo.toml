@@ -1,5 +1,5 @@
 [package]
-name = "semconv"
+name = "weaver_semconv"
 version = "0.1.0"
 authors.workspace = true
 repository.workspace = true

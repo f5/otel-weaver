@@ -1,5 +1,5 @@
 [package]
-name = "template"
+name = "weaver_template"
 version = "0.1.0"
 authors.workspace = true
 repository.workspace = true
@@ -8,9 +8,9 @@ publish.workspace = true
 edition.workspace = true
 
 [dependencies]
-logger = { path = "../logger" }
-resolver = { path = "../resolver" }
-schema = { path = "../schema" }
+weaver_logger = { path = "../weaver_logger" }
+weaver_resolver = { path = "../weaver_resolver" }
+weaver_schema = { path = "../weaver_schema" }
 
 tera = "1.19.1"
 textwrap = "0.16.0"

@@ -6,8 +6,8 @@ use crate::attribute::Attribute;
 use crate::span_event::SpanEvent;
 use crate::span_link::SpanLink;
 use crate::tags::Tags;
-use semconv::group::SpanKind;
 use serde::{Deserialize, Serialize};
+use weaver_semconv::group::SpanKind;
 
 /// A span specification.
 #[derive(Serialize, Deserialize, Debug)]

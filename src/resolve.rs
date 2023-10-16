@@ -6,8 +6,8 @@ use clap::Parser;
 use std::path::PathBuf;
 use std::process::exit;
 
-use logger::Logger;
-use resolver::SchemaResolver;
+use weaver_logger::Logger;
+use weaver_resolver::SchemaResolver;
 
 /// Parameters for the `resolve` command
 #[derive(Parser)]

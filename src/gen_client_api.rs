@@ -2,8 +2,8 @@
 
 //! Command to generate a client API (third party)
 
-use logger::Logger;
 use std::path::Path;
+use weaver_logger::Logger;
 
 /// Generate a client API (third party)
 pub fn command_gen_client_api(_log: &Logger, _schema: &Path) {}

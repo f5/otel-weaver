@@ -13,7 +13,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use version::Versions;
+use weaver_version::Versions;
 
 use crate::schema_spec::SchemaSpec;
 
