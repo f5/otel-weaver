@@ -1403,6 +1403,7 @@ dependencies = [
  "tera",
  "textwrap",
  "thiserror",
+ "thread_local",
  "weaver_logger",
  "weaver_resolver",
  "weaver_schema",

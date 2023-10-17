@@ -4,7 +4,7 @@
 
 use std::error::Error;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::{fs, process};
 
 use glob::{glob, Paths};
@@ -33,7 +33,7 @@ pub struct ClientSdkGenerator {
     tera: Tera,
 
     /// Global configuration
-    config: Arc<Mutex<DynamicGlobalConfig>>,
+    config: Arc<DynamicGlobalConfig>,
 }
 
 enum Template {
@@ -88,7 +88,7 @@ impl ClientSdkGenerator {
 
         let lang_config = LanguageConfig::try_new(&lang_path)?;
 
-        let config = Arc::new(Mutex::new(DynamicGlobalConfig::default()));
+        let config = Arc::new(DynamicGlobalConfig::default());
 
         // Register custom filters
         tera.register_filter(
@@ -332,23 +332,14 @@ impl ClientSdkGenerator {
                         })?;
 
                         // Reset the config
-                        {
-                            self.config
-                                .lock()
-                                .map_err(|e| InternalError(e.to_string()))?
-                                .reset();
-                        }
+                        self.config.reset();
 
                         log.loading(&format!("Generating code for univariate metric `{}`", name));
                         let generated_code = self.generate_code(log, tmpl_file, context)?;
 
                         // Retrieve the file name from the config
                         let relative_path = {
-                            let mutex_guard = self
-                                .config
-                                .lock()
-                                .map_err(|e| InternalError(e.to_string()))?;
-                            match &mutex_guard.file_name {
+                            match &self.config.get() {
                                 None => {
                                     return Err(TemplateFileNameUndefined {
                                         template: PathBuf::from(tmpl_file),
@@ -388,12 +379,7 @@ impl ClientSdkGenerator {
                         })?;
 
                     // Reset the config
-                    {
-                        self.config
-                            .lock()
-                            .map_err(|e| InternalError(e.to_string()))?
-                            .reset();
-                    }
+                    self.config.reset();
 
                     log.loading(&format!(
                         "Generating code for multivariate metric `{}`",
@@ -403,11 +389,7 @@ impl ClientSdkGenerator {
 
                     // Retrieve the file name from the config
                     let relative_path = {
-                        let mutex_guard = self
-                            .config
-                            .lock()
-                            .map_err(|e| InternalError(e.to_string()))?;
-                        match &mutex_guard.file_name {
+                        match self.config.get() {
                             None => {
                                 return Err(TemplateFileNameUndefined {
                                     template: PathBuf::from(tmpl_file),
@@ -447,12 +429,7 @@ impl ClientSdkGenerator {
                     })?;
 
                     // Reset the config
-                    {
-                        self.config
-                            .lock()
-                            .map_err(|e| InternalError(e.to_string()))?
-                            .reset();
-                    }
+                    self.config.reset();
 
                     log.loading(&format!(
                         "Generating code for log `{}`",
@@ -462,11 +439,7 @@ impl ClientSdkGenerator {
 
                     // Retrieve the file name from the config
                     let relative_path = {
-                        let mutex_guard = self
-                            .config
-                            .lock()
-                            .map_err(|e| InternalError(e.to_string()))?;
-                        match &mutex_guard.file_name {
+                        match self.config.get() {
                             None => {
                                 return Err(TemplateFileNameUndefined {
                                     template: PathBuf::from(tmpl_file),
@@ -505,23 +478,14 @@ impl ClientSdkGenerator {
                         })?;
 
                     // Reset the config
-                    {
-                        self.config
-                            .lock()
-                            .map_err(|e| InternalError(e.to_string()))?
-                            .reset();
-                    }
+                    self.config.reset();
 
                     log.loading(&format!("Generating code for span `{}`", span.span_name));
                     let generated_code = self.generate_code(log, tmpl_file, context)?;
 
                     // Retrieve the file name from the config
                     let relative_path = {
-                        let mutex_guard = self
-                            .config
-                            .lock()
-                            .map_err(|e| InternalError(e.to_string()))?;
-                        match &mutex_guard.file_name {
+                        match self.config.get() {
                             None => {
                                 return Err(TemplateFileNameUndefined {
                                     template: PathBuf::from(tmpl_file),

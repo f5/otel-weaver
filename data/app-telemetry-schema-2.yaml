@@ -41,7 +41,25 @@ schema:
     # Declaration of all the univariate metrics
     metrics:
       - ref: jvm.thread.count
+        attributes:
+          - ref: server.address
+          - ref: server.port
+          #- ref: http.request.method
+          #          - ref: http.response.status_code
+          - ref: network.protocol.name
+          - ref: network.protocol.version
+          - ref: url.scheme
+            requirement_level: required
       - ref: jvm.class.loaded
+        attributes:
+          - ref: server.address
+          - ref: server.port
+          #- ref: http.request.method
+          #          - ref: http.response.status_code
+          - ref: network.protocol.name
+          - ref: network.protocol.version
+          - ref: url.scheme
+            requirement_level: required
       - ref: jvm.cpu.recent_utilization
 #      - ref: http.server.request.duration
         attributes:
@@ -52,6 +70,7 @@ schema:
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
+            requirement_level: required
     # Declaration of all the multivariate metrics
     metric_groups:
       - id: http  # name of a metrics group
