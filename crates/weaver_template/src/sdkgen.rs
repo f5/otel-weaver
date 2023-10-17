@@ -8,12 +8,15 @@ use std::sync::Arc;
 use std::{fs, process};
 
 use glob::{glob, Paths};
-use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
 use tera::{Context, Tera};
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
+use weaver_schema::event::Event;
+use weaver_schema::metric_group::MetricGroup;
+use weaver_schema::span::Span;
 use weaver_schema::univariate_metric::UnivariateMetric;
 use weaver_schema::TelemetrySchema;
 
@@ -36,22 +39,28 @@ pub struct ClientSdkGenerator {
     config: Arc<DynamicGlobalConfig>,
 }
 
-enum Template {
+/// A pair {template, object} to generate code for.
+enum TemplateObjectPair<'a> {
     Metric {
         template: String,
+        metric: &'a UnivariateMetric,
     },
     MetricGroup {
         template: String,
+        metric_group: &'a MetricGroup,
     },
     Event {
         template: String,
+        event: &'a Event,
     },
     Span {
         template: String,
+        span: &'a Span,
     },
     Other {
         template: String,
         relative_path: PathBuf,
+        object: &'a TelemetrySchema,
     },
 }
 
@@ -155,11 +164,6 @@ impl ClientSdkGenerator {
                 }
             })?;
 
-        let context = &Context::from_serialize(&schema).map_err(|e| InvalidTelemetrySchema {
-            schema: schema_path.clone(),
-            error: format!("{}", e),
-        })?;
-
         // Process recursively all files in the template directory
         let mut lang_path = self.lang_path.to_str().unwrap_or_default().to_string();
         let paths = if lang_path.is_empty() {
@@ -169,37 +173,48 @@ impl ClientSdkGenerator {
             glob(lang_path.as_str()).map_err(|e| InternalError(e.to_string()))?
         };
 
-        // Process all templates in parallel.
-        self.list_all_templates(paths)?
-            .par_iter()
-            .try_for_each(|template| {
-                match template {
-                    Template::Metric { template } => {
-                        self.process_metrics(log, template, &schema_path, &schema, &output_dir)
+        // Build the list of all {template, object} pairs to generate code for
+        // and process them in parallel.
+        // All pairs are independent from each other so we can process them in parallel.
+        self.list_all_templates(&schema, paths)?
+            .into_par_iter()
+            .try_for_each(|pair| {
+                match pair {
+                    TemplateObjectPair::Metric { template, metric } => {
+                        self.process_metric(log, &template, &schema_path, metric, &output_dir)
                     }
-                    Template::MetricGroup { template } => self.process_metric_groups(
-                        log,
+                    TemplateObjectPair::MetricGroup {
                         template,
+                        metric_group,
+                    } => self.process_metric_group(
+                        log,
+                        &template,
                         &schema_path,
-                        &schema,
+                        metric_group,
                         &output_dir,
                     ),
-                    Template::Event { template } => {
-                        self.process_events(log, template, &schema_path, &schema, &output_dir)
+                    TemplateObjectPair::Event { template, event } => {
+                        self.process_event(log, &template, &schema_path, event, &output_dir)
                     }
-                    Template::Span { template } => {
-                        self.process_spans(log, template, &schema_path, &schema, &output_dir)
+                    TemplateObjectPair::Span { template, span } => {
+                        self.process_span(log, &template, &schema_path, span, &output_dir)
                     }
-                    Template::Other {
+                    TemplateObjectPair::Other {
                         template,
                         relative_path,
+                        object,
                     } => {
                         // Process other templates
-                        log.loading(&format!("Generating file {}", template));
-                        let generated_code = self.generate_code(log, template, context)?;
-                        let mut relative_path = relative_path.to_path_buf();
-                        relative_path.set_extension("");
+                        let context = &Context::from_serialize(object).map_err(|e| {
+                            InvalidTelemetrySchema {
+                                schema: schema_path.clone(),
+                                error: format!("{}", e),
+                            }
+                        })?;
 
+                        log.loading(&format!("Generating file {}", template));
+                        let generated_code = self.generate_code(log, &template, context)?;
+                        let relative_path = relative_path.to_path_buf();
                         let generated_file =
                             Self::save_generated_code(&output_dir, relative_path, generated_code)?;
                         log.success(&format!("Generated file {:?}", generated_file));
@@ -211,52 +226,88 @@ impl ClientSdkGenerator {
         Ok(())
     }
 
-    /// Lists all templates in the template directory.
-    fn list_all_templates(&self, paths: Paths) -> Result<Vec<Template>, crate::Error> {
+    /// Lists all {template, object} pairs derived from a template directory and a given
+    /// schema specification.
+    fn list_all_templates<'a>(
+        &self,
+        schema: &'a TelemetrySchema,
+        paths: Paths,
+    ) -> Result<Vec<TemplateObjectPair<'a>>, crate::Error> {
         let mut templates = Vec::new();
-        for entry in paths {
-            if let Ok(tmpl_file_path) = entry {
-                if tmpl_file_path.is_dir() {
-                    continue;
-                }
-                let relative_path = tmpl_file_path.strip_prefix(&self.lang_path).unwrap();
-                let tmpl_file = relative_path
-                    .to_str()
-                    .ok_or(InvalidTemplateFile(tmpl_file_path.clone()))?;
-
-                if tmpl_file.ends_with(".macro.tera") {
-                    // Macro files are not templates.
-                    // They are included in other templates.
-                    // So we skip them.
-                    continue;
-                }
-
-                match tmpl_file_path.file_stem().and_then(|s| s.to_str()) {
-                    Some("metric") => templates.push(Template::Metric {
-                        template: tmpl_file.into(),
-                    }),
-                    Some("metric_group") => templates.push(Template::MetricGroup {
-                        template: tmpl_file.into(),
-                    }),
-                    Some("event") => templates.push(Template::Event {
-                        template: tmpl_file.into(),
-                    }),
-                    Some("span") => templates.push(Template::Span {
-                        template: tmpl_file.into(),
-                    }),
-                    _ => {
-                        // Remove the `tera` extension from the relative path
-                        let mut relative_path = relative_path.to_path_buf();
-                        relative_path.set_extension("");
-
-                        templates.push(Template::Other {
-                            template: tmpl_file.into(),
-                            relative_path,
-                        })
+        if let Some(schema_spec) = &schema.schema {
+            for entry in paths {
+                if let Ok(tmpl_file_path) = entry {
+                    if tmpl_file_path.is_dir() {
+                        continue;
                     }
+                    let relative_path = tmpl_file_path.strip_prefix(&self.lang_path).unwrap();
+                    let tmpl_file = relative_path
+                        .to_str()
+                        .ok_or(InvalidTemplateFile(tmpl_file_path.clone()))?;
+
+                    if tmpl_file.ends_with(".macro.tera") {
+                        // Macro files are not templates.
+                        // They are included in other templates.
+                        // So we skip them.
+                        continue;
+                    }
+
+                    match tmpl_file_path.file_stem().and_then(|s| s.to_str()) {
+                        Some("metric") => {
+                            if let Some(resource_metrics) = schema_spec.resource_metrics.as_ref() {
+                                for metric in resource_metrics.metrics.iter() {
+                                    templates.push(TemplateObjectPair::Metric {
+                                        template: tmpl_file.into(),
+                                        metric,
+                                    })
+                                }
+                            }
+                        }
+                        Some("metric_group") => {
+                            if let Some(resource_metrics) = schema_spec.resource_metrics.as_ref() {
+                                for metric_group in resource_metrics.metric_groups.iter() {
+                                    templates.push(TemplateObjectPair::MetricGroup {
+                                        template: tmpl_file.into(),
+                                        metric_group,
+                                    })
+                                }
+                            }
+                        }
+                        Some("event") => {
+                            if let Some(events) = schema_spec.resource_events.as_ref() {
+                                for event in events.events.iter() {
+                                    templates.push(TemplateObjectPair::Event {
+                                        template: tmpl_file.into(),
+                                        event,
+                                    })
+                                }
+                            }
+                        }
+                        Some("span") => {
+                            if let Some(spans) = schema_spec.resource_spans.as_ref() {
+                                for span in spans.spans.iter() {
+                                    templates.push(TemplateObjectPair::Span {
+                                        template: tmpl_file.into(),
+                                        span,
+                                    })
+                                }
+                            }
+                        }
+                        _ => {
+                            // Remove the `tera` extension from the relative path
+                            let mut relative_path = relative_path.to_path_buf();
+                            relative_path.set_extension("");
+
+                            templates.push(TemplateObjectPair::Other {
+                                template: tmpl_file.into(),
+                                relative_path,
+                                object: schema,
+                            })
+                        }
+                    }
+                } else {
+                    return Err(InvalidTemplateDirectory(self.lang_path.clone()));
                 }
-            } else {
-                return Err(InvalidTemplateDirectory(self.lang_path.clone()));
             }
         }
         Ok(templates)
@@ -311,197 +362,165 @@ impl ClientSdkGenerator {
         Ok(output_file_path)
     }
 
-    /// Process all univariate metrics in the schema.
-    fn process_metrics(
+    /// Process an univariate metric.
+    fn process_metric(
         &self,
         log: &Logger,
         tmpl_file: &str,
         schema_path: &Path,
-        schema: &TelemetrySchema,
+        metric: &UnivariateMetric,
         output_dir: &Path,
     ) -> Result<(), crate::Error> {
-        if let Some(schema_spec) = &schema.schema {
-            if let Some(metrics) = schema_spec.resource_metrics.as_ref() {
-                for metric in metrics.metrics.iter() {
-                    if let UnivariateMetric::Metric { name, .. } = metric {
-                        let context = &Context::from_serialize(metric).map_err(|e| {
-                            InvalidTelemetrySchema {
-                                schema: schema_path.to_path_buf(),
-                                error: format!("{}", e),
-                            }
-                        })?;
+        if let UnivariateMetric::Metric { name, .. } = metric {
+            let context = &Context::from_serialize(metric).map_err(|e| InvalidTelemetrySchema {
+                schema: schema_path.to_path_buf(),
+                error: format!("{}", e),
+            })?;
 
-                        // Reset the config
-                        self.config.reset();
+            // Reset the config
+            self.config.reset();
 
-                        log.loading(&format!("Generating code for univariate metric `{}`", name));
-                        let generated_code = self.generate_code(log, tmpl_file, context)?;
+            log.loading(&format!("Generating code for univariate metric `{}`", name));
+            let generated_code = self.generate_code(log, tmpl_file, context)?;
 
-                        // Retrieve the file name from the config
-                        let relative_path = {
-                            match &self.config.get() {
-                                None => {
-                                    return Err(TemplateFileNameUndefined {
-                                        template: PathBuf::from(tmpl_file),
-                                    });
-                                }
-                                Some(file_name) => PathBuf::from(file_name.clone()),
-                            }
-                        };
-
-                        // Save the generated code to the output directory
-                        let generated_file =
-                            Self::save_generated_code(output_dir, relative_path, generated_code)?;
-                        log.success(&format!("Generated file {:?}", generated_file));
+            // Retrieve the file name from the config
+            let relative_path = {
+                match &self.config.get() {
+                    None => {
+                        return Err(TemplateFileNameUndefined {
+                            template: PathBuf::from(tmpl_file),
+                        });
                     }
+                    Some(file_name) => PathBuf::from(file_name.clone()),
                 }
-            }
+            };
+
+            // Save the generated code to the output directory
+            let generated_file =
+                Self::save_generated_code(output_dir, relative_path, generated_code)?;
+            log.success(&format!("Generated file {:?}", generated_file));
         }
+
         Ok(())
     }
 
-    /// Process all metric groups (multivariate) in the schema.
-    fn process_metric_groups(
+    /// Process a metric group (multivariate).
+    fn process_metric_group(
         &self,
         log: &Logger,
         tmpl_file: &str,
         schema_path: &Path,
-        schema: &TelemetrySchema,
+        metric: &MetricGroup,
         output_dir: &Path,
     ) -> Result<(), crate::Error> {
-        if let Some(schema_spec) = &schema.schema {
-            if let Some(metrics) = schema_spec.resource_metrics.as_ref() {
-                for metric in metrics.metric_groups.iter() {
-                    let context =
-                        &Context::from_serialize(metric).map_err(|e| InvalidTelemetrySchema {
-                            schema: schema_path.to_path_buf(),
-                            error: format!("{}", e),
-                        })?;
+        let context = &Context::from_serialize(metric).map_err(|e| InvalidTelemetrySchema {
+            schema: schema_path.to_path_buf(),
+            error: format!("{}", e),
+        })?;
 
-                    // Reset the config
-                    self.config.reset();
+        // Reset the config
+        self.config.reset();
 
-                    log.loading(&format!(
-                        "Generating code for multivariate metric `{}`",
-                        metric.id
-                    ));
-                    let generated_code = self.generate_code(log, tmpl_file, context)?;
+        log.loading(&format!(
+            "Generating code for multivariate metric `{}`",
+            metric.id
+        ));
+        let generated_code = self.generate_code(log, tmpl_file, context)?;
 
-                    // Retrieve the file name from the config
-                    let relative_path = {
-                        match self.config.get() {
-                            None => {
-                                return Err(TemplateFileNameUndefined {
-                                    template: PathBuf::from(tmpl_file),
-                                });
-                            }
-                            Some(file_name) => PathBuf::from(file_name.clone()),
-                        }
-                    };
-
-                    // Save the generated code to the output directory
-                    let generated_file =
-                        Self::save_generated_code(output_dir, relative_path, generated_code)?;
-                    log.success(&format!("Generated file {:?}", generated_file));
+        // Retrieve the file name from the config
+        let relative_path = {
+            match self.config.get() {
+                None => {
+                    return Err(TemplateFileNameUndefined {
+                        template: PathBuf::from(tmpl_file),
+                    });
                 }
+                Some(file_name) => PathBuf::from(file_name.clone()),
             }
-        }
+        };
+
+        // Save the generated code to the output directory
+        let generated_file = Self::save_generated_code(output_dir, relative_path, generated_code)?;
+        log.success(&format!("Generated file {:?}", generated_file));
+
         Ok(())
     }
 
-    /// Process all logs in the schema.
-    fn process_events(
+    /// Process an event.
+    fn process_event(
         &self,
         log: &Logger,
         tmpl_file: &str,
         schema_path: &Path,
-        schema: &TelemetrySchema,
+        event: &Event,
         output_dir: &Path,
     ) -> Result<(), crate::Error> {
-        if let Some(schema_spec) = &schema.schema {
-            if let Some(logs) = schema_spec.resource_events.as_ref() {
-                for log_record in logs.events.iter() {
-                    let context = &Context::from_serialize(log_record).map_err(|e| {
-                        InvalidTelemetrySchema {
-                            schema: schema_path.to_path_buf(),
-                            error: format!("{}", e),
-                        }
-                    })?;
+        let context = &Context::from_serialize(event).map_err(|e| InvalidTelemetrySchema {
+            schema: schema_path.to_path_buf(),
+            error: format!("{}", e),
+        })?;
 
-                    // Reset the config
-                    self.config.reset();
+        // Reset the config
+        self.config.reset();
 
-                    log.loading(&format!(
-                        "Generating code for log `{}`",
-                        log_record.event_name
-                    ));
-                    let generated_code = self.generate_code(log, tmpl_file, context)?;
+        log.loading(&format!("Generating code for log `{}`", event.event_name));
+        let generated_code = self.generate_code(log, tmpl_file, context)?;
 
-                    // Retrieve the file name from the config
-                    let relative_path = {
-                        match self.config.get() {
-                            None => {
-                                return Err(TemplateFileNameUndefined {
-                                    template: PathBuf::from(tmpl_file),
-                                });
-                            }
-                            Some(file_name) => PathBuf::from(file_name.clone()),
-                        }
-                    };
-
-                    // Save the generated code to the output directory
-                    let generated_file =
-                        Self::save_generated_code(output_dir, relative_path, generated_code)?;
-                    log.success(&format!("Generated file {:?}", generated_file));
+        // Retrieve the file name from the config
+        let relative_path = {
+            match self.config.get() {
+                None => {
+                    return Err(TemplateFileNameUndefined {
+                        template: PathBuf::from(tmpl_file),
+                    });
                 }
+                Some(file_name) => PathBuf::from(file_name.clone()),
             }
-        }
+        };
+
+        // Save the generated code to the output directory
+        let generated_file = Self::save_generated_code(output_dir, relative_path, generated_code)?;
+        log.success(&format!("Generated file {:?}", generated_file));
+
         Ok(())
     }
 
-    /// Process all spans in the schema.
-    fn process_spans(
+    /// Process a span.
+    fn process_span(
         &self,
         log: &Logger,
         tmpl_file: &str,
         schema_path: &Path,
-        schema: &TelemetrySchema,
+        span: &Span,
         output_dir: &Path,
     ) -> Result<(), crate::Error> {
-        if let Some(schema_spec) = &schema.schema {
-            if let Some(spans) = schema_spec.resource_spans.as_ref() {
-                for span in spans.spans.iter() {
-                    let context =
-                        &Context::from_serialize(span).map_err(|e| InvalidTelemetrySchema {
-                            schema: schema_path.to_path_buf(),
-                            error: format!("{}", e),
-                        })?;
+        let context = &Context::from_serialize(span).map_err(|e| InvalidTelemetrySchema {
+            schema: schema_path.to_path_buf(),
+            error: format!("{}", e),
+        })?;
 
-                    // Reset the config
-                    self.config.reset();
+        // Reset the config
+        self.config.reset();
 
-                    log.loading(&format!("Generating code for span `{}`", span.span_name));
-                    let generated_code = self.generate_code(log, tmpl_file, context)?;
+        log.loading(&format!("Generating code for span `{}`", span.span_name));
+        let generated_code = self.generate_code(log, tmpl_file, context)?;
 
-                    // Retrieve the file name from the config
-                    let relative_path = {
-                        match self.config.get() {
-                            None => {
-                                return Err(TemplateFileNameUndefined {
-                                    template: PathBuf::from(tmpl_file),
-                                });
-                            }
-                            Some(file_name) => PathBuf::from(file_name.clone()),
-                        }
-                    };
-
-                    // Save the generated code to the output directory
-                    let generated_file =
-                        Self::save_generated_code(output_dir, relative_path, generated_code)?;
-                    log.success(&format!("Generated file {:?}", generated_file));
+        // Retrieve the file name from the config
+        let relative_path = {
+            match self.config.get() {
+                None => {
+                    return Err(TemplateFileNameUndefined {
+                        template: PathBuf::from(tmpl_file),
+                    });
                 }
+                Some(file_name) => PathBuf::from(file_name.clone()),
             }
-        }
+        };
+
+        // Save the generated code to the output directory
+        let generated_file = Self::save_generated_code(output_dir, relative_path, generated_code)?;
+        log.success(&format!("Generated file {:?}", generated_file));
+
         Ok(())
     }
 }
