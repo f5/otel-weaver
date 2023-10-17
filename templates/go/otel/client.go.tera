@@ -6,9 +6,12 @@ import (
     "context"
     "fmt"
     "log"
+	"os"
+    "time"
 
     "go.opentelemetry.io/otel"
     otel_attr "go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
     "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
     "go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
@@ -150,9 +153,9 @@ func installExportPipeline(
 		return
 	}
 
-    metricProvider := sdkmetric.NewMetricProvider(
+    metricProvider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter, sdkmetric.WithInterval(3*time.Second))),
-        sdktrace.WithResource(resourceBuilder(
+        sdkmetric.WithResource(resourceBuilder(
             {%- for attr in required_attrs %}
             {{attr.id | arg_name}},
             {%- endfor %}
@@ -162,7 +165,7 @@ func installExportPipeline(
     otel.SetMeterProvider(metricProvider)
 
     tracerProvider := sdktrace.NewTracerProvider(
-        sdktrace.WithBatcher(exporter),
+        sdktrace.WithBatcher(traceExporter),
         sdktrace.WithResource(resourceBuilder(
             {%- for attr in required_attrs %}
             {{attr.id | arg_name}},

@@ -17,13 +17,8 @@ import (
 	"go_test/pkg/otel/attribute"
 )
 
-type Int64Observer interface {
-    Report() (int64, {% for attr in attributes | required | without_value %}{{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}[]OptionalMetricAttribute, error)
-}
-
-type Float64Observer interface {
-    Report() (float64, {% for attr in attributes | required | without_value %}{{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}[]OptionalMetricAttribute, error)
-}
+type Int64Observer func() (int64, {% for attr in attributes | required | without_value %}{{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}[]OptionalMetricAttribute, error)
+type Float64Observer func() (float64, {% for attr in attributes | required | without_value %}{{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}[]OptionalMetricAttribute, error)
 
 {% if instrument == "counter" %}
 // ===== Synchronous Counter Declaration =====
@@ -38,7 +33,7 @@ type Float64Counter_ struct {
 }
 
 func Int64Counter() (*Int64Counter_, error) {
-    Int64CounterWithContext(context.TODO())
+    return Int64CounterWithContext(context.TODO())
 }
 
 func Int64CounterWithContext(ctx context.Context) (*Int64Counter_, error) {
@@ -56,14 +51,28 @@ func Int64CounterWithContext(ctx context.Context) (*Int64Counter_, error) {
 	}, nil
 }
 
-func (g *Int64Counter_) Add(incr int64) {
-	var addOptions []metric.AddOption
-	// Required and optional attributes
-	g.counter.Add(g.ctx, incr, addOptions...)
+func (g *Int64Counter_) Add(incr uint64, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}optAttrs ...OptionalMetricAttribute) {
+    options := []metric.AddOption {
+        {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+    }
+    for _, opt := range optAttrs {
+        options = append(options, metric.WithAttributes(opt.Attribute()))
+    }
+	g.counter.Add(g.ctx, int64(incr), options...)
+}
+
+func (g *Int64Counter_) AddWithContext(ctx context.Context, incr uint64, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}optAttrs ...OptionalMetricAttribute) {
+    options := []metric.AddOption {
+        {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+    }
+    for _, opt := range optAttrs {
+        options = append(options, metric.WithAttributes(opt.Attribute()))
+    }
+	g.counter.Add(ctx, int64(incr), options...)
 }
 
 func Float64Counter() (*Float64Counter_, error) {
-    Float64CounterWithContext(context.TODO())
+    return Float64CounterWithContext(context.TODO())
 }
 
 func Float64CounterWithContext(ctx context.Context) (*Float64Counter_, error) {
@@ -81,10 +90,24 @@ func Float64CounterWithContext(ctx context.Context) (*Float64Counter_, error) {
 	}, nil
 }
 
-func (g *Float64Counter_) Add(incr float64) {
-	var addOptions []metric.AddOption
-	// Required and optional attributes
-	g.counter.Add(g.ctx, incr, addOptions...)
+func (g *Float64Counter_) Add(incr float64, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}optAttrs ...OptionalMetricAttribute) {
+    options := []metric.AddOption {
+        {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+    }
+    for _, opt := range optAttrs {
+        options = append(options, metric.WithAttributes(opt.Attribute()))
+    }
+	g.counter.Add(g.ctx, incr, options...)
+}
+
+func (g *Float64Counter_) AddWithContext(ctx context.Context, incr float64, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}optAttrs ...OptionalMetricAttribute) {
+    options := []metric.AddOption {
+        {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+    }
+    for _, opt := range optAttrs {
+        options = append(options, metric.WithAttributes(opt.Attribute()))
+    }
+	g.counter.Add(ctx, incr, options...)
 }
 
 // ============================================
@@ -97,7 +120,7 @@ func Int64ObservableCounter(observer Int64Observer) error {
         metric.WithDescription("{{brief}}"),
         metric.WithUnit("{{unit}}"),
 		metric.WithInt64Callback(func(ctx context.Context, otelObserver metric.Int64Observer) error {
-			v, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}}, {% endfor %}optAttrs, err := observer.Report()
+			v, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}}, {% endfor %}optAttrs, err := observer()
 			if err != nil {
                 return err
             }
@@ -122,7 +145,7 @@ func Float64ObservableCounter(observer Float64Observer) error {
         metric.WithDescription("{{brief}}"),
         metric.WithUnit("{{unit}}"),
 		metric.WithFloat64Callback(func(ctx context.Context, otelObserver metric.Float64Observer) error {
-			v,  {% for attr in attributes | required | without_value %}{{attr.id | arg_name}}, {% endfor %}optAttrs, err := observer.Report()
+			v,  {% for attr in attributes | required | without_value %}{{attr.id | arg_name}}, {% endfor %}optAttrs, err := observer()
 			if err != nil {
                 return err
             }
@@ -154,7 +177,7 @@ func Int64ObservableGauge(observer Int64Observer) error {
         metric.WithDescription("{{brief}}"),
         metric.WithUnit("{{unit}}"),
 		metric.WithInt64Callback(func(ctx context.Context, otelObserver metric.Int64Observer) error {
-			v, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}}, {% endfor %}optAttrs, err := observer.Report()
+			v, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}}, {% endfor %}optAttrs, err := observer()
 			if err != nil {
                 return err
             }
@@ -179,7 +202,7 @@ func Float64ObservableGauge(observer Float64Observer) error {
         metric.WithDescription("{{brief}}"),
         metric.WithUnit("{{unit}}"),
 		metric.WithFloat64Callback(func(ctx context.Context, otelObserver metric.Float64Observer) error {
-			v,  {% for attr in attributes | required | without_value %}{{attr.id | arg_name}}, {% endfor %}optAttrs, err := observer.Report()
+			v,  {% for attr in attributes | required | without_value %}{{attr.id | arg_name}}, {% endfor %}optAttrs, err := observer()
 			if err != nil {
                 return err
             }
