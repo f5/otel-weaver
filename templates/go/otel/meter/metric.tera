@@ -165,6 +165,148 @@ func Float64ObservableCounter(observer Float64Observer) error {
 }
 
 {% elif instrument == "updowncounter" %}
+// ===== Synchronous UpDownCounter Declaration =====
+type Int64UpDownCounter_ struct {
+    ctx context.Context
+    counter metric.Int64UpDownCounter
+}
+
+type Float64UpDownCounter_ struct {
+    ctx context.Context
+    counter metric.Float64UpDownCounter
+}
+
+func Int64UpDownCounter() (*Int64UpDownCounter_, error) {
+    return Int64UpDownCounterWithContext(context.TODO())
+}
+
+func Int64UpDownCounterWithContext(ctx context.Context) (*Int64UpDownCounter_, error) {
+	counter, err := client.Meter.Int64UpDownCounter(
+		"{{name}}",
+		metric.WithDescription("{{brief}}"),
+		metric.WithUnit("{{unit}}"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &Int64UpDownCounter_{
+		ctx:     ctx,
+		counter: counter,
+	}, nil
+}
+
+func (g *Int64UpDownCounter_) Add(incr uint64, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}optAttrs ...OptionalMetricAttribute) {
+    options := []metric.AddOption {
+        {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+    }
+    for _, opt := range optAttrs {
+        options = append(options, metric.WithAttributes(opt.Attribute()))
+    }
+	g.counter.Add(g.ctx, int64(incr), options...)
+}
+
+func (g *Int64UpDownCounter_) AddWithContext(ctx context.Context, incr uint64, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}optAttrs ...OptionalMetricAttribute) {
+    options := []metric.AddOption {
+        {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+    }
+    for _, opt := range optAttrs {
+        options = append(options, metric.WithAttributes(opt.Attribute()))
+    }
+	g.counter.Add(ctx, int64(incr), options...)
+}
+
+func Float64UpDownCounter() (*Float64UpDownCounter_, error) {
+    return Float64UpDownCounterWithContext(context.TODO())
+}
+
+func Float64UpDownCounterWithContext(ctx context.Context) (*Float64UpDownCounter_, error) {
+	counter, err := client.Meter.Float64UpDownCounter(
+		"{{name}}",
+		metric.WithDescription("{{brief}}"),
+		metric.WithUnit("{{unit}}"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &Float64UpDownCounter_{
+		ctx:     ctx,
+		counter: counter,
+	}, nil
+}
+
+func (g *Float64UpDownCounter_) Add(incr float64, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}optAttrs ...OptionalMetricAttribute) {
+    options := []metric.AddOption {
+        {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+    }
+    for _, opt := range optAttrs {
+        options = append(options, metric.WithAttributes(opt.Attribute()))
+    }
+	g.counter.Add(g.ctx, incr, options...)
+}
+
+func (g *Float64UpDownCounter_) AddWithContext(ctx context.Context, incr float64, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}optAttrs ...OptionalMetricAttribute) {
+    options := []metric.AddOption {
+        {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+    }
+    for _, opt := range optAttrs {
+        options = append(options, metric.WithAttributes(opt.Attribute()))
+    }
+	g.counter.Add(ctx, incr, options...)
+}
+
+// ============================================
+// ===== Asynchronous UpDownCounter Declaration =====
+// ============================================
+
+func Int64ObservableUpDownCounter(observer Int64Observer) error {
+    _, err := client.Meter.Int64ObservableUpDownCounter(
+        "{{name}}",
+        metric.WithDescription("{{brief}}"),
+        metric.WithUnit("{{unit}}"),
+		metric.WithInt64Callback(func(ctx context.Context, otelObserver metric.Int64Observer) error {
+			v, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}}, {% endfor %}optAttrs, err := observer()
+			if err != nil {
+                return err
+            }
+			options := []metric.ObserveOption {
+			    {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+			}
+            for _, opt := range optAttrs {
+                options = append(options, metric.WithAttributes(opt.Attribute()))
+            }
+			otelObserver.Observe(v, options...)
+			return nil
+		}))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func Float64ObservableUpDownCounter(observer Float64Observer) error {
+    _, err := client.Meter.Float64ObservableUpDownCounter(
+        "{{name}}",
+        metric.WithDescription("{{brief}}"),
+        metric.WithUnit("{{unit}}"),
+		metric.WithFloat64Callback(func(ctx context.Context, otelObserver metric.Float64Observer) error {
+			v,  {% for attr in attributes | required | without_value %}{{attr.id | arg_name}}, {% endfor %}optAttrs, err := observer()
+			if err != nil {
+                return err
+            }
+			options := []metric.ObserveOption {
+			    {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+			}
+            for _, opt := range optAttrs {
+                options = append(options, metric.WithAttributes(opt.Attribute()))
+            }
+			otelObserver.Observe(v, options...)
+			return nil
+		}))
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 {% elif instrument == "gauge" %}
 // ==========================================
