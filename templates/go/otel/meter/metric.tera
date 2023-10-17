@@ -364,6 +364,97 @@ func Float64ObservableGauge(observer Float64Observer) error {
 }
 
 {% elif instrument == "histogram" %}
+// =============================================
+// ===== Synchronous Histogram Declaration =====
+// =============================================
+
+type Int64Histogram_ struct {
+    ctx context.Context
+    histogram metric.Int64Histogram
+}
+
+type Float64Histogram_ struct {
+    ctx context.Context
+    histogram metric.Float64Histogram
+}
+
+func Int64Histogram() (*Int64Histogram_, error) {
+    return Int64HistogramWithContext(context.TODO())
+}
+
+func Int64HistogramWithContext(ctx context.Context) (*Int64Histogram_, error) {
+	histogram, err := client.Meter.Int64Histogram(
+		"{{name}}",
+		metric.WithDescription("{{brief}}"),
+		metric.WithUnit("{{unit}}"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &Int64Histogram_{
+		ctx:     ctx,
+		histogram: histogram,
+	}, nil
+}
+
+func (g *Int64Histogram_) Record(incr uint64, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}optAttrs ...OptionalMetricAttribute) {
+    options := []metric.RecordOption {
+        {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+    }
+    for _, opt := range optAttrs {
+        options = append(options, metric.WithAttributes(opt.Attribute()))
+    }
+	g.histogram.Record(g.ctx, int64(incr), options...)
+}
+
+func (g *Int64Histogram_) RecordWithContext(ctx context.Context, incr uint64, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}optAttrs ...OptionalMetricAttribute) {
+    options := []metric.RecordOption {
+        {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+    }
+    for _, opt := range optAttrs {
+        options = append(options, metric.WithAttributes(opt.Attribute()))
+    }
+	g.histogram.Record(ctx, int64(incr), options...)
+}
+
+func Float64Histogram() (*Float64Histogram_, error) {
+    return Float64HistogramWithContext(context.TODO())
+}
+
+func Float64HistogramWithContext(ctx context.Context) (*Float64Histogram_, error) {
+	histogram, err := client.Meter.Float64Histogram(
+		"{{name}}",
+		metric.WithDescription("{{brief}}"),
+		metric.WithUnit("{{unit}}"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &Float64Histogram_{
+		ctx:     ctx,
+		histogram: histogram,
+	}, nil
+}
+
+func (g *Float64Histogram_) Record(incr float64, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}optAttrs ...OptionalMetricAttribute) {
+    options := []metric.RecordOption {
+        {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+    }
+    for _, opt := range optAttrs {
+        options = append(options, metric.WithAttributes(opt.Attribute()))
+    }
+	g.histogram.Record(g.ctx, incr, options...)
+}
+
+func (g *Float64Histogram_) RecordWithContext(ctx context.Context, incr float64, {% for attr in attributes | required | without_value %}{{attr.id | arg_name}} {{attr.id | struct_name}}ReqAttrWrapper, {% endfor %}optAttrs ...OptionalMetricAttribute) {
+    options := []metric.RecordOption {
+        {% for attr in attributes | required | without_value %}metric.WithAttributes({{attr.id | arg_name}}.Attribute()),{% endfor %}
+    }
+    for _, opt := range optAttrs {
+        options = append(options, metric.WithAttributes(opt.Attribute()))
+    }
+	g.histogram.Record(ctx, incr, options...)
+}
 
 {% endif %}
 
