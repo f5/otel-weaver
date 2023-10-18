@@ -15,9 +15,9 @@ use crossterm::{
 };
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{CrosstermBackend, Terminal};
-use ratatui::style::{Color, Style};
+use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, List, ListItem};
+use ratatui::widgets::{Block, Borders, List, ListItem, ListState};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Schema, STORED, TEXT};
@@ -41,13 +41,78 @@ pub struct SearchParams {
 
 pub struct SearchApp<'a> {
     search_area: TextArea<'a>,
-    results: Vec<ListItem<'a>>,
+
+    results: StatefulResults,
 
     searcher: tantivy::Searcher,
     query_parser: tantivy::query::QueryParser,
     current_query: Option<String>,
 
     should_quit: bool,
+}
+
+/// A result item
+pub struct ResultItem {
+    r#type: String,
+    id: String,
+    brief: String,
+}
+
+/// A stateful list of items
+pub struct StatefulResults {
+    state: ListState,
+    items: Vec<ResultItem>,
+}
+
+impl StatefulResults {
+    /// Creates a new stateful list of items
+    fn new() -> StatefulResults {
+        StatefulResults {
+            state: ListState::default(),
+            items: vec![],
+        }
+    }
+
+    /// Selects the next item in the list
+    fn next(&mut self) {
+        let i = match self.state.selected() {
+            Some(i) => {
+                if i >= self.items.len() - 1 {
+                    0
+                } else {
+                    i + 1
+                }
+            }
+            None => 0,
+        };
+        self.state.select(Some(i));
+    }
+
+    /// Selects the previous item in the list
+    fn previous(&mut self) {
+        let i = match self.state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.items.len() - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => 0,
+        };
+        self.state.select(Some(i));
+    }
+
+    /// Unselects the current selection
+    fn unselect(&mut self) {
+        self.state.select(None);
+    }
+
+    /// Clears the results
+    fn clear(&mut self) {
+        self.unselect();
+        self.items.clear();
+    }
 }
 
 /// Search for attributes and metrics in a schema file
@@ -121,7 +186,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
     // application state
     let mut app = SearchApp {
         search_area,
-        results: vec![],
+        results: StatefulResults::new(),
         searcher,
         query_parser,
         current_query: None,
@@ -180,16 +245,17 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
                         .doc(doc_address)
                         .expect("Failed to retrieve document");
                     let values = retrieved_doc.field_values();
-                    app.results.push(ListItem::new(Line::from(Span::styled(
-                        format!(
-                            "{: <10} {: <25} {}",
-                            values[0].value().as_text().unwrap_or_default(),
-                            values[1].value().as_text().unwrap_or_default(),
-                            values[2].value().as_text().unwrap_or_default()
-                        ),
-                        Style::default().fg(Color::Yellow),
-                    ))));
+                    let r#type = values[0].value().as_text().unwrap_or_default();
+                    let id = values[1].value().as_text().unwrap_or_default();
+                    let brief = values[2].value().as_text().unwrap_or_default();
+
+                    app.results.items.push(ResultItem {
+                        r#type: r#type.to_string(),
+                        id: id.to_string(),
+                        brief: brief.to_string(),
+                    });
                 }
+                app.results.next();
             }
             Err(_e) => {
                 app.results.clear();
@@ -197,30 +263,61 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         }
     });
 
-    let chunks = Layout::default()
+    let items: Vec<ListItem> = app
+        .results
+        .items
+        .iter()
+        .map(|item| {
+            ListItem::new(Line::from(Span::styled(
+                format!("{: <10} {: <30} {}", item.r#type, item.id, item.brief),
+                Style::default().fg(Color::White),
+            )))
+        })
+        .collect();
+
+    let outer_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(1), Constraint::Length(3)])
         .split(frame.size());
+
+    let inner_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
+        .split(outer_layout[0]);
 
     let result_block = Block::default()
         .borders(Borders::ALL)
         .title("Search results (i.e. attributes and metrics)")
         .style(Style::default());
 
-    let content = List::new(app.results.clone()).block(result_block);
+    let content = List::new(items)
+        .highlight_style(
+            Style::default()
+                .bg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        )
+        .highlight_symbol(">> ")
+        .block(result_block);
 
-    frame.render_widget(content, chunks[0]);
+    frame.render_stateful_widget(content, inner_layout[0], &mut app.results.state);
 
-    frame.render_widget(app.search_area.widget(), chunks[1]);
+    frame.render_widget(app.search_area.widget(), outer_layout[1]);
 }
 
 fn update(app: &mut SearchApp) -> Result<()> {
     if event::poll(std::time::Duration::from_millis(250))? {
         let event = event::read()?;
         if let event::Event::Key(key) = event {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Esc {
-                app.should_quit = true;
-                return Ok(());
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Esc => {
+                        app.should_quit = true;
+                        return Ok(());
+                    }
+                    KeyCode::Up => app.results.previous(),
+                    KeyCode::Down => app.results.next(),
+                    _ => {}
+                }
             }
         }
         app.search_area.input(event);
