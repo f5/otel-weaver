@@ -56,6 +56,8 @@ schema:
           - ref: network.protocol.version
           - ref: url.scheme
             requirement_level: required
+        tags:
+          sensitivity: PII
       - ref: jvm.cpu.recent_utilization
         attributes:
           - ref: server.address

@@ -5,6 +5,7 @@
 use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
+use crate::search::schema::{attribute, tags};
 
 /// Render a span details.
 pub fn widget(span: Option<&weaver_schema::span::Span>) -> Paragraph {
@@ -28,12 +29,7 @@ pub fn widget(span: Option<&weaver_schema::span::Span>) -> Paragraph {
                 ]));
             }
 
-            if !span.attributes.is_empty() {
-                text.push(Line::from(Span::styled("Attributes: ", Style::default().fg(Color::Yellow))));
-                for attr in span.attributes.iter() {
-                    text.push(Line::from(Span::raw(format!("- {} ", attr.id()))));
-                }
-            }
+            attribute::append_lines(span.attributes.as_slice(), &mut text);
 
             if !span.events.is_empty() {
                 text.push(Line::from(Span::styled("Events    : ", Style::default().fg(Color::Yellow))));
@@ -49,17 +45,8 @@ pub fn widget(span: Option<&weaver_schema::span::Span>) -> Paragraph {
                 }
             }
 
-            if let Some(tags) = span.tags.as_ref() {
-                let mut tag_list = vec![
-                    Span::styled("Tags      : ", Style::default().fg(Color::Yellow)),
-                ];
-                for (k,v) in tags.iter() {
-                    tag_list.push(Span::raw(format!("  - {}={} ", k,v)));
-                }
-                if !tag_list.is_empty() {
-                    text.push(Line::from(tag_list));
-                }
-            }
+            tags::append_lines(span.tags.as_ref(), &mut text);
+
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }
         None => Paragraph::new(vec![Line::default()])
