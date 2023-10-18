@@ -158,6 +158,23 @@ impl SchemaResolver {
         Ok(schema)
     }
 
+    /// Loads a semantic convention catalog from the given schema path.
+    // pub fn semantic_catalog_from<P: AsRef<Path> + Clone>(schema_path: P) -> Result<SemConvCatalog, Error> {
+    //     let mut schema = TelemetrySchema::load_from_file(schema_path.clone()).map_err(|e| {
+    //         Error::TelemetrySchemaError(e)
+    //     })?;
+    //
+    //     let parent_schema = Self::load_parent_schema(&schema, log.clone())?;
+    //     schema.set_parent_schema(parent_schema);
+    //     let semantic_conventions = schema.merged_semantic_conventions();
+    //     let mut sem_conv_catalog =
+    //         Self::create_semantic_convention_catalog(&semantic_conventions, log.clone())?;
+    //     let _ = sem_conv_catalog
+    //         .resolve(ResolverConfig::default())
+    //         .map_err(Error::SemConvError)?;
+    //     return Ok(sem_conv_catalog);
+    // }
+
     /// Loads the parent telemetry schema if it exists.
     fn load_parent_schema(
         schema: &TelemetrySchema,
@@ -253,7 +270,7 @@ impl SchemaResolver {
             }
         });
 
-        // ToDo do something with the errors
+        // ToDo LQ: Propagate the errors!
 
         Ok(sem_conv_catalog)
     }

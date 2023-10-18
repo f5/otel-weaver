@@ -43,8 +43,13 @@ name = "weaver"
 weaver_logger = { path = "crates/weaver_logger" }
 weaver_resolver = { path = "crates/weaver_resolver" }
 weaver_template = { path = "crates/weaver_template" }
+weaver_schema = { path = "crates/weaver_schema" }
 
 clap = { version = "4.4.2", features = ["derive"] }
+crossterm = "0.27.0"
+ratatui = "0.23.0"
+tui-textarea = { version = "0.2.2", features = ["ratatui-crossterm"], default-features = false }
+tantivy = "0.21.0"
 
 # workspace dependencies
 serde.workspace = true

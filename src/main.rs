@@ -12,6 +12,7 @@ mod gen_client_api;
 mod gen_client_sdk;
 mod languages;
 mod resolve;
+mod search;
 
 fn main() {
     let cli = Cli::parse();
@@ -29,6 +30,9 @@ fn main() {
         }
         Some(Commands::Languages(params)) => {
             languages::command_languages(&log, params);
+        }
+        Some(Commands::Search(params)) => {
+            search::command_search(&log, params);
         }
         None => {}
     }
