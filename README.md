@@ -15,7 +15,7 @@ specified with the `--output` option. This command is mainly used to validate an
 a telemetry schema.
 
 ```bash
-weaver resolve telemetry-schema.yaml --output telemetry-schema-resolved.yaml
+weaver resolve --schema telemetry-schema.yaml --output telemetry-schema-resolved.yaml
 ```
 
 Generate a Rust OTel client SDK from a telemetry schema. An OTel client SDK can be used
@@ -23,14 +23,14 @@ by an application to send telemetry data to an OTel collector. The generated SDK
 the protocol specified with the `--protocol` option. The default protocol is OTLP/gRPC.
 
 ```bash
-weaver gen-client-sdk telemetry-schema.yaml --language rust --protocol otel-arrow
+weaver gen-client-sdk --schema telemetry-schema.yaml --language rust --protocol otel-arrow
 ```
 
 Generate a Rust OTel client API from a telemetry schema. An OTel client API can be used
 by a third party library to send telemetry data to an OTel collector.
 
 ```bash
-weaver gen-client-api telemetry-schema.yaml --language rust 
+weaver gen-client-api --schema telemetry-schema.yaml --language rust 
 ```
 
 List all the available languages for which a client SDK/API can be generated.
@@ -39,23 +39,11 @@ List all the available languages for which a client SDK/API can be generated.
 weaver languages
 ```
 
-### Generate a Client SDK
-### Check a schema
-### Export a schema
+Interactive terminal UI to search for attributes and metrics referenced in a given schema.
 
-## How to Contribute
-- Add support for a new language
-  - [Via Tera templates](docs/contribution.md#via-tera-templates)
-  - [Via WASM plugin](docs/contribution.md#via-wasm-plugin)
-- Create other WASM plugins for 
-  - [Schema validation](docs/contribution.md#schema-validation-plugin)
-  - [Schema export](docs/contribution.md#schema-export-plugin)
-  - [Variable resolver](docs/contribution.md#variable-resolver-plugin)
-
-## Other links
-- [Internal crates interdependencies](docs/dependencies.md)
-- [OpenTelemetry Schema File Format v1.1.0](https://opentelemetry.io/docs/specs/otel/schemas/file_format_v1.1.0/)
-- [OpenTelemetry Semantic Convention File Format](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md)
+```bash
+weaver search --schema <path>
+```
 
 ## ToDo
 **Telemetry Schema Improvements**
@@ -71,7 +59,6 @@ weaver languages
 - [X] Add support for group extends.
 - [X] Add support for group of attributes (in general and for metrics).
 - [X] Support attribute value everywhere (not only in resource).
-- [X] Support nested spans.
 
 **Client SDK/API Code Generation**
 - Generate Go Client SDK/API on top of the generic Go Client SDK/API.
@@ -82,22 +69,26 @@ weaver languages
     - [X] Synchronous histogram.
   - [ ] Generate type-safe API for metric groups.
   - [X] Generate type-safe API for events (not yet connected to the underlying OTel API).
-  - [X] Generate type-safe API for spans.
+  - [X] Generate type-safe API for spans (including nested spans).
+  - [ ] Support obfuscation and masking.
 - Generate Go Client SDK/API with support for OTel Arrow Protocol.
   - [ ] Generate type-safe API for metrics.
   - [ ] Generate type-safe API for metric groups.
   - [ ] Generate type-safe API for events (not yet connected to the underlying OTel API).
   - [ ] Generate type-safe API for spans.
+  - [ ] Support obfuscation and masking.
 - Generate Rust Client SDK/API on top of the generic Rust Client SDK/API.
   - [ ] Generate type-safe API for metrics.
   - [ ] Generate type-safe API for metric groups.
   - [ ] Generate type-safe API for events (not yet connected to the underlying OTel API).
   - [ ] Generate type-safe API for spans.
+  - [ ] Support obfuscation and masking.
 - Generate Rust Client SDK/API with support for OTel Arrow Protocol.
   - [ ] Generate type-safe API for metrics.
   - [ ] Generate type-safe API for metric groups.
   - [ ] Generate type-safe API for events (not yet connected to the underlying OTel API).
   - [ ] Generate type-safe API for spans.
+  - [ ] Support obfuscation and masking.
 
 **Tooling and Plugins**
   - [ ] Add support for WASM plugins.
@@ -106,3 +97,18 @@ weaver languages
 
 ## Questions
 - Should we support the equivalent of trace.SpanFromContext(context.TODO()) to get the current span? 
+
+## How to Contribute
+- Add support for a new language
+  - [Via Tera templates](docs/contribution.md#via-tera-templates)
+  - [Via WASM plugin](docs/contribution.md#via-wasm-plugin)
+- Create other WASM plugins for
+  - [Schema validation](docs/contribution.md#schema-validation-plugin)
+  - [Schema export](docs/contribution.md#schema-export-plugin)
+  - [Variable resolver](docs/contribution.md#variable-resolver-plugin)
+
+## Other links
+- [Internal crates interdependencies](docs/dependencies.md)
+- [OpenTelemetry Schema File Format v1.1.0](https://opentelemetry.io/docs/specs/otel/schemas/file_format_v1.1.0/)
+- [OpenTelemetry Semantic Convention File Format](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md)
+
