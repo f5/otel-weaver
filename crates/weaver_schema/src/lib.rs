@@ -6,16 +6,21 @@
 #![deny(clippy::print_stdout)]
 #![deny(clippy::print_stderr)]
 
+extern crate core;
+
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use url::Url;
+use weaver_semconv::SemConvCatalog;
 
+use crate::event::Event;
 use weaver_version::Versions;
 
 use crate::schema_spec::SchemaSpec;
+use crate::span::Span;
 
 pub mod attribute;
 pub mod event;
@@ -102,6 +107,11 @@ pub struct TelemetrySchema {
     /// The parent schema.
     #[serde(skip)]
     parent_schema: Option<Box<TelemetrySchema>>,
+
+    /// The semantic convention catalog used to resolve the schema
+    /// (if resolved).
+    #[serde(skip)]
+    semantic_convention_catalog: SemConvCatalog,
 }
 
 /// A semantic convention import.
@@ -167,6 +177,11 @@ impl TelemetrySchema {
         }
     }
 
+    /// Sets the semantic convention catalog used to resolve the schema.
+    pub fn set_semantic_convention_catalog(&mut self, catalog: SemConvCatalog) {
+        self.semantic_convention_catalog = catalog;
+    }
+
     /// Sets the parent schema.
     pub fn set_parent_schema(&mut self, parent_schema: Option<TelemetrySchema>) {
         self.parent_schema = parent_schema.map(Box::new);
@@ -196,6 +211,51 @@ impl TelemetrySchema {
                 }
             }
         }
+    }
+
+    /// Returns the semantic convention catalog used to resolve the schema (if resolved).
+    pub fn semantic_convention_catalog(&self) -> &SemConvCatalog {
+        &self.semantic_convention_catalog
+    }
+
+    /// Returns the metric by name or None if not found.
+    pub fn metric(&self, metric_name: &str) -> Option<&univariate_metric::UnivariateMetric> {
+        self.schema.as_ref().map_or(None, |schema| schema.metric(metric_name))
+    }
+
+    /// Returns a vector of metrics.
+    pub fn metrics(&self) -> Vec<&univariate_metric::UnivariateMetric> {
+        self.schema
+            .as_ref()
+            .map_or(Vec::<&univariate_metric::UnivariateMetric>::new(), |schema| {
+                schema.metrics()
+            })
+    }
+
+    /// Returns a vector of metric groups.
+    pub fn metric_groups(&self) -> Vec<&metric_group::MetricGroup> {
+        self.schema
+            .as_ref()
+            .map_or(Vec::<&metric_group::MetricGroup>::new(), |schema| {
+                schema.metric_groups()
+            })
+    }
+
+    /// Returns an iterator over the events.
+    pub fn events(&self) -> Vec<&Event> {
+        self.schema.as_ref().map_or(Vec::<&Event>::new(), |schema| schema.events())
+    }
+
+    /// Returns a slice of spans.
+    pub fn spans(&self) -> Vec<&Span> {
+        self.schema
+            .as_ref()
+            .map_or(Vec::<&Span>::new(), |schema| schema.spans())
+    }
+
+    /// Returns a span by name or None if not found.
+    pub fn span(&self, span_name: &str) -> Option<&Span> {
+        self.schema.as_ref().map_or(None, |schema| schema.span(span_name))
     }
 }
 

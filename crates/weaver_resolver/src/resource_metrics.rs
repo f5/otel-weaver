@@ -38,7 +38,7 @@ pub fn resolve_metrics(
                     sem_conv_catalog,
                     version_changes.metric_attribute_changes(),
                 )?;
-                if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
+                if let Some(referenced_metric) = sem_conv_catalog.metric(r#ref) {
                     let mut inherited_attrs = to_schema_attributes(&referenced_metric.attributes);
                     inherited_attrs = resolve_attributes(
                         &inherited_attrs,
@@ -87,7 +87,7 @@ pub fn resolve_metrics(
             let mut required_shared_attributes = HashSet::new();
             for (i, metric) in metrics.metrics.iter_mut().enumerate() {
                 if let Metric::Ref { r#ref, tags } = metric {
-                    if let Some(referenced_metric) = sem_conv_catalog.get_metric(r#ref) {
+                    if let Some(referenced_metric) = sem_conv_catalog.metric(r#ref) {
                         let inherited_attrs = referenced_metric.attributes.clone();
 
                         // Initialize all/required_shared_attributes only if first metric.

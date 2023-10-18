@@ -466,7 +466,7 @@ impl SemConvCatalog {
 
     /// Returns an attribute definition from its reference or `None` if the
     /// reference does not exist.
-    pub fn get_attribute(&self, attr_ref: &str) -> Option<&Attribute> {
+    pub fn attribute(&self, attr_ref: &str) -> Option<&Attribute> {
         self.all_attributes
             .get(attr_ref)
             .map(|attr| &attr.attribute)
@@ -474,7 +474,7 @@ impl SemConvCatalog {
 
     /// Returns a map id -> attribute definition from an attribute group reference.
     /// Or an error if the reference does not exist.
-    pub fn get_attributes(
+    pub fn attributes(
         &self,
         r#ref: &str,
         r#type: group::ConvType,
@@ -517,7 +517,7 @@ impl SemConvCatalog {
 
     /// Returns a metric definition from its name or `None` if the
     /// name does not exist.
-    pub fn get_metric(&self, metric_name: &str) -> Option<&Metric> {
+    pub fn metric(&self, metric_name: &str) -> Option<&Metric> {
         self.all_metrics.get(metric_name)
     }
 

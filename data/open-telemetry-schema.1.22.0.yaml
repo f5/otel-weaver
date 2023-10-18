@@ -29,6 +29,9 @@ semantic_conventions:
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/metrics/jvm-metrics.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/metrics/rpc-metrics.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/metrics/system-metrics.yaml
+    # registry
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/registry/http.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/registry/url.yaml
     # resources
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/android.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/browser.yaml

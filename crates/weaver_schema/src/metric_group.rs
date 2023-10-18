@@ -59,3 +59,10 @@ pub enum Metric {
         tags: Option<Tags>,
     },
 }
+
+impl MetricGroup {
+    /// Returns the id of the metric group
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+}

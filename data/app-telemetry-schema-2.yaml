@@ -44,8 +44,6 @@ schema:
         attributes:
           - ref: server.address
           - ref: server.port
-          #- ref: http.request.method
-          #          - ref: http.response.status_code
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
@@ -54,19 +52,14 @@ schema:
         attributes:
           - ref: server.address
           - ref: server.port
-          #- ref: http.request.method
-          #          - ref: http.response.status_code
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
             requirement_level: required
       - ref: jvm.cpu.recent_utilization
-#      - ref: http.server.request.duration
         attributes:
           - ref: server.address
           - ref: server.port
-          #- ref: http.request.method
-#          - ref: http.response.status_code
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
@@ -78,7 +71,6 @@ schema:
         attributes:
           - ref: server.address
           - ref: server.port
-#          - ref: http.response.status_code
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
@@ -100,7 +92,7 @@ schema:
         attributes:
           - ref: server.address
           - ref: server.port
-          # - ref: http.request.method
+          - ref: http.request.method
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme
@@ -113,8 +105,8 @@ schema:
         attributes:
           - ref: server.address
           - ref: server.port
-          # - ref: http.request.method
-#          - ref: http.response.status_code
+          - ref: http.request.method
+          - ref: http.response.status_code
           - ref: network.protocol.name
           - ref: network.protocol.version
           - ref: url.scheme

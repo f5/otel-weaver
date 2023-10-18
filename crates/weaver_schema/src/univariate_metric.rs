@@ -45,3 +45,29 @@ pub enum UnivariateMetric {
         tags: Option<Tags>,
     },
 }
+
+impl UnivariateMetric {
+    /// Returns the name of the metric.
+    pub fn name(&self) -> String {
+        match self {
+            UnivariateMetric::Ref { r#ref, .. } => r#ref.clone(),
+            UnivariateMetric::Metric { name, .. } => name.clone(),
+        }
+    }
+
+    /// Returns the brief description of the metric.
+    pub fn brief(&self) -> String {
+        match self {
+            UnivariateMetric::Ref { .. } => String::new(),
+            UnivariateMetric::Metric { brief, .. } => brief.clone(),
+        }
+    }
+
+    /// Returns the note on the metric.
+    pub fn note(&self) -> String {
+        match self {
+            UnivariateMetric::Ref { .. } => String::new(),
+            UnivariateMetric::Metric { note, .. } => note.clone(),
+        }
+    }
+}

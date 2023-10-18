@@ -7,7 +7,7 @@ use crate::tags::Tags;
 use serde::{Deserialize, Serialize};
 
 /// An event specification.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields)]
 pub struct Event {
     /// The name of the event.

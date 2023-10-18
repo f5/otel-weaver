@@ -23,3 +23,15 @@ pub struct ResourceSpans {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Tags>,
 }
+
+impl ResourceSpans {
+    /// Returns a slice of spans.
+    pub fn spans(&self) -> Vec<&Span> {
+        self.spans.iter().collect()
+    }
+
+    /// Returns a span by name or None if not found.
+    pub fn span(&self, name: &str) -> Option<&Span> {
+        self.spans.iter().find(|span| span.span_name.as_str() == name)
+    }
+}

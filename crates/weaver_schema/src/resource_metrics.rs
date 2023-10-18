@@ -31,3 +31,21 @@ pub struct ResourceMetrics {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Tags>,
 }
+
+impl ResourceMetrics {
+    /// Returns a metric by name or None if not found.
+    /// Note: this is a linear search.
+    pub fn metric(&self, name: &str) -> Option<&UnivariateMetric> {
+        self.metrics.iter().find(|metric| metric.name() == name)
+    }
+
+    /// Returns a vector of metrics.
+    pub fn metrics(&self) -> Vec<&UnivariateMetric> {
+        self.metrics.iter().collect()
+    }
+
+    /// Returns a vector of metric groups.
+    pub fn metric_groups(&self) -> Vec<&MetricGroup> {
+        self.metric_groups.iter().collect()
+    }
+}

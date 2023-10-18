@@ -6,27 +6,31 @@ use std::io;
 use std::path::PathBuf;
 
 use clap::Parser;
-use crossterm::event::DisableMouseCapture;
-use crossterm::event::EnableMouseCapture;
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use crossterm::event::DisableMouseCapture;
+use crossterm::event::EnableMouseCapture;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use ratatui::style::{Color, Modifier, Style};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap};
+use ratatui::text::Line;
+use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
+use ratatui::widgets::Cell;
+use tantivy::{doc, Index, IndexWriter, ReloadPolicy};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Schema, STORED, TEXT};
-use tantivy::{doc, Index, IndexWriter, ReloadPolicy};
 use tui_textarea::TextArea;
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
-use weaver_semconv::SemConvCatalog;
+use weaver_schema::TelemetrySchema;
+
+mod semconv;
+mod schema;
 
 type Err = Box<dyn std::error::Error>;
 type Result<T> = std::result::Result<T, Err>;
@@ -41,7 +45,7 @@ pub struct SearchParams {
 }
 
 pub struct SearchApp<'a> {
-    sem_conv_catalog: SemConvCatalog,
+    schema: TelemetrySchema,
     search_area: TextArea<'a>,
 
     results: StatefulResults,
@@ -55,6 +59,7 @@ pub struct SearchApp<'a> {
 
 /// A result item
 pub struct ResultItem {
+    source: String,
     r#type: String,
     id: String,
     brief: String,
@@ -62,7 +67,8 @@ pub struct ResultItem {
 
 /// A stateful list of items
 pub struct StatefulResults {
-    state: ListState,
+    state: TableState,
+    // ListState,
     items: Vec<ResultItem>,
 }
 
@@ -70,7 +76,7 @@ impl StatefulResults {
     /// Creates a new stateful list of items
     fn new() -> StatefulResults {
         StatefulResults {
-            state: ListState::default(),
+            state: TableState::default(), // ListState::default(),
             items: vec![],
         }
     }
@@ -119,19 +125,16 @@ impl StatefulResults {
 
 /// Search for attributes and metrics in a schema file
 pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
-    let schema = SchemaResolver::load_schema_from_path(params.schema.clone(), log.clone())
+    let schema = SchemaResolver::resolve_schema_file(params.schema.clone(), log.clone())
         .unwrap_or_else(|e| {
             log.error(&format!("{}", e));
             std::process::exit(1);
         });
-    let sem_conv_catalog = SchemaResolver::semantic_catalog_from_schema(&schema, log.clone())
-        .unwrap_or_else(|e| {
-            log.error(&format!("{}", e));
-            std::process::exit(1);
-        });
+    let sem_conv_catalog = schema.semantic_convention_catalog();
 
     let mut schema_builder = Schema::builder();
 
+    let source = schema_builder.add_text_field("source", TEXT | STORED);
     let r#type = schema_builder.add_text_field("type", TEXT | STORED);
     let id = schema_builder.add_text_field("id", TEXT | STORED);
     let brief = schema_builder.add_text_field("brief", TEXT | STORED);
@@ -147,6 +150,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
     for attr in sem_conv_catalog.attributes_iter() {
         index_writer
             .add_document(doc!(
+                source => "semconv",
                 r#type => "attribute",
                 id => attr.id(),
                 brief => attr.brief(),
@@ -155,14 +159,65 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
             .expect("Failed to add document");
     }
 
-    // Index metrics
+    // Index metric groups
     for metric in sem_conv_catalog.metrics_iter() {
         index_writer
             .add_document(doc!(
+                source => "semconv",
                 r#type => "metric",
                 id => metric.name(),
                 brief => metric.brief(),
                 note => metric.note()
+            ))
+            .expect("Failed to add document");
+    }
+
+    // Index metrics
+    for metric in schema.metrics() {
+        index_writer
+            .add_document(doc!(
+                source => "schema",
+                r#type => "metric",
+                id => metric.name(),
+                brief => metric.brief(),
+                note => metric.note()
+            ))
+            .expect("Failed to add document");
+    }
+    for metric_group in schema.metric_groups() {
+        index_writer
+            .add_document(doc!(
+                source => "schema",
+                r#type => "metric_group",
+                id => metric_group.id(),
+                brief => "",
+                note => ""
+            ))
+            .expect("Failed to add document");
+    }
+
+    // Index events
+    for event in schema.events() {
+        index_writer
+            .add_document(doc!(
+                source => "schema",
+                r#type => "event",
+                id => event.event_name.clone(),
+                brief => event.domain.clone(),
+                note => ""
+            ))
+            .expect("Failed to add document");
+    }
+
+    // Index spans
+    for span in schema.spans() {
+        index_writer
+            .add_document(doc!(
+                source => "schema",
+                r#type => "span",
+                id => span.span_name.clone(),
+                brief => "",
+                note => ""
             ))
             .expect("Failed to add document");
     }
@@ -176,18 +231,19 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
         .try_into()
         .expect("Failed to create reader");
     let searcher = reader.searcher();
-    let query_parser = QueryParser::for_index(&index, vec![r#type, id, brief, note]);
+    let query_parser = QueryParser::for_index(&index, vec![source, r#type, id, brief, note]);
 
     let mut search_area = TextArea::default();
     search_area.set_block(
         Block::default()
             .borders(Borders::ALL)
-            .title("Search (press `Esc` or `Ctrl-C` to stop running)"),
+            .title(" Search (press `Esc` or `Ctrl-C` to stop running) ")
+            .title_style(Style::default().fg(Color::Yellow)),
     );
 
     // application state
     let mut app = SearchApp {
-        sem_conv_catalog,
+        schema,
         search_area,
         results: StatefulResults::new(),
         searcher,
@@ -248,11 +304,13 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
                         .doc(doc_address)
                         .expect("Failed to retrieve document");
                     let values = retrieved_doc.field_values();
-                    let r#type = values[0].value().as_text().unwrap_or_default();
-                    let id = values[1].value().as_text().unwrap_or_default();
-                    let brief = values[2].value().as_text().unwrap_or_default();
+                    let source = values[0].value().as_text().unwrap_or_default();
+                    let r#type = values[1].value().as_text().unwrap_or_default();
+                    let id = values[2].value().as_text().unwrap_or_default();
+                    let brief = values[3].value().as_text().unwrap_or_default();
 
                     app.results.items.push(ResultItem {
+                        source: source.to_string(),
                         r#type: r#type.to_string(),
                         id: id.to_string(),
                         brief: brief.to_string(),
@@ -266,15 +324,27 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         }
     });
 
-    let items: Vec<ListItem> = app
+    let selected_style = Style::default().add_modifier(Modifier::REVERSED);
+    let normal_style = Style::default();
+    let header_cells = ["source:", "type:", "name:", "brief:"]
+        .iter()
+        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Yellow)));
+    let header = Row::new(header_cells)
+        .style(normal_style)
+        .height(1)
+        .bottom_margin(0);
+    let rows: Vec<Row> = app
         .results
         .items
         .iter()
         .map(|item| {
-            ListItem::new(Line::from(Span::styled(
-                format!("{: <10} {: <30} {}", item.r#type, item.id, item.brief),
-                Style::default().fg(Color::White),
-            )))
+            let cells = vec![
+                Cell::from(item.source.clone()),
+                Cell::from(item.r#type.clone()),
+                Cell::from(item.id.clone()),
+                Cell::from(item.brief.clone()),
+            ];
+            Row::new(cells).height(1).bottom_margin(0)
         })
         .collect();
 
@@ -288,19 +358,17 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
         .split(outer_layout[0]);
 
-    let result_block = Block::default()
-        .borders(Borders::ALL)
-        .title("Search results (i.e. attributes and metrics)")
-        .style(Style::default());
-
-    let content = List::new(items)
-        .highlight_style(
-            Style::default()
-                .bg(Color::Green)
-                .add_modifier(Modifier::BOLD),
-        )
+    let content = Table::new(rows)
+        .header(header)
+        .block(Block::default().borders(Borders::ALL).title(" Search results ").title_style(Style::default().fg(Color::Yellow)))
+        .highlight_style(selected_style)
         .highlight_symbol(">> ")
-        .block(result_block);
+        .widths(&[
+            Constraint::Max(8),
+            Constraint::Max(12),
+            Constraint::Max(30),
+            Constraint::Max(120),
+        ]);
 
     frame.render_stateful_widget(content, inner_layout[0], &mut app.results.state);
 
@@ -316,63 +384,30 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
 
 fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Paragraph<'a> {
     let paragraph = if let Some(item) = item {
-        let text = match item.r#type.as_str() {
-            "attribute" => {
-                let attribute = app.sem_conv_catalog.get_attribute(item.id.as_str()).expect("Failed to get attribute (fix me)");
-                vec![
-                    Line::from(vec![
-                        Span::styled("Type   : ", Style::default().fg(Color::Yellow)),
-                        Span::raw("Attribute"),
-                    ]),
-                    Line::from(vec![
-                        Span::styled("Id     : ", Style::default().fg(Color::Yellow)),
-                        Span::raw(attribute.id()),
-                    ]),
-                    Line::from(vec![
-                        Span::styled("Brief  : ", Style::default().fg(Color::Yellow)),
-                        Span::raw(attribute.brief()),
-                    ]),
-                    Line::from(vec![
-                        Span::styled("Note   : ", Style::default().fg(Color::Yellow)),
-                        Span::raw(attribute.note()),
-                    ]),
-                ]
-            },
-            "metric" => {
-                let metric = app.sem_conv_catalog.get_metric(item.id.as_str()).expect("Failed to get metric (fix me)");
-                vec![
-                    Line::from(vec![
-                        Span::styled("Type   : ", Style::default().fg(Color::Yellow)),
-                        Span::raw("Metric"),
-                    ]),
-                    Line::from(vec![
-                        Span::styled("Name   : ", Style::default().fg(Color::Yellow)),
-                        Span::raw(metric.name.clone()),
-                    ]),
-                    Line::from(vec![
-                        Span::styled("Brief  : ", Style::default().fg(Color::Yellow)),
-                        Span::raw(metric.brief.clone()),
-                    ]),
-                    Line::from(vec![
-                        Span::styled("Note   : ", Style::default().fg(Color::Yellow)),
-                        Span::raw(metric.note.clone()),
-                    ]),
-                    Line::from(vec![
-                        Span::styled("Unit   : ", Style::default().fg(Color::Yellow)),
-                        Span::raw(metric.unit.clone().unwrap_or_default()),
-                    ]),
-                ]
-            },
-            _ => vec![]
-        };
-        Paragraph::new(text).style(Style::default().fg(Color::Gray))
+        let source = item.source.as_str();
+        let r#type = item.r#type.as_str();
+
+        match (source, r#type) {
+            ("semconv", "attribute") => semconv::attribute::widget(app.schema.semantic_convention_catalog().attribute(item.id.as_str())),
+            ("semconv", "metric") => semconv::metric::widget(app.schema.semantic_convention_catalog().metric(item.id.as_str())),
+            ("schema", "metric") => schema::metric::widget(app.schema.metric(item.id.as_str())),
+            ("schema", "metric_group") => Paragraph::new(vec![Line::default()]),
+            ("schema", "event") => Paragraph::new(vec![Line::default()]),
+            ("schema", "span") => schema::span::widget(app.schema.span(item.id.as_str())),
+            _ => Paragraph::new(vec![Line::default()]),
+        }
     } else {
         Paragraph::new(vec![Line::default()])
     };
-    paragraph.block(Block::default()
-        .borders(Borders::ALL)
-        .title("Details")
-        .style(Style::default()))
+
+    paragraph
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Details ")
+                .title_style(Style::default().fg(Color::Yellow))
+                .style(Style::default()),
+        )
         .wrap(Wrap { trim: true })
 }
 

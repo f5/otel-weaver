@@ -23,3 +23,10 @@ pub struct ResourceEvents {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Tags>,
 }
+
+impl ResourceEvents {
+    /// Returns a vector of events.
+    pub fn events(&self) -> Vec<&Event> {
+        self.events.iter().collect()
+    }
+}
