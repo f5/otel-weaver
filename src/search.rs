@@ -17,7 +17,7 @@ use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, List, ListItem, ListState};
+use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Schema, STORED, TEXT};
@@ -26,6 +26,7 @@ use tui_textarea::TextArea;
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
+use weaver_semconv::SemConvCatalog;
 
 type Err = Box<dyn std::error::Error>;
 type Result<T> = std::result::Result<T, Err>;
@@ -40,6 +41,7 @@ pub struct SearchParams {
 }
 
 pub struct SearchApp<'a> {
+    sem_conv_catalog: SemConvCatalog,
     search_area: TextArea<'a>,
 
     results: StatefulResults,
@@ -122,7 +124,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
             log.error(&format!("{}", e));
             std::process::exit(1);
         });
-    let catalog = SchemaResolver::semantic_catalog_from_schema(&schema, log.clone())
+    let sem_conv_catalog = SchemaResolver::semantic_catalog_from_schema(&schema, log.clone())
         .unwrap_or_else(|e| {
             log.error(&format!("{}", e));
             std::process::exit(1);
@@ -142,7 +144,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
         .expect("Failed to create index writer");
 
     // Index attributes
-    for attr in catalog.attributes_iter() {
+    for attr in sem_conv_catalog.attributes_iter() {
         index_writer
             .add_document(doc!(
                 r#type => "attribute",
@@ -154,7 +156,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
     }
 
     // Index metrics
-    for metric in catalog.metrics_iter() {
+    for metric in sem_conv_catalog.metrics_iter() {
         index_writer
             .add_document(doc!(
                 r#type => "metric",
@@ -185,6 +187,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
 
     // application state
     let mut app = SearchApp {
+        sem_conv_catalog,
         search_area,
         results: StatefulResults::new(),
         searcher,
@@ -301,7 +304,76 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
 
     frame.render_stateful_widget(content, inner_layout[0], &mut app.results.state);
 
+    // Detail area
+    let item = match app.results.state.selected() {
+        Some(i) => app.results.items.get(i),
+        None => None,
+    };
+    frame.render_widget(detail_area(app, item), inner_layout[1]);
+
     frame.render_widget(app.search_area.widget(), outer_layout[1]);
+}
+
+fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Paragraph<'a> {
+    let paragraph = if let Some(item) = item {
+        let text = match item.r#type.as_str() {
+            "attribute" => {
+                let attribute = app.sem_conv_catalog.get_attribute(item.id.as_str()).expect("Failed to get attribute (fix me)");
+                vec![
+                    Line::from(vec![
+                        Span::styled("Type   : ", Style::default().fg(Color::Yellow)),
+                        Span::raw("Attribute"),
+                    ]),
+                    Line::from(vec![
+                        Span::styled("Id     : ", Style::default().fg(Color::Yellow)),
+                        Span::raw(attribute.id()),
+                    ]),
+                    Line::from(vec![
+                        Span::styled("Brief  : ", Style::default().fg(Color::Yellow)),
+                        Span::raw(attribute.brief()),
+                    ]),
+                    Line::from(vec![
+                        Span::styled("Note   : ", Style::default().fg(Color::Yellow)),
+                        Span::raw(attribute.note()),
+                    ]),
+                ]
+            },
+            "metric" => {
+                let metric = app.sem_conv_catalog.get_metric(item.id.as_str()).expect("Failed to get metric (fix me)");
+                vec![
+                    Line::from(vec![
+                        Span::styled("Type   : ", Style::default().fg(Color::Yellow)),
+                        Span::raw("Metric"),
+                    ]),
+                    Line::from(vec![
+                        Span::styled("Name   : ", Style::default().fg(Color::Yellow)),
+                        Span::raw(metric.name.clone()),
+                    ]),
+                    Line::from(vec![
+                        Span::styled("Brief  : ", Style::default().fg(Color::Yellow)),
+                        Span::raw(metric.brief.clone()),
+                    ]),
+                    Line::from(vec![
+                        Span::styled("Note   : ", Style::default().fg(Color::Yellow)),
+                        Span::raw(metric.note.clone()),
+                    ]),
+                    Line::from(vec![
+                        Span::styled("Unit   : ", Style::default().fg(Color::Yellow)),
+                        Span::raw(metric.unit.clone().unwrap_or_default()),
+                    ]),
+                ]
+            },
+            _ => vec![]
+        };
+        Paragraph::new(text).style(Style::default().fg(Color::Gray))
+    } else {
+        Paragraph::new(vec![Line::default()])
+    };
+    paragraph.block(Block::default()
+        .borders(Borders::ALL)
+        .title("Details")
+        .style(Style::default()))
+        .wrap(Wrap { trim: true })
 }
 
 fn update(app: &mut SearchApp) -> Result<()> {
