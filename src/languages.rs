@@ -5,7 +5,7 @@
 use clap::Parser;
 use std::path::PathBuf;
 
-use weaver_logger::Logger;
+use weaver_logger::{ILogger};
 
 /// Parameters for the `languages` command
 #[derive(Parser)]
@@ -16,7 +16,7 @@ pub struct LanguagesParams {
 }
 
 /// List of supported languages
-pub fn command_languages(log: &Logger, params: &LanguagesParams) {
+pub fn command_languages(log: impl ILogger + Sync + Clone, params: &LanguagesParams) {
     // List all directories in the templates directory
     log.log("List of supported languages:");
     let template_dir = match std::fs::read_dir(&params.templates) {

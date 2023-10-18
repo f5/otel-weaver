@@ -12,7 +12,7 @@ use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
 use tera::{Context, Tera};
 
-use weaver_logger::Logger;
+use weaver_logger::{ILogger};
 use weaver_resolver::SchemaResolver;
 use weaver_schema::event::Event;
 use weaver_schema::metric_group::MetricGroup;
@@ -152,12 +152,12 @@ impl ClientSdkGenerator {
     /// Generate a client SDK for the given schema
     pub fn generate(
         &self,
-        log: &Logger,
+        log: impl ILogger + Clone + Sync,
         schema_path: PathBuf,
         output_dir: PathBuf,
     ) -> Result<(), crate::Error> {
         let schema =
-            SchemaResolver::resolve_schema_file(schema_path.clone(), log).map_err(|e| {
+            SchemaResolver::resolve_schema_file(schema_path.clone(), log.clone()).map_err(|e| {
                 InvalidTelemetrySchema {
                     schema: schema_path.clone(),
                     error: format!("{}", e),
@@ -181,23 +181,23 @@ impl ClientSdkGenerator {
             .try_for_each(|pair| {
                 match pair {
                     TemplateObjectPair::Metric { template, metric } => {
-                        self.process_metric(log, &template, &schema_path, metric, &output_dir)
+                        self.process_metric(log.clone(), &template, &schema_path, metric, &output_dir)
                     }
                     TemplateObjectPair::MetricGroup {
                         template,
                         metric_group,
                     } => self.process_metric_group(
-                        log,
+                        log.clone(),
                         &template,
                         &schema_path,
                         metric_group,
                         &output_dir,
                     ),
                     TemplateObjectPair::Event { template, event } => {
-                        self.process_event(log, &template, &schema_path, event, &output_dir)
+                        self.process_event(log.clone(), &template, &schema_path, event, &output_dir)
                     }
                     TemplateObjectPair::Span { template, span } => {
-                        self.process_span(log, &template, &schema_path, span, &output_dir)
+                        self.process_span(log.clone(), &template, &schema_path, span, &output_dir)
                     }
                     TemplateObjectPair::Other {
                         template,
@@ -213,7 +213,7 @@ impl ClientSdkGenerator {
                         })?;
 
                         log.loading(&format!("Generating file {}", template));
-                        let generated_code = self.generate_code(log, &template, context)?;
+                        let generated_code = self.generate_code(log.clone(), &template, context)?;
                         let relative_path = relative_path.to_path_buf();
                         let generated_file =
                             Self::save_generated_code(&output_dir, relative_path, generated_code)?;
@@ -316,7 +316,7 @@ impl ClientSdkGenerator {
     /// Generate code.
     fn generate_code(
         &self,
-        log: &Logger,
+        log: impl ILogger,
         tmpl_file: &str,
         context: &Context,
     ) -> Result<String, crate::Error> {
@@ -365,7 +365,7 @@ impl ClientSdkGenerator {
     /// Process an univariate metric.
     fn process_metric(
         &self,
-        log: &Logger,
+        log: impl ILogger + Clone,
         tmpl_file: &str,
         schema_path: &Path,
         metric: &UnivariateMetric,
@@ -381,7 +381,7 @@ impl ClientSdkGenerator {
             self.config.reset();
 
             log.loading(&format!("Generating code for univariate metric `{}`", name));
-            let generated_code = self.generate_code(log, tmpl_file, context)?;
+            let generated_code = self.generate_code(log.clone(), tmpl_file, context)?;
 
             // Retrieve the file name from the config
             let relative_path = {
@@ -407,7 +407,7 @@ impl ClientSdkGenerator {
     /// Process a metric group (multivariate).
     fn process_metric_group(
         &self,
-        log: &Logger,
+        log: impl ILogger + Clone,
         tmpl_file: &str,
         schema_path: &Path,
         metric: &MetricGroup,
@@ -425,7 +425,7 @@ impl ClientSdkGenerator {
             "Generating code for multivariate metric `{}`",
             metric.id
         ));
-        let generated_code = self.generate_code(log, tmpl_file, context)?;
+        let generated_code = self.generate_code(log.clone(), tmpl_file, context)?;
 
         // Retrieve the file name from the config
         let relative_path = {
@@ -449,7 +449,7 @@ impl ClientSdkGenerator {
     /// Process an event.
     fn process_event(
         &self,
-        log: &Logger,
+        log: impl ILogger + Clone,
         tmpl_file: &str,
         schema_path: &Path,
         event: &Event,
@@ -464,7 +464,7 @@ impl ClientSdkGenerator {
         self.config.reset();
 
         log.loading(&format!("Generating code for log `{}`", event.event_name));
-        let generated_code = self.generate_code(log, tmpl_file, context)?;
+        let generated_code = self.generate_code(log.clone(), tmpl_file, context)?;
 
         // Retrieve the file name from the config
         let relative_path = {
@@ -488,7 +488,7 @@ impl ClientSdkGenerator {
     /// Process a span.
     fn process_span(
         &self,
-        log: &Logger,
+        log: impl ILogger + Clone,
         tmpl_file: &str,
         schema_path: &Path,
         span: &Span,
@@ -503,7 +503,7 @@ impl ClientSdkGenerator {
         self.config.reset();
 
         log.loading(&format!("Generating code for span `{}`", span.span_name));
-        let generated_code = self.generate_code(log, tmpl_file, context)?;
+        let generated_code = self.generate_code(log.clone(), tmpl_file, context)?;
 
         // Retrieve the file name from the config
         let relative_path = {

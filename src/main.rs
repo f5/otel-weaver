@@ -20,19 +20,19 @@ fn main() {
 
     match &cli.command {
         Some(Commands::Resolve(params)) => {
-            command_resolve(&log, params);
+            command_resolve(log, params);
         }
         Some(Commands::GenClientSdk(params)) => {
-            command_gen_client_sdk(&log, params);
+            command_gen_client_sdk(log, params);
         }
         Some(Commands::GenClientApi { schema }) => {
-            command_gen_client_api(&log, schema);
+            command_gen_client_api(log, schema);
         }
         Some(Commands::Languages(params)) => {
-            languages::command_languages(&log, params);
+            languages::command_languages(log, params);
         }
         Some(Commands::Search(params)) => {
-            search::command_search(&log, params);
+            search::command_search(log, params);
         }
         None => {}
     }

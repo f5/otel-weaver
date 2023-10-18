@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
-use weaver_logger::Logger;
+use weaver_logger::{ILogger};
 use weaver_template::sdkgen::ClientSdkGenerator;
 use weaver_template::GeneratorConfig;
 
@@ -27,7 +27,7 @@ pub struct GenClientSdkParams {
 }
 
 /// Generate a client SDK (application)
-pub fn command_gen_client_sdk(log: &Logger, params: &GenClientSdkParams) {
+pub fn command_gen_client_sdk(log: impl ILogger + Sync + Clone, params: &GenClientSdkParams) {
     log.loading(&format!(
         "Generating client SDK for language {}",
         params.language
@@ -42,7 +42,7 @@ pub fn command_gen_client_sdk(log: &Logger, params: &GenClientSdkParams) {
     };
 
     generator
-        .generate(log, params.schema.clone(), params.output_dir.clone())
+        .generate(log.clone(), params.schema.clone(), params.output_dir.clone())
         .map_err(|e| {
             log.error(&format!("{}", e));
             std::process::exit(1);

@@ -15,7 +15,7 @@ use rayon::iter::ParallelIterator;
 use regex::Regex;
 use url::Url;
 
-use weaver_logger::Logger;
+use weaver_logger::{ILogger};
 use weaver_schema::{SemConvImport, TelemetrySchema};
 use weaver_semconv::{ResolverConfig, SemConvCatalog, SemConvSpec};
 use weaver_version::VersionChanges;
@@ -91,7 +91,7 @@ impl SchemaResolver {
     /// Loads a telemetry schema file and returns the resolved schema.
     pub fn resolve_schema_file<P: AsRef<Path> + Clone>(
         schema_path: P,
-        log: &Logger,
+        log: impl ILogger + Clone + Sync,
     ) -> Result<TelemetrySchema, Error> {
         log.loading(&format!(
             "Loading schema '{}'",
@@ -178,7 +178,7 @@ impl SchemaResolver {
     /// Loads the parent telemetry schema if it exists.
     fn load_parent_schema(
         schema: &TelemetrySchema,
-        log: Logger,
+        log: impl ILogger,
     ) -> Result<Option<TelemetrySchema>, Error> {
         // Load the parent schema and merge it into the current schema.
         let parent_schema = if let Some(parent_schema_url) = schema.parent_schema_url.as_ref() {
@@ -225,7 +225,7 @@ impl SchemaResolver {
     /// Creates a semantic convention catalog from the given telemetry schema.
     fn create_semantic_convention_catalog(
         sem_convs: &[SemConvImport],
-        log: Logger,
+        log: impl ILogger + Sync,
     ) -> Result<SemConvCatalog, Error> {
         // Load all the semantic convention catalogs.
         let mut sem_conv_catalog = SemConvCatalog::default();

@@ -6,7 +6,7 @@ use clap::Parser;
 use std::path::PathBuf;
 use std::process::exit;
 
-use weaver_logger::Logger;
+use weaver_logger::{ILogger};
 use weaver_resolver::SchemaResolver;
 
 /// Parameters for the `resolve` command
@@ -23,9 +23,9 @@ pub struct ResolveParams {
 }
 
 /// Resolve a schema file and print the result
-pub fn command_resolve(log: &Logger, params: &ResolveParams) {
+pub fn command_resolve(log: impl ILogger + Sync + Clone, params: &ResolveParams) {
     let schema = params.schema.clone();
-    let schema = SchemaResolver::resolve_schema_file(schema, log);
+    let schema = SchemaResolver::resolve_schema_file(schema, log.clone());
 
     match schema {
         Ok(schema) => match serde_yaml::to_string(&schema) {

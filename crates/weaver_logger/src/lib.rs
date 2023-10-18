@@ -8,15 +8,54 @@
 
 use std::sync::{Arc, Mutex};
 
+/// A trait that defines the interface of a logger.
+pub trait ILogger {
+    /// Logs an trace message (only with debug enabled).
+    fn trace(&self, message: &str) -> &Self;
+
+    /// Logs an info message.
+    fn info(&self, message: &str) -> &Self;
+
+    /// Logs a warning message.
+    fn warn(&self, message: &str) -> &Self;
+
+    /// Logs an error message.
+    fn error(&self, message: &str) -> &Self;
+
+    /// Logs a success message.
+    fn success(&self, message: &str) -> &Self;
+
+    /// Logs a newline.
+    fn newline(&self, count: usize) -> &Self;
+
+    /// Indents the logger.
+    fn indent(&self, count: usize) -> &Self;
+
+    /// Stops a loading message.
+    fn done(&self);
+
+    /// Adds a style to the logger.
+    fn add_style(&self, name: &str, styles: Vec<&'static str>) -> &Self;
+
+    /// Logs a loading message with a spinner.
+    fn loading(&self, message: &str) -> &Self;
+
+    /// Forces the logger to not print a newline for the next message.
+    fn same(&self) -> &Self;
+
+    /// Logs a message without icon.
+    fn log(&self, message: &str) -> &Self;
+}
+
 /// A generic logger that can be used to log messages to the console.
 /// This logger is thread-safe and can be cloned.
 #[derive(Default, Clone)]
-pub struct Logger<'a> {
-    logger: Arc<Mutex<paris::Logger<'a>>>,
+pub struct Logger {
+    logger: Arc<Mutex<paris::Logger<'static>>>,
     debug_level: u8,
 }
 
-impl<'a> Logger<'a> {
+impl Logger {
     /// Creates a new logger.
     pub fn new(debug_level: u8) -> Self {
         Logger {
@@ -24,9 +63,11 @@ impl<'a> Logger<'a> {
             debug_level,
         }
     }
+}
 
+impl ILogger for Logger {
     /// Logs an trace message (only with debug enabled).
-    pub fn trace(&self, message: &str) -> &Self {
+    fn trace(&self, message: &str) -> &Self {
         if self.debug_level > 0 {
             self.logger
                 .lock()
@@ -37,7 +78,7 @@ impl<'a> Logger<'a> {
     }
 
     /// Logs an info message.
-    pub fn info(&self, message: &str) -> &Self {
+    fn info(&self, message: &str) -> &Self {
         self.logger
             .lock()
             .expect("Failed to lock logger")
@@ -46,7 +87,7 @@ impl<'a> Logger<'a> {
     }
 
     /// Logs a warning message.
-    pub fn warn(&self, message: &str) -> &Self {
+    fn warn(&self, message: &str) -> &Self {
         self.logger
             .lock()
             .expect("Failed to lock logger")
@@ -55,7 +96,7 @@ impl<'a> Logger<'a> {
     }
 
     /// Logs an error message.
-    pub fn error(&self, message: &str) -> &Self {
+    fn error(&self, message: &str) -> &Self {
         self.logger
             .lock()
             .expect("Failed to lock logger")
@@ -64,7 +105,7 @@ impl<'a> Logger<'a> {
     }
 
     /// Logs a success message.
-    pub fn success(&self, message: &str) -> &Self {
+    fn success(&self, message: &str) -> &Self {
         self.logger
             .lock()
             .expect("Failed to lock logger")
@@ -73,7 +114,7 @@ impl<'a> Logger<'a> {
     }
 
     /// Logs a newline.
-    pub fn newline(&self, count: usize) -> &Self {
+    fn newline(&self, count: usize) -> &Self {
         self.logger
             .lock()
             .expect("Failed to lock logger")
@@ -82,7 +123,7 @@ impl<'a> Logger<'a> {
     }
 
     /// Indents the logger.
-    pub fn indent(&self, count: usize) -> &Self {
+    fn indent(&self, count: usize) -> &Self {
         self.logger
             .lock()
             .expect("Failed to lock logger")
@@ -91,12 +132,12 @@ impl<'a> Logger<'a> {
     }
 
     /// Stops a loading message.
-    pub fn done(&self) {
+    fn done(&self) {
         self.logger.lock().expect("Failed to lock logger").done();
     }
 
     /// Adds a style to the logger.
-    pub fn add_style(&self, name: &str, styles: Vec<&'a str>) -> &Self {
+    fn add_style(&self, name: &str, styles: Vec<&'static str>) -> &Self {
         self.logger
             .lock()
             .expect("Failed to lock logger")
@@ -105,7 +146,7 @@ impl<'a> Logger<'a> {
     }
 
     /// Logs a loading message with a spinner.
-    pub fn loading(&self, message: &str) -> &Self {
+    fn loading(&self, message: &str) -> &Self {
         self.logger
             .lock()
             .expect("Failed to lock logger")
@@ -114,13 +155,13 @@ impl<'a> Logger<'a> {
     }
 
     /// Forces the logger to not print a newline for the next message.
-    pub fn same(&self) -> &Self {
+    fn same(&self) -> &Self {
         self.logger.lock().expect("Failed to lock logger").same();
         self
     }
 
     /// Logs a message without icon.
-    pub fn log(&self, message: &str) -> &Self {
+    fn log(&self, message: &str) -> &Self {
         self.logger
             .lock()
             .expect("Failed to lock logger")

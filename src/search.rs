@@ -21,7 +21,7 @@ use tantivy::{Index, IndexWriter};
 use tantivy::schema::{Schema, STORED, TEXT};
 use tui_textarea::TextArea;
 
-use weaver_logger::Logger;
+use weaver_logger::{ILogger};
 use weaver_resolver::SchemaResolver;
 use weaver_schema::TelemetrySchema;
 use weaver_template::Error::InvalidTelemetrySchema;
@@ -44,9 +44,9 @@ pub struct SearchApp<'a> {
 }
 
 /// Search for attributes and metrics in a schema file
-pub fn command_search(log: &Logger, params: &SearchParams) {
+pub fn command_search(log: impl ILogger + Sync + Clone, params: &SearchParams) {
     let telemetry_schema =
-        SchemaResolver::resolve_schema_file(params.schema.clone(), log).map_err(|e| {
+        SchemaResolver::resolve_schema_file(params.schema.clone(), log.clone()).map_err(|e| {
             InvalidTelemetrySchema {
                 schema: params.schema.clone(),
                 error: format!("{}", e),
