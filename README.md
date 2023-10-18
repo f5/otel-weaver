@@ -102,7 +102,7 @@ weaver languages
 **Tooling and Plugins**
   - [ ] Add support for WASM plugins.
   - [ ] Add Tera filter to apply obfuscation, masking, ... based on tags and language configuration.
-  - [ ] Search engine for semantic convention catalog.
+  - [X] Search engine for semantic convention catalog.
 
 ## Questions
 - Should we support the equivalent of trace.SpanFromContext(context.TODO()) to get the current span? 
