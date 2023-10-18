@@ -39,6 +39,11 @@ impl Tags {
         self.tags.iter()
     }
 
+    /// Checks if the tags are empty.
+    pub fn is_empty(&self) -> bool {
+        self.tags.is_empty()
+    }
+
     /// Merges the tags with another set of tags. If a tag exists in both sets of tags, the tag
     /// from the current set of tags is used (i.e. self).
     pub fn merge_with_override(&self, other: &Tags) -> Tags {
