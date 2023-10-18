@@ -15,7 +15,7 @@ use rayon::iter::ParallelIterator;
 use regex::Regex;
 use url::Url;
 
-use weaver_logger::{ILogger};
+use weaver_logger::Logger;
 use weaver_schema::{SemConvImport, TelemetrySchema};
 use weaver_semconv::{ResolverConfig, SemConvCatalog, SemConvSpec};
 use weaver_version::VersionChanges;
@@ -91,38 +91,40 @@ impl SchemaResolver {
     /// Loads a telemetry schema file and returns the resolved schema.
     pub fn resolve_schema_file<P: AsRef<Path> + Clone>(
         schema_path: P,
-        log: impl ILogger + Clone + Sync,
+        log: impl Logger + Clone + Sync,
     ) -> Result<TelemetrySchema, Error> {
-        log.loading(&format!(
-            "Loading schema '{}'",
-            schema_path.as_ref().display()
-        ));
-        let mut schema = TelemetrySchema::load_from_file(schema_path.clone()).map_err(|e| {
-            log.error(&format!(
-                "Failed to load schema '{}'",
-                schema_path.as_ref().display()
-            ));
-            Error::TelemetrySchemaError(e)
-        })?;
-        log.success(&format!(
-            "Loaded schema '{}'",
-            schema_path.as_ref().display()
-        ));
-
-        let parent_schema = Self::load_parent_schema(&schema, log.clone())?;
-        schema.set_parent_schema(parent_schema);
-        let semantic_conventions = schema.merged_semantic_conventions();
-        let mut sem_conv_catalog =
-            Self::create_semantic_convention_catalog(&semantic_conventions, log.clone())?;
-        let _ = sem_conv_catalog
-            .resolve(ResolverConfig::default())
-            .map_err(Error::SemConvError)?;
-        log.success(&format!(
-            "Loaded {} semantic convention files ({} attributes, {} metrics)",
-            semantic_conventions.len(),
-            sem_conv_catalog.attribute_count(),
-            sem_conv_catalog.metric_count()
-        ));
+        let mut schema = Self::load_schema_from_path(schema_path.clone(), log.clone())?;
+        let sem_conv_catalog = Self::semantic_catalog_from_schema(&schema, log.clone())?;
+        // log.loading(&format!(
+        //     "Loading schema '{}'",
+        //     schema_path.as_ref().display()
+        // ));
+        // let mut schema = TelemetrySchema::load_from_file(schema_path.clone()).map_err(|e| {
+        //     log.error(&format!(
+        //         "Failed to load schema '{}'",
+        //         schema_path.as_ref().display()
+        //     ));
+        //     Error::TelemetrySchemaError(e)
+        // })?;
+        // log.success(&format!(
+        //     "Loaded schema '{}'",
+        //     schema_path.as_ref().display()
+        // ));
+        //
+        // let parent_schema = Self::load_parent_schema(&schema, log.clone())?;
+        // schema.set_parent_schema(parent_schema);
+        // let semantic_conventions = schema.merged_semantic_conventions();
+        // let mut sem_conv_catalog =
+        //     Self::create_semantic_convention_catalog(&semantic_conventions, log.clone())?;
+        // let _ = sem_conv_catalog
+        //     .resolve(ResolverConfig::default())
+        //     .map_err(Error::SemConvError)?;
+        // log.success(&format!(
+        //     "Loaded {} semantic convention files ({} attributes, {} metrics)",
+        //     semantic_conventions.len(),
+        //     sem_conv_catalog.attribute_count(),
+        //     sem_conv_catalog.metric_count()
+        // ));
 
         // Merges the versions of the parent schema into the current schema.
         schema.merge_versions();
@@ -158,27 +160,58 @@ impl SchemaResolver {
         Ok(schema)
     }
 
+    /// Loads a telemetry schema from the given path.
+    pub fn load_schema_from_path<P: AsRef<Path> + Clone>(
+        schema_path: P,
+        log: impl Logger + Clone + Sync,
+    ) -> Result<TelemetrySchema, Error> {
+        log.loading(&format!(
+            "Loading schema '{}'",
+            schema_path.as_ref().display()
+        ));
+
+        let mut schema = TelemetrySchema::load_from_file(schema_path.clone()).map_err(|e| {
+            log.error(&format!(
+                "Failed to load schema '{}'",
+                schema_path.as_ref().display()
+            ));
+            Error::TelemetrySchemaError(e)
+        })?;
+        log.success(&format!(
+            "Loaded schema '{}'",
+            schema_path.as_ref().display()
+        ));
+
+        let parent_schema = Self::load_parent_schema(&schema, log.clone())?;
+        schema.set_parent_schema(parent_schema);
+        Ok(schema)
+    }
+
     /// Loads a semantic convention catalog from the given schema path.
-    // pub fn semantic_catalog_from<P: AsRef<Path> + Clone>(schema_path: P) -> Result<SemConvCatalog, Error> {
-    //     let mut schema = TelemetrySchema::load_from_file(schema_path.clone()).map_err(|e| {
-    //         Error::TelemetrySchemaError(e)
-    //     })?;
-    //
-    //     let parent_schema = Self::load_parent_schema(&schema, log.clone())?;
-    //     schema.set_parent_schema(parent_schema);
-    //     let semantic_conventions = schema.merged_semantic_conventions();
-    //     let mut sem_conv_catalog =
-    //         Self::create_semantic_convention_catalog(&semantic_conventions, log.clone())?;
-    //     let _ = sem_conv_catalog
-    //         .resolve(ResolverConfig::default())
-    //         .map_err(Error::SemConvError)?;
-    //     return Ok(sem_conv_catalog);
-    // }
+    pub fn semantic_catalog_from_schema(
+        schema: &TelemetrySchema,
+        log: impl Logger + Clone + Sync,
+    ) -> Result<SemConvCatalog, Error> {
+        let semantic_conventions = schema.merged_semantic_conventions();
+        let mut sem_conv_catalog =
+            Self::create_semantic_convention_catalog(&semantic_conventions, log.clone())?;
+        let _ = sem_conv_catalog
+            .resolve(ResolverConfig::default())
+            .map_err(Error::SemConvError)?;
+        log.success(&format!(
+            "Loaded {} semantic convention files ({} attributes, {} metrics)",
+            semantic_conventions.len(),
+            sem_conv_catalog.attribute_count(),
+            sem_conv_catalog.metric_count()
+        ));
+
+        Ok(sem_conv_catalog)
+    }
 
     /// Loads the parent telemetry schema if it exists.
     fn load_parent_schema(
         schema: &TelemetrySchema,
-        log: impl ILogger,
+        log: impl Logger,
     ) -> Result<Option<TelemetrySchema>, Error> {
         // Load the parent schema and merge it into the current schema.
         let parent_schema = if let Some(parent_schema_url) = schema.parent_schema_url.as_ref() {
@@ -225,7 +258,7 @@ impl SchemaResolver {
     /// Creates a semantic convention catalog from the given telemetry schema.
     fn create_semantic_convention_catalog(
         sem_convs: &[SemConvImport],
-        log: impl ILogger + Sync,
+        log: impl Logger + Sync,
     ) -> Result<SemConvCatalog, Error> {
         // Load all the semantic convention catalogs.
         let mut sem_conv_catalog = SemConvCatalog::default();
@@ -278,15 +311,15 @@ impl SchemaResolver {
 
 #[cfg(test)]
 mod test {
-    use weaver_logger::Logger;
+    use weaver_logger::ConsoleLogger;
 
     use crate::SchemaResolver;
 
     #[test]
     fn resolve_schema() {
-        let mut log = Logger::new(0);
+        let log = ConsoleLogger::new(0);
         let schema =
-            SchemaResolver::resolve_schema_file("../../data/app-telemetry-schema.yaml", &mut log);
+            SchemaResolver::resolve_schema_file("../../data/app-telemetry-schema.yaml", log);
         assert!(schema.is_ok(), "{:#?}", schema.err().unwrap());
     }
 }

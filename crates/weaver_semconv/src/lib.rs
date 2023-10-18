@@ -505,6 +505,16 @@ impl SemConvCatalog {
         Ok(attributes)
     }
 
+    /// Returns an iterator over all the attributes defined in the catalog.
+    pub fn attributes_iter(&self) -> impl Iterator<Item = &Attribute> {
+        self.all_attributes.values().map(|attr| &attr.attribute)
+    }
+
+    /// Returns an iterator over all the metrics defined in the catalog.
+    pub fn metrics_iter(&self) -> impl Iterator<Item = &Metric> {
+        self.all_metrics.values()
+    }
+
     /// Returns a metric definition from its name or `None` if the
     /// name does not exist.
     pub fn get_metric(&self, metric_name: &str) -> Option<&Metric> {

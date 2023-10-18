@@ -12,7 +12,7 @@ use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
 use tera::{Context, Tera};
 
-use weaver_logger::{ILogger};
+use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
 use weaver_schema::event::Event;
 use weaver_schema::metric_group::MetricGroup;
@@ -152,16 +152,14 @@ impl ClientSdkGenerator {
     /// Generate a client SDK for the given schema
     pub fn generate(
         &self,
-        log: impl ILogger + Clone + Sync,
+        log: impl Logger + Clone + Sync,
         schema_path: PathBuf,
         output_dir: PathBuf,
     ) -> Result<(), crate::Error> {
-        let schema =
-            SchemaResolver::resolve_schema_file(schema_path.clone(), log.clone()).map_err(|e| {
-                InvalidTelemetrySchema {
-                    schema: schema_path.clone(),
-                    error: format!("{}", e),
-                }
+        let schema = SchemaResolver::resolve_schema_file(schema_path.clone(), log.clone())
+            .map_err(|e| InvalidTelemetrySchema {
+                schema: schema_path.clone(),
+                error: format!("{}", e),
             })?;
 
         // Process recursively all files in the template directory
@@ -180,9 +178,13 @@ impl ClientSdkGenerator {
             .into_par_iter()
             .try_for_each(|pair| {
                 match pair {
-                    TemplateObjectPair::Metric { template, metric } => {
-                        self.process_metric(log.clone(), &template, &schema_path, metric, &output_dir)
-                    }
+                    TemplateObjectPair::Metric { template, metric } => self.process_metric(
+                        log.clone(),
+                        &template,
+                        &schema_path,
+                        metric,
+                        &output_dir,
+                    ),
                     TemplateObjectPair::MetricGroup {
                         template,
                         metric_group,
@@ -316,7 +318,7 @@ impl ClientSdkGenerator {
     /// Generate code.
     fn generate_code(
         &self,
-        log: impl ILogger,
+        log: impl Logger,
         tmpl_file: &str,
         context: &Context,
     ) -> Result<String, crate::Error> {
@@ -365,7 +367,7 @@ impl ClientSdkGenerator {
     /// Process an univariate metric.
     fn process_metric(
         &self,
-        log: impl ILogger + Clone,
+        log: impl Logger + Clone,
         tmpl_file: &str,
         schema_path: &Path,
         metric: &UnivariateMetric,
@@ -407,7 +409,7 @@ impl ClientSdkGenerator {
     /// Process a metric group (multivariate).
     fn process_metric_group(
         &self,
-        log: impl ILogger + Clone,
+        log: impl Logger + Clone,
         tmpl_file: &str,
         schema_path: &Path,
         metric: &MetricGroup,
@@ -449,7 +451,7 @@ impl ClientSdkGenerator {
     /// Process an event.
     fn process_event(
         &self,
-        log: impl ILogger + Clone,
+        log: impl Logger + Clone,
         tmpl_file: &str,
         schema_path: &Path,
         event: &Event,
@@ -488,7 +490,7 @@ impl ClientSdkGenerator {
     /// Process a span.
     fn process_span(
         &self,
-        log: impl ILogger + Clone,
+        log: impl Logger + Clone,
         tmpl_file: &str,
         schema_path: &Path,
         span: &Span,

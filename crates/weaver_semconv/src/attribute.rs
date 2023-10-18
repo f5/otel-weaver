@@ -137,6 +137,22 @@ impl Attribute {
             Attribute::Id { id, .. } => id.clone(),
         }
     }
+
+    /// Returns the brief of the attribute.
+    pub fn brief(&self) -> String {
+        match self {
+            Attribute::Ref { brief, .. } => brief.clone().unwrap_or_default(),
+            Attribute::Id { brief, .. } => brief.clone(),
+        }
+    }
+
+    /// Returns the note of the attribute.
+    pub fn note(&self) -> String {
+        match self {
+            Attribute::Ref { note, .. } => note.clone().unwrap_or_default(),
+            Attribute::Id { note, .. } => note.clone(),
+        }
+    }
 }
 
 /// The different types of attributes.

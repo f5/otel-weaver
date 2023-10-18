@@ -24,3 +24,25 @@ pub struct Metric {
     /// Unit of the metric.
     pub unit: Option<String>,
 }
+
+impl Metric {
+    /// Returns the name of the metric.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Returns the brief description of the metric.
+    pub fn brief(&self) -> &str {
+        &self.brief
+    }
+
+    /// Returns the note on the metric.
+    pub fn note(&self) -> &str {
+        &self.note
+    }
+
+    /// Returns the unit of the metric.
+    pub fn unit(&self) -> Option<&str> {
+        self.unit.as_deref()
+    }
+}

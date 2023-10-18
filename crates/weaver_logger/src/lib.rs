@@ -9,7 +9,7 @@
 use std::sync::{Arc, Mutex};
 
 /// A trait that defines the interface of a logger.
-pub trait ILogger {
+pub trait Logger {
     /// Logs an trace message (only with debug enabled).
     fn trace(&self, message: &str) -> &Self;
 
@@ -50,22 +50,22 @@ pub trait ILogger {
 /// A generic logger that can be used to log messages to the console.
 /// This logger is thread-safe and can be cloned.
 #[derive(Default, Clone)]
-pub struct Logger {
+pub struct ConsoleLogger {
     logger: Arc<Mutex<paris::Logger<'static>>>,
     debug_level: u8,
 }
 
-impl Logger {
+impl ConsoleLogger {
     /// Creates a new logger.
     pub fn new(debug_level: u8) -> Self {
-        Logger {
+        ConsoleLogger {
             logger: Arc::new(Mutex::new(paris::Logger::new())),
             debug_level,
         }
     }
 }
 
-impl ILogger for Logger {
+impl Logger for ConsoleLogger {
     /// Logs an trace message (only with debug enabled).
     fn trace(&self, message: &str) -> &Self {
         if self.debug_level > 0 {
@@ -166,6 +166,77 @@ impl ILogger for Logger {
             .lock()
             .expect("Failed to lock logger")
             .log(message);
+        self
+    }
+}
+
+/// A logger that does not log anything.
+#[derive(Default, Clone)]
+pub struct NullLogger {}
+
+impl NullLogger {
+    /// Creates a new logger.
+    pub fn new() -> Self {
+        NullLogger {}
+    }
+}
+
+impl Logger for NullLogger {
+    /// Logs an trace message (only with debug enabled).
+    fn trace(&self, _: &str) -> &Self {
+        self
+    }
+
+    /// Logs an info message.
+    fn info(&self, _: &str) -> &Self {
+        self
+    }
+
+    /// Logs a warning message.
+    fn warn(&self, _: &str) -> &Self {
+        self
+    }
+
+    /// Logs an error message.
+    fn error(&self, _: &str) -> &Self {
+        self
+    }
+
+    /// Logs a success message.
+    fn success(&self, _: &str) -> &Self {
+        self
+    }
+
+    /// Logs a newline.
+    fn newline(&self, _: usize) -> &Self {
+        self
+    }
+
+    /// Indents the logger.
+    fn indent(&self, _: usize) -> &Self {
+        self
+    }
+
+    /// Stops a loading message.
+    fn done(&self) {}
+
+    /// Adds a style to the logger.
+    fn add_style(&self, _: &str, _: Vec<&'static str>) -> &Self {
+        self
+    }
+
+    /// Logs a loading message with a spinner.
+    fn loading(&self, _: &str) -> &Self {
+        self
+    }
+
+    /// Forces the logger to not print a newline for the next message.
+    fn same(&self) -> &Self {
+        self
+    }
+
+    /// Logs a message without icon.
+    fn log(&self, _: &str) -> &Self {
         self
     }
 }

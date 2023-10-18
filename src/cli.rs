@@ -5,9 +5,9 @@
 use crate::gen_client_sdk::GenClientSdkParams;
 use crate::languages::LanguagesParams;
 use crate::resolve::ResolveParams;
+use crate::search::SearchParams;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-use crate::search::SearchParams;
 
 /// Command line arguments.
 #[derive(Parser)]
@@ -38,5 +38,5 @@ pub enum Commands {
     /// List of supported languages
     Languages(LanguagesParams),
     /// Search for attributes and metrics in a schema file
-    Search(SearchParams)
+    Search(SearchParams),
 }

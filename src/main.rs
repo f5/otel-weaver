@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use weaver_logger::Logger;
+use weaver_logger::ConsoleLogger;
 
 use crate::cli::{Cli, Commands};
 use crate::gen_client_api::command_gen_client_api;
@@ -16,7 +16,7 @@ mod search;
 
 fn main() {
     let cli = Cli::parse();
-    let log = Logger::new(cli.debug);
+    let log = ConsoleLogger::new(cli.debug);
 
     match &cli.command {
         Some(Commands::Resolve(params)) => {

@@ -2218,7 +2218,6 @@ dependencies = [
  "tui-textarea",
  "weaver_logger",
  "weaver_resolver",
- "weaver_schema",
  "weaver_template",
 ]
 

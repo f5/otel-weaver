@@ -62,7 +62,6 @@ schema:
           - ref: server.port
           - ref: network.protocol.name
           - ref: network.protocol.version
-          - ref: url.scheme
     # Declaration of all the multivariate metrics
     metric_groups:
       - id: http  # name of a multivariate metrics group
@@ -82,7 +81,6 @@ schema:
           - ref: server.port
           - ref: network.protocol.name
           - ref: network.protocol.version
-          - ref: url.scheme
 
   # Spans declaration
   resource_spans:
@@ -93,7 +91,6 @@ schema:
           - ref: server.port
           - ref: client.address
           - ref: client.port
-          - ref: url.scheme
         events:
           - event_name: error
             attributes:
