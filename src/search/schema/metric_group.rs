@@ -32,7 +32,14 @@ pub fn widget(metric_group: Option<&MetricGroup>) -> Paragraph {
                     Style::default().fg(Color::Yellow),
                 )));
                 for metric in metric_group.metrics.iter() {
-                    if let Metric::Metric { name, instrument, unit, tags, .. } = metric {
+                    if let Metric::Metric {
+                        name,
+                        instrument,
+                        unit,
+                        tags,
+                        ..
+                    } = metric
+                    {
                         let mut properties = vec![];
                         if let Some(instrument) = instrument {
                             properties.push(format!("instrument={:?}", instrument));

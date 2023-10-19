@@ -183,9 +183,13 @@ impl Display for AttributeType {
             AttributeType::PrimitiveOrArray(t) => write!(f, "{}", t),
             AttributeType::Template(t) => write!(f, "{}", t),
             AttributeType::Enum { members, .. } => {
-                let entries = members.iter().map(|m| m.id.clone()).collect::<Vec<String>>().join(", ");
+                let entries = members
+                    .iter()
+                    .map(|m| m.id.clone())
+                    .collect::<Vec<String>>()
+                    .join(", ");
                 write!(f, "[{}]", entries)
-            },
+            }
         }
     }
 }
