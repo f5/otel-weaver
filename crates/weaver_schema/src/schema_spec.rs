@@ -45,14 +45,14 @@ impl SchemaSpec {
     pub fn metric(&self, name: &str) -> Option<&UnivariateMetric> {
         self.resource_metrics
             .as_ref()
-            .map_or(None, |resource_metrics| resource_metrics.metric(name))
+            .and_then(|resource_metrics| resource_metrics.metric(name))
     }
 
     /// Returns a metric group by name or None if not found.
     pub fn metric_group(&self, name: &str) -> Option<&MetricGroup> {
         self.resource_metrics
             .as_ref()
-            .map_or(None, |resource_metrics| resource_metrics.metric_group(name))
+            .and_then(|resource_metrics| resource_metrics.metric_group(name))
     }
 
     /// Returns a vector of metrics.
@@ -93,13 +93,13 @@ impl SchemaSpec {
     pub fn event(&self, event_name: &str) -> Option<&Event> {
         self.resource_events
             .as_ref()
-            .map_or(None, |resource_events| resource_events.event(event_name))
+            .and_then(|resource_events| resource_events.event(event_name))
     }
 
     /// Returns a span by name or None if not found.
     pub fn span(&self, span_name: &str) -> Option<&Span> {
         self.resource_spans
             .as_ref()
-            .map_or(None, |resource_spans| resource_spans.span(span_name))
+            .and_then(|resource_spans| resource_spans.span(span_name))
     }
 }

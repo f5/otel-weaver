@@ -14,12 +14,12 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use url::Url;
+
 use weaver_semconv::SemConvCatalog;
+use weaver_version::Versions;
 
 use crate::event::Event;
 use crate::metric_group::MetricGroup;
-use weaver_version::Versions;
-
 use crate::schema_spec::SchemaSpec;
 use crate::span::Span;
 
@@ -223,14 +223,14 @@ impl TelemetrySchema {
     pub fn metric(&self, metric_name: &str) -> Option<&univariate_metric::UnivariateMetric> {
         self.schema
             .as_ref()
-            .map_or(None, |schema| schema.metric(metric_name))
+            .and_then(|schema| schema.metric(metric_name))
     }
 
     /// Returns the metric group by name or None if not found.
     pub fn metric_group(&self, name: &str) -> Option<&MetricGroup> {
         self.schema
             .as_ref()
-            .map_or(None, |schema| schema.metric_group(name))
+            .and_then(|schema| schema.metric_group(name))
     }
 
     /// Returns a vector of metrics.
@@ -268,14 +268,14 @@ impl TelemetrySchema {
     pub fn event(&self, event_name: &str) -> Option<&Event> {
         self.schema
             .as_ref()
-            .map_or(None, |schema| schema.event(event_name))
+            .and_then(|schema| schema.event(event_name))
     }
 
     /// Returns a span by name or None if not found.
     pub fn span(&self, span_name: &str) -> Option<&Span> {
         self.schema
             .as_ref()
-            .map_or(None, |schema| schema.span(span_name))
+            .and_then(|schema| schema.span(span_name))
     }
 }
 
