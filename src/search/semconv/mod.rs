@@ -4,3 +4,4 @@
 
 pub mod attribute;
 pub mod metric;
+pub mod examples;

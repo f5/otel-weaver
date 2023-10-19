@@ -5,7 +5,7 @@
 use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
-use crate::search::schema::{attribute, tags};
+use crate::search::schema::{attributes, tags};
 
 /// Render a span details.
 pub fn widget(event: Option<&weaver_schema::event::Event>) -> Paragraph {
@@ -26,7 +26,7 @@ pub fn widget(event: Option<&weaver_schema::event::Event>) -> Paragraph {
                 ]),
             ];
 
-            attribute::append_lines(event.attributes.as_slice(), &mut text);
+            attributes::append_lines(event.attributes.as_slice(), &mut text);
             tags::append_lines(event.tags.as_ref(), &mut text);
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))

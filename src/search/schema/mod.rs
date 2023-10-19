@@ -3,7 +3,7 @@
 //! Renderers for schema objects.
 pub mod span;
 pub mod metric;
-pub mod attribute;
+pub mod attributes;
 pub mod tags;
 pub mod event;
 pub mod metric_group;

@@ -2,15 +2,13 @@
 
 //! Render metric.
 
-use std::process::id;
 use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 
 use weaver_schema::metric_group::{Metric, MetricGroup};
-use weaver_semconv::attribute::{BasicRequirementLevel, RequirementLevel};
 
-use crate::search::schema::{attribute, tags};
+use crate::search::schema::{attributes, tags};
 
 /// Render a metric details.
 pub fn widget(metric_group: Option<&MetricGroup>) -> Paragraph {
@@ -28,7 +26,7 @@ pub fn widget(metric_group: Option<&MetricGroup>) -> Paragraph {
                 Span::raw(metric_group.id.clone()),
             ]));
 
-            attribute::append_lines(metric_group.attributes.as_slice(), &mut text);
+            attributes::append_lines(metric_group.attributes.as_slice(), &mut text);
 
             if !metric_group.metrics.is_empty() {
                 text.push(Line::from(Span::styled("Metrics   : ", Style::default().fg(Color::Yellow))));

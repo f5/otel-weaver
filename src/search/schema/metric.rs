@@ -7,7 +7,7 @@ use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 
 use weaver_schema::univariate_metric::UnivariateMetric;
-use crate::search::schema::{attribute, tags};
+use crate::search::schema::{attributes, tags};
 
 /// Render a metric details.
 pub fn widget(metric: Option<&UnivariateMetric>) -> Paragraph {
@@ -34,7 +34,7 @@ pub fn widget(metric: Option<&UnivariateMetric>) -> Paragraph {
                     Span::raw(note),
                 ]));
 
-                attribute::append_lines(attributes.as_slice(), &mut text);
+                attributes::append_lines(attributes.as_slice(), &mut text);
 
                 if let Some(instrument) = instrument {
                     text.push(Line::from(vec![
