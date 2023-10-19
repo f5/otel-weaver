@@ -18,6 +18,7 @@ use weaver_semconv::SemConvCatalog;
 
 use crate::event::Event;
 use weaver_version::Versions;
+use crate::metric_group::MetricGroup;
 
 use crate::schema_spec::SchemaSpec;
 use crate::span::Span;
@@ -221,6 +222,11 @@ impl TelemetrySchema {
     /// Returns the metric by name or None if not found.
     pub fn metric(&self, metric_name: &str) -> Option<&univariate_metric::UnivariateMetric> {
         self.schema.as_ref().map_or(None, |schema| schema.metric(metric_name))
+    }
+
+    /// Returns the metric group by name or None if not found.
+    pub fn metric_group(&self, name: &str) -> Option<&MetricGroup> {
+        self.schema.as_ref().map_or(None, |schema| schema.metric_group(name))
     }
 
     /// Returns a vector of metrics.

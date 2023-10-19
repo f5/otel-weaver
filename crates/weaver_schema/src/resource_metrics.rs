@@ -44,6 +44,12 @@ impl ResourceMetrics {
         self.metrics.iter().collect()
     }
 
+    /// Returns a metric group by name or None if not found.
+    /// Note: this is a linear search.
+    pub fn metric_group(&self, name: &str) -> Option<&MetricGroup> {
+        self.metric_groups.iter().find(|metric_group| metric_group.id() == name)
+    }
+
     /// Returns a vector of metric groups.
     pub fn metric_groups(&self) -> Vec<&MetricGroup> {
         self.metric_groups.iter().collect()

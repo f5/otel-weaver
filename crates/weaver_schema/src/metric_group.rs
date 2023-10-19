@@ -22,7 +22,7 @@ pub struct MetricGroup {
     pub metrics: Vec<Metric>,
     /// A set of tags for the metric group.
     #[serde(skip_serializing_if = "Option::is_none")]
-    tags: Option<Tags>,
+    pub tags: Option<Tags>,
 }
 
 /// A metric specification.

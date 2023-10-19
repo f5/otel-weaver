@@ -48,6 +48,13 @@ impl SchemaSpec {
         })
     }
 
+    /// Returns a metric group by name or None if not found.
+    pub fn metric_group(&self, name: &str) -> Option<&MetricGroup> {
+        self.resource_metrics.as_ref().map_or(None, |resource_metrics| {
+            resource_metrics.metric_group(name)
+        })
+    }
+
     /// Returns a vector of metrics.
     pub fn metrics(&self) -> Vec<&UnivariateMetric> {
         self.resource_metrics

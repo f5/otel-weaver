@@ -6,3 +6,4 @@ pub mod metric;
 pub mod attribute;
 pub mod tags;
 pub mod event;
+pub mod metric_group;
