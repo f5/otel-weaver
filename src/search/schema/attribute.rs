@@ -5,13 +5,37 @@
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
 use weaver_schema::attribute::Attribute;
+use weaver_semconv::attribute::{BasicRequirementLevel, RequirementLevel};
 
 /// Append attributes to the text.
 pub fn append_lines(attributes: &[Attribute], text: &mut Vec<Line>) {
     if !attributes.is_empty() {
         text.push(Line::from(Span::styled("Attributes: ", Style::default().fg(Color::Yellow))));
         for attr in attributes.iter() {
-            text.push(Line::from(Span::raw(format!("- {} ", attr.id()))));
+            if let Attribute::Id { id, requirement_level, tags, value, .. } = attr {
+                let mut properties = vec![];
+                if let RequirementLevel::Basic(BasicRequirementLevel::Required) = requirement_level {
+                    properties.push("required".to_string());
+                }
+                if let Some(tags) = tags {
+                    if !tags.is_empty() {
+                        let mut pairs = vec![];
+                        for (k,v) in tags.iter() {
+                            pairs.push(format!("{}={}", k,v));
+                        }
+                        properties.push(format!("tags=[{}]", pairs.join(",")));
+                    }
+                }
+                if let Some(value) = value {
+                    properties.push(format!("value={}", value));
+                }
+                let properties = if properties.is_empty() {
+                    String::new()
+                } else {
+                    format!(" ({})", properties.join(", "))
+                };
+                text.push(Line::from(Span::raw(format!("- {}{}", id, properties))));
+            }
         }
     }
 }

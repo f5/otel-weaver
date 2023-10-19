@@ -2,6 +2,7 @@
 
 //! Attribute specification.
 
+use std::fmt::{Display, Formatter, write};
 use serde::{Deserialize, Serialize};
 
 use crate::stability::Stability;
@@ -263,6 +264,17 @@ pub enum Value {
     Double(f64),
     /// A string value.
     String(String),
+}
+
+impl Display for Value {
+    /// Formats the value.
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Int(v) => write!(f, "{}", v),
+            Value::Double(v) => write!(f, "{}", v),
+            Value::String(v) => write!(f, "{}", v),
+        }
+    }
 }
 
 /// The different types of examples.
