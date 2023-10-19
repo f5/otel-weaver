@@ -5,12 +5,23 @@
 use ratatui::prelude::{Color, Line, Span, Style};
 use ratatui::widgets::Paragraph;
 
-use weaver_semconv::attribute::Attribute;
 use crate::search::semconv::examples;
+use weaver_semconv::attribute::Attribute;
 
 pub fn widget(attribute: Option<&Attribute>) -> Paragraph {
     match attribute.as_ref() {
-        Some(Attribute::Id { id, r#type, brief, examples, tag, requirement_level, sampling_relevant, note, stability, deprecated }) => {
+        Some(Attribute::Id {
+            id,
+            r#type,
+            brief,
+            examples,
+            tag,
+            requirement_level,
+            sampling_relevant,
+            note,
+            stability,
+            deprecated,
+        }) => {
             let mut text = vec![
                 Line::from(vec![
                     Span::styled("Type   : ", Style::default().fg(Color::Yellow)),
@@ -73,6 +84,6 @@ pub fn widget(attribute: Option<&Attribute>) -> Paragraph {
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }
-        _ => Paragraph::new(vec![Line::from("Attribute not resolved!")])
+        _ => Paragraph::new(vec![Line::from("Attribute not resolved!")]),
     }
 }

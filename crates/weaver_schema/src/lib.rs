@@ -17,8 +17,8 @@ use url::Url;
 use weaver_semconv::SemConvCatalog;
 
 use crate::event::Event;
-use weaver_version::Versions;
 use crate::metric_group::MetricGroup;
+use weaver_version::Versions;
 
 use crate::schema_spec::SchemaSpec;
 use crate::span::Span;
@@ -221,21 +221,24 @@ impl TelemetrySchema {
 
     /// Returns the metric by name or None if not found.
     pub fn metric(&self, metric_name: &str) -> Option<&univariate_metric::UnivariateMetric> {
-        self.schema.as_ref().map_or(None, |schema| schema.metric(metric_name))
+        self.schema
+            .as_ref()
+            .map_or(None, |schema| schema.metric(metric_name))
     }
 
     /// Returns the metric group by name or None if not found.
     pub fn metric_group(&self, name: &str) -> Option<&MetricGroup> {
-        self.schema.as_ref().map_or(None, |schema| schema.metric_group(name))
+        self.schema
+            .as_ref()
+            .map_or(None, |schema| schema.metric_group(name))
     }
 
     /// Returns a vector of metrics.
     pub fn metrics(&self) -> Vec<&univariate_metric::UnivariateMetric> {
-        self.schema
-            .as_ref()
-            .map_or(Vec::<&univariate_metric::UnivariateMetric>::new(), |schema| {
-                schema.metrics()
-            })
+        self.schema.as_ref().map_or(
+            Vec::<&univariate_metric::UnivariateMetric>::new(),
+            |schema| schema.metrics(),
+        )
     }
 
     /// Returns a vector of metric groups.
@@ -249,7 +252,9 @@ impl TelemetrySchema {
 
     /// Returns an iterator over the events.
     pub fn events(&self) -> Vec<&Event> {
-        self.schema.as_ref().map_or(Vec::<&Event>::new(), |schema| schema.events())
+        self.schema
+            .as_ref()
+            .map_or(Vec::<&Event>::new(), |schema| schema.events())
     }
 
     /// Returns a slice of spans.
@@ -261,12 +266,16 @@ impl TelemetrySchema {
 
     /// Returns an event by name or None if not found.
     pub fn event(&self, event_name: &str) -> Option<&Event> {
-        self.schema.as_ref().map_or(None, |schema| schema.event(event_name))
+        self.schema
+            .as_ref()
+            .map_or(None, |schema| schema.event(event_name))
     }
 
     /// Returns a span by name or None if not found.
     pub fn span(&self, span_name: &str) -> Option<&Span> {
-        self.schema.as_ref().map_or(None, |schema| schema.span(span_name))
+        self.schema
+            .as_ref()
+            .map_or(None, |schema| schema.span(span_name))
     }
 }
 

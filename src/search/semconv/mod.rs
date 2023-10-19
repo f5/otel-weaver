@@ -3,5 +3,6 @@
 //! Renderers for semantic convention objects.
 
 pub mod attribute;
-pub mod metric;
+pub mod attributes;
 pub mod examples;
+pub mod metric;

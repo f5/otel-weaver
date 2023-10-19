@@ -2,8 +2,8 @@
 
 //! Attribute specification.
 
-use std::fmt::{Display, Formatter, write};
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 
 use crate::stability::Stability;
 

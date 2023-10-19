@@ -2,10 +2,10 @@
 
 //! Render span.
 
+use crate::search::schema::{attributes, tags};
 use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
-use crate::search::schema::{attributes, tags};
 
 /// Render a span details.
 pub fn widget(span: Option<&weaver_schema::span::Span>) -> Paragraph {
@@ -32,14 +32,20 @@ pub fn widget(span: Option<&weaver_schema::span::Span>) -> Paragraph {
             attributes::append_lines(span.attributes.as_slice(), &mut text);
 
             if !span.events.is_empty() {
-                text.push(Line::from(Span::styled("Events    : ", Style::default().fg(Color::Yellow))));
+                text.push(Line::from(Span::styled(
+                    "Events    : ",
+                    Style::default().fg(Color::Yellow),
+                )));
                 for event in span.events.iter() {
                     text.push(Line::from(Span::raw(format!("- {} ", event.event_name))));
                 }
             }
 
             if !span.links.is_empty() {
-                text.push(Line::from(Span::styled("Links     : ", Style::default().fg(Color::Yellow))));
+                text.push(Line::from(Span::styled(
+                    "Links     : ",
+                    Style::default().fg(Color::Yellow),
+                )));
                 for link in span.links.iter() {
                     text.push(Line::from(Span::raw(format!("- {} ", link.link_name))));
                 }
@@ -49,6 +55,6 @@ pub fn widget(span: Option<&weaver_schema::span::Span>) -> Paragraph {
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }
-        None => Paragraph::new(vec![Line::default()])
+        None => Paragraph::new(vec![Line::default()]),
     }
 }

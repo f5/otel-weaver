@@ -2,10 +2,10 @@
 
 //! Render span.
 
+use crate::search::schema::{attributes, tags};
 use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
-use crate::search::schema::{attributes, tags};
 
 /// Render a span details.
 pub fn widget(event: Option<&weaver_schema::event::Event>) -> Paragraph {
@@ -31,6 +31,6 @@ pub fn widget(event: Option<&weaver_schema::event::Event>) -> Paragraph {
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }
-        None => Paragraph::new(vec![Line::default()])
+        None => Paragraph::new(vec![Line::default()]),
     }
 }

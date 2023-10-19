@@ -14,12 +14,10 @@ use crate::search::schema::{attributes, tags};
 pub fn widget(metric_group: Option<&MetricGroup>) -> Paragraph {
     match metric_group {
         Some(metric_group) => {
-            let mut text = vec![
-                Line::from(vec![
-                    Span::styled("Type      : ", Style::default().fg(Color::Yellow)),
-                    Span::raw("Metric Group (schema)"),
-                ]),
-            ];
+            let mut text = vec![Line::from(vec![
+                Span::styled("Type      : ", Style::default().fg(Color::Yellow)),
+                Span::raw("Metric Group (schema)"),
+            ])];
 
             text.push(Line::from(vec![
                 Span::styled("Name      : ", Style::default().fg(Color::Yellow)),
@@ -29,15 +27,18 @@ pub fn widget(metric_group: Option<&MetricGroup>) -> Paragraph {
             attributes::append_lines(metric_group.attributes.as_slice(), &mut text);
 
             if !metric_group.metrics.is_empty() {
-                text.push(Line::from(Span::styled("Metrics   : ", Style::default().fg(Color::Yellow))));
+                text.push(Line::from(Span::styled(
+                    "Metrics   : ",
+                    Style::default().fg(Color::Yellow),
+                )));
                 for metric in metric_group.metrics.iter() {
-                    if let Metric::Metric {name, tags, ..} = metric {
+                    if let Metric::Metric { name, tags, .. } = metric {
                         let mut properties = vec![];
                         if let Some(tags) = tags {
                             if !tags.is_empty() {
                                 let mut pairs = vec![];
-                                for (k,v) in tags.iter() {
-                                    pairs.push(format!("{}={}", k,v));
+                                for (k, v) in tags.iter() {
+                                    pairs.push(format!("{}={}", k, v));
                                 }
                                 properties.push(format!("tags=[{}]", pairs.join(",")));
                             }
@@ -47,7 +48,8 @@ pub fn widget(metric_group: Option<&MetricGroup>) -> Paragraph {
                         } else {
                             format!(" ({})", properties.join(", "))
                         };
-                        text.push(Line::from(Span::raw(format!("- {}{}", name, properties))));                    }
+                        text.push(Line::from(Span::raw(format!("- {}{}", name, properties))));
+                    }
                 }
             }
 
@@ -55,6 +57,6 @@ pub fn widget(metric_group: Option<&MetricGroup>) -> Paragraph {
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }
-        None => Paragraph::new(vec![Line::default()])
+        None => Paragraph::new(vec![Line::default()]),
     }
 }

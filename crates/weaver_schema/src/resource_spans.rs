@@ -32,6 +32,8 @@ impl ResourceSpans {
 
     /// Returns a span by name or None if not found.
     pub fn span(&self, name: &str) -> Option<&Span> {
-        self.spans.iter().find(|span| span.span_name.as_str() == name)
+        self.spans
+            .iter()
+            .find(|span| span.span_name.as_str() == name)
     }
 }

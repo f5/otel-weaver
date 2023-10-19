@@ -6,31 +6,31 @@ use std::io;
 use std::path::PathBuf;
 
 use clap::Parser;
+use crossterm::event::DisableMouseCapture;
+use crossterm::event::EnableMouseCapture;
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use crossterm::event::DisableMouseCapture;
-use crossterm::event::EnableMouseCapture;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::Line;
-use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
 use ratatui::widgets::Cell;
-use tantivy::{doc, Index, IndexWriter, ReloadPolicy};
+use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Schema, STORED, TEXT};
+use tantivy::{doc, Index, IndexWriter, ReloadPolicy};
 use tui_textarea::TextArea;
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
 use weaver_schema::TelemetrySchema;
 
-mod semconv;
 mod schema;
+mod semconv;
 
 type Err = Box<dyn std::error::Error>;
 type Result<T> = std::result::Result<T, Err>;
@@ -360,7 +360,12 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
 
     let content = Table::new(rows)
         .header(header)
-        .block(Block::default().borders(Borders::ALL).title(" Search results ").title_style(Style::default().fg(Color::Yellow)))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Search results ")
+                .title_style(Style::default().fg(Color::Yellow)),
+        )
         .highlight_style(selected_style)
         .highlight_symbol(">> ")
         .widths(&[
@@ -388,10 +393,20 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
         let r#type = item.r#type.as_str();
 
         match (source, r#type) {
-            ("semconv", "attribute") => semconv::attribute::widget(app.schema.semantic_convention_catalog().attribute(item.id.as_str())),
-            ("semconv", "metric") => semconv::metric::widget(app.schema.semantic_convention_catalog().metric(item.id.as_str())),
+            ("semconv", "attribute") => semconv::attribute::widget(
+                app.schema
+                    .semantic_convention_catalog()
+                    .attribute(item.id.as_str()),
+            ),
+            ("semconv", "metric") => semconv::metric::widget(
+                app.schema
+                    .semantic_convention_catalog()
+                    .metric(item.id.as_str()),
+            ),
             ("schema", "metric") => schema::metric::widget(app.schema.metric(item.id.as_str())),
-            ("schema", "metric_group") => schema::metric_group::widget(app.schema.metric_group(item.id.as_str())),
+            ("schema", "metric_group") => {
+                schema::metric_group::widget(app.schema.metric_group(item.id.as_str()))
+            }
             ("schema", "event") => schema::event::widget(app.schema.event(item.id.as_str())),
             ("schema", "span") => schema::span::widget(app.schema.span(item.id.as_str())),
             _ => Paragraph::new(vec![Line::default()]),

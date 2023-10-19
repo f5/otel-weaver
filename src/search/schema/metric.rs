@@ -6,21 +6,28 @@ use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 
-use weaver_schema::univariate_metric::UnivariateMetric;
 use crate::search::schema::{attributes, tags};
+use weaver_schema::univariate_metric::UnivariateMetric;
 
 /// Render a metric details.
 pub fn widget(metric: Option<&UnivariateMetric>) -> Paragraph {
     match metric {
         Some(metric) => {
-            let mut text = vec![
-                Line::from(vec![
-                    Span::styled("Type      : ", Style::default().fg(Color::Yellow)),
-                    Span::raw("Metric (schema)"),
-                ]),
-            ];
+            let mut text = vec![Line::from(vec![
+                Span::styled("Type      : ", Style::default().fg(Color::Yellow)),
+                Span::raw("Metric (schema)"),
+            ])];
 
-            if let UnivariateMetric::Metric { name, brief, note, attributes, instrument, unit, tags } = metric {
+            if let UnivariateMetric::Metric {
+                name,
+                brief,
+                note,
+                attributes,
+                instrument,
+                unit,
+                tags,
+            } = metric
+            {
                 text.push(Line::from(vec![
                     Span::styled("Name      : ", Style::default().fg(Color::Yellow)),
                     Span::raw(name),
@@ -54,6 +61,6 @@ pub fn widget(metric: Option<&UnivariateMetric>) -> Paragraph {
             }
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }
-        None => Paragraph::new(vec![Line::default()])
+        None => Paragraph::new(vec![Line::default()]),
     }
 }

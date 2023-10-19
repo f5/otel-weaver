@@ -11,9 +11,12 @@ pub fn append_lines(tags: Option<&Tags>, text: &mut Vec<Line>) {
         if tags.is_empty() {
             return;
         }
-        text.push(Line::from(Span::styled("Tags      : ", Style::default().fg(Color::Yellow))));
-        for (k,v) in tags.iter() {
-            text.push(Line::from(Span::raw(format!("  - {}={} ", k,v))));
+        text.push(Line::from(Span::styled(
+            "Tags      : ",
+            Style::default().fg(Color::Yellow),
+        )));
+        for (k, v) in tags.iter() {
+            text.push(Line::from(Span::raw(format!("  - {}={} ", k, v))));
         }
     }
 }
