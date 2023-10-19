@@ -253,6 +253,11 @@ impl TelemetrySchema {
             .map_or(Vec::<&Span>::new(), |schema| schema.spans())
     }
 
+    /// Returns an event by name or None if not found.
+    pub fn event(&self, event_name: &str) -> Option<&Event> {
+        self.schema.as_ref().map_or(None, |schema| schema.event(event_name))
+    }
+
     /// Returns a span by name or None if not found.
     pub fn span(&self, span_name: &str) -> Option<&Span> {
         self.schema.as_ref().map_or(None, |schema| schema.span(span_name))

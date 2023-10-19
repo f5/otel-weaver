@@ -2,16 +2,17 @@
 
 //! A schema specification.
 
+use serde::{Deserialize, Serialize};
+
 use crate::event::Event;
 use crate::instrumentation_library::InstrumentationLibrary;
+use crate::metric_group::MetricGroup;
 use crate::resource::Resource;
 use crate::resource_events::ResourceEvents;
 use crate::resource_metrics::ResourceMetrics;
 use crate::resource_spans::ResourceSpans;
 use crate::span::Span;
 use crate::tags::Tags;
-use serde::{Deserialize, Serialize};
-use crate::metric_group::MetricGroup;
 use crate::univariate_metric::UnivariateMetric;
 
 /// Definition of the telemetry schema for an application or a library.
@@ -77,6 +78,13 @@ impl SchemaSpec {
         self.resource_spans
             .as_ref()
             .map_or(Vec::<&Span>::new(), |resource_spans| resource_spans.spans())
+    }
+
+    /// Returns an event by name or None if not found.
+    pub fn event(&self, event_name: &str) -> Option<&Event> {
+        self.resource_events.as_ref().map_or(None, |resource_events| {
+            resource_events.event(event_name)
+        })
     }
 
     /// Returns a span by name or None if not found.

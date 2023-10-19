@@ -25,6 +25,12 @@ pub struct ResourceEvents {
 }
 
 impl ResourceEvents {
+    /// Returns an event by name or None if not found.
+    pub fn event(&self, event_name: &str) -> Option<&Event> {
+        self.events.iter().find(|event| event.event_name.as_str() == event_name)
+    }
+
+
     /// Returns a vector of events.
     pub fn events(&self) -> Vec<&Event> {
         self.events.iter().collect()

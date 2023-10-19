@@ -392,7 +392,7 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
             ("semconv", "metric") => semconv::metric::widget(app.schema.semantic_convention_catalog().metric(item.id.as_str())),
             ("schema", "metric") => schema::metric::widget(app.schema.metric(item.id.as_str())),
             ("schema", "metric_group") => Paragraph::new(vec![Line::default()]),
-            ("schema", "event") => Paragraph::new(vec![Line::default()]),
+            ("schema", "event") => schema::event::widget(app.schema.event(item.id.as_str())),
             ("schema", "span") => schema::span::widget(app.schema.span(item.id.as_str())),
             _ => Paragraph::new(vec![Line::default()]),
         }

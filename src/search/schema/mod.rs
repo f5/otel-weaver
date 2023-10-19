@@ -4,4 +4,5 @@
 pub mod span;
 pub mod metric;
 pub mod attribute;
-mod tags;
+pub mod tags;
+pub mod event;
