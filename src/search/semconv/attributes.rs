@@ -16,11 +16,14 @@ pub fn append_lines(attributes: &[Attribute], text: &mut Vec<Line>) {
         for attr in attributes.iter() {
             if let Attribute::Id {
                 id,
+                r#type,
                 requirement_level,
                 ..
             } = attr
             {
-                let mut properties = vec![];
+                let mut properties = vec![
+                    format!("type={}", r#type),
+                ];
                 if let RequirementLevel::Basic(BasicRequirementLevel::Required) = requirement_level
                 {
                     properties.push("required".to_string());

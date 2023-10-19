@@ -176,6 +176,20 @@ pub enum AttributeType {
     },
 }
 
+/// Implements a human readable display for AttributeType.
+impl Display for AttributeType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AttributeType::PrimitiveOrArray(t) => write!(f, "{}", t),
+            AttributeType::Template(t) => write!(f, "{}", t),
+            AttributeType::Enum { members, .. } => {
+                let entries = members.iter().map(|m| m.id.clone()).collect::<Vec<String>>().join(", ");
+                write!(f, "[{}]", entries)
+            },
+        }
+    }
+}
+
 /// Specifies the default value for allow_custom_values.
 fn default_as_true() -> bool {
     true
@@ -207,6 +221,22 @@ pub enum PrimitiveOrArrayType {
     Booleans,
 }
 
+/// Implements a human readable display for PrimitiveOrArrayType.
+impl Display for PrimitiveOrArrayType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PrimitiveOrArrayType::Boolean => write!(f, "boolean"),
+            PrimitiveOrArrayType::Int => write!(f, "int"),
+            PrimitiveOrArrayType::Double => write!(f, "double"),
+            PrimitiveOrArrayType::String => write!(f, "string"),
+            PrimitiveOrArrayType::Strings => write!(f, "string[]"),
+            PrimitiveOrArrayType::Ints => write!(f, "int[]"),
+            PrimitiveOrArrayType::Doubles => write!(f, "double[]"),
+            PrimitiveOrArrayType::Booleans => write!(f, "boolean[]"),
+        }
+    }
+}
+
 /// Template types.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -235,6 +265,22 @@ pub enum TemplateType {
     /// An array of boolean attribute.
     #[serde(rename = "template[boolean[]]")]
     Booleans,
+}
+
+/// Implements a human readable display for TemplateType.
+impl Display for TemplateType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TemplateType::Boolean => write!(f, "template[boolean]"),
+            TemplateType::Int => write!(f, "template[int]"),
+            TemplateType::Double => write!(f, "template[double]"),
+            TemplateType::String => write!(f, "template[string]"),
+            TemplateType::Strings => write!(f, "template[string[]]"),
+            TemplateType::Ints => write!(f, "template[int[]]"),
+            TemplateType::Doubles => write!(f, "template[double[]]"),
+            TemplateType::Booleans => write!(f, "template[boolean[]]"),
+        }
+    }
 }
 
 /// Possible enum entries.
