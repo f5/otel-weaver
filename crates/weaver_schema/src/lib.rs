@@ -233,6 +233,11 @@ impl TelemetrySchema {
             .and_then(|schema| schema.metric_group(name))
     }
 
+    /// Returns a resource or None if not found.
+    pub fn resource(&self) -> Option<&resource::Resource> {
+        self.schema.as_ref().and_then(|schema| schema.resource())
+    }
+
     /// Returns a vector of metrics.
     pub fn metrics(&self) -> Vec<&univariate_metric::UnivariateMetric> {
         self.schema.as_ref().map_or(

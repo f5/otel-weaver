@@ -55,6 +55,11 @@ impl SchemaSpec {
             .and_then(|resource_metrics| resource_metrics.metric_group(name))
     }
 
+    /// Returns a resource or None if not found.
+    pub fn resource(&self) -> Option<&Resource> {
+        self.resource.as_ref()
+    }
+
     /// Returns a vector of metrics.
     pub fn metrics(&self) -> Vec<&UnivariateMetric> {
         self.resource_metrics

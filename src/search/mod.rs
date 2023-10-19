@@ -27,6 +27,7 @@ use tui_textarea::TextArea;
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
+use weaver_schema::attribute::Attribute;
 use weaver_schema::TelemetrySchema;
 
 mod schema;
@@ -170,6 +171,29 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
                 note => metric.note()
             ))
             .expect("Failed to add document");
+    }
+
+    // Index resources
+    if let Some(resource) = schema.resource() {
+        for attr in resource.attributes() {
+            if let Attribute::Id {
+                id: the_id,
+                brief: the_brief,
+                note: the_note,
+                ..
+            } = attr
+            {
+                index_writer
+                    .add_document(doc!(
+                        source => "schema",
+                        r#type => "resource/attribute",
+                        id => the_id.as_str(),
+                        brief => the_brief.as_str(),
+                        note => the_note.as_str()
+                    ))
+                    .expect("Failed to add document");
+            }
+        }
     }
 
     // Index metrics
@@ -403,6 +427,23 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
                     .semantic_convention_catalog()
                     .metric(item.id.as_str()),
             ),
+            ("schema", "resource/attribute") => {
+                if let Some(resource) = app.schema.resource() {
+                    if let Some(attribute) = resource.attributes.iter().find(|attr| {
+                        if let Attribute::Id { id, .. } = attr {
+                            id.as_str() == item.id.as_str()
+                        } else {
+                            false
+                        }
+                    }) {
+                        schema::attribute::widget(attribute)
+                    } else {
+                        Paragraph::new(vec![Line::default()])
+                    }
+                } else {
+                    Paragraph::new(vec![Line::default()])
+                }
+            }
             ("schema", "metric") => schema::metric::widget(app.schema.metric(item.id.as_str())),
             ("schema", "metric_group") => {
                 schema::metric_group::widget(app.schema.metric_group(item.id.as_str()))

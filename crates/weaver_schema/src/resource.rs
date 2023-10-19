@@ -20,3 +20,15 @@ pub struct Resource {
     #[serde(skip_serializing_if = "Option::is_none")]
     tags: Option<Tags>,
 }
+
+impl Resource {
+    /// Returns an iterator over the attributes.
+    pub fn attributes(&self) -> impl Iterator<Item = &Attribute> {
+        self.attributes.iter()
+    }
+
+    /// Returns the tags of the resource or None if not set.
+    pub fn tags(&self) -> Option<&Tags> {
+        self.tags.as_ref()
+    }
+}
