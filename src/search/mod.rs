@@ -213,7 +213,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
             .add_document(doc!(
                 source => "schema",
                 r#type => "metric_group",
-                id => metric_group.id(),
+                id => metric_group.name(),
                 brief => "",
                 note => ""
             ))

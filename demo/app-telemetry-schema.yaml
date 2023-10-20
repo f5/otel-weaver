@@ -71,7 +71,7 @@ schema:
       - ref: jvm.gc.duration
     # Declaration of all the multivariate metrics
     metric_groups:
-      - id: http  # name of a metrics group
+      - name: http  # name of a metrics group
         attributes:
           - ref: server.address
           - ref: server.port

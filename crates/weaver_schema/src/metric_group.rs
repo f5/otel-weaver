@@ -13,7 +13,7 @@ use weaver_semconv::group::Instrument;
 #[serde(deny_unknown_fields)]
 pub struct MetricGroup {
     /// The name of the metric group.
-    pub id: String,
+    pub name: String,
     /// The attributes of the metric group.
     #[serde(default)]
     pub attributes: Vec<Attribute>,
@@ -61,8 +61,8 @@ pub enum Metric {
 }
 
 impl MetricGroup {
-    /// Returns the id of the metric group
-    pub fn id(&self) -> &str {
-        &self.id
+    /// Returns the name of the metric group
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }

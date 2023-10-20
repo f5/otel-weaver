@@ -107,7 +107,7 @@ pub fn resolve_metrics(
                                 required_count += 1;
                                 if !required_shared_attributes.contains(&attr.id()) {
                                     return Err(Error::IncompatibleMetricAttributes {
-                                        metric_group_ref: metrics.id.clone(),
+                                        metric_group_ref: metrics.name.clone(),
                                         metric_ref: referenced_metric.name.clone(),
                                         error: format!("The attribute '{}' is required but not required in other metrics", attr.id()),
                                     });
@@ -116,7 +116,7 @@ pub fn resolve_metrics(
                         }
                         if required_count != required_shared_attributes.len() {
                             return Err(Error::IncompatibleMetricAttributes {
-                                metric_group_ref: metrics.id.clone(),
+                                metric_group_ref: metrics.name.clone(),
                                 metric_ref: referenced_metric.name.clone(),
                                 error: "Some required attributes are missing in this metric"
                                     .to_string(),

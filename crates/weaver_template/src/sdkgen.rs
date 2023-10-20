@@ -425,7 +425,7 @@ impl ClientSdkGenerator {
 
         log.loading(&format!(
             "Generating code for multivariate metric `{}`",
-            metric.id
+            metric.name
         ));
         let generated_code = self.generate_code(log.clone(), tmpl_file, context)?;
 

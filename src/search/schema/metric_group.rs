@@ -21,7 +21,7 @@ pub fn widget(metric_group: Option<&MetricGroup>) -> Paragraph {
 
             text.push(Line::from(vec![
                 Span::styled("Name      : ", Style::default().fg(Color::Yellow)),
-                Span::raw(metric_group.id.clone()),
+                Span::raw(metric_group.name.clone()),
             ]));
 
             attributes::append_lines(metric_group.attributes.as_slice(), &mut text);

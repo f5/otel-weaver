@@ -49,7 +49,7 @@ impl ResourceMetrics {
     pub fn metric_group(&self, name: &str) -> Option<&MetricGroup> {
         self.metric_groups
             .iter()
-            .find(|metric_group| metric_group.id() == name)
+            .find(|metric_group| metric_group.name() == name)
     }
 
     /// Returns a vector of metric groups.
