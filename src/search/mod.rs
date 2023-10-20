@@ -21,7 +21,7 @@ use ratatui::widgets::Cell;
 use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
-use tantivy::schema::{Schema, STORED, TEXT};
+use tantivy::schema::{Field, Schema, STORED, TEXT};
 use tantivy::{doc, Index, IndexWriter, ReloadPolicy};
 use tui_textarea::TextArea;
 
@@ -29,6 +29,7 @@ use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
 use weaver_schema::attribute::Attribute;
 use weaver_schema::TelemetrySchema;
+use crate::search::schema::{attribute, metric, metric_group};
 
 mod schema;
 mod semconv;
@@ -71,6 +72,15 @@ pub struct StatefulResults {
     state: TableState,
     // ListState,
     items: Vec<ResultItem>,
+}
+
+/// A struct representing all the fields in an indexed document.
+pub struct DocFields {
+    source: Field,
+    r#type: Field,
+    id: Field,
+    brief: Field,
+    note: Field,
 }
 
 impl StatefulResults {
@@ -134,12 +144,13 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
     let sem_conv_catalog = schema.semantic_convention_catalog();
 
     let mut schema_builder = Schema::builder();
-
-    let source = schema_builder.add_text_field("source", TEXT | STORED);
-    let r#type = schema_builder.add_text_field("type", TEXT | STORED);
-    let id = schema_builder.add_text_field("id", TEXT | STORED);
-    let brief = schema_builder.add_text_field("brief", TEXT | STORED);
-    let note = schema_builder.add_text_field("note", TEXT);
+    let fields = DocFields {
+        source: schema_builder.add_text_field("source", TEXT | STORED),
+        r#type: schema_builder.add_text_field("type", TEXT | STORED),
+        id: schema_builder.add_text_field("id", TEXT | STORED),
+        brief: schema_builder.add_text_field("brief", TEXT | STORED),
+        note: schema_builder.add_text_field("note", TEXT),
+    };
 
     let index_schema = schema_builder.build();
     let index = Index::create_in_ram(index_schema.clone());
@@ -147,28 +158,17 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
         .writer(10_000_000)
         .expect("Failed to create index writer");
 
-    // Index attributes
-    for attr in sem_conv_catalog.attributes_iter() {
-        index_writer
-            .add_document(doc!(
-                source => "semconv",
-                r#type => "attribute",
-                id => attr.id(),
-                brief => attr.brief(),
-                note => attr.note()
-            ))
-            .expect("Failed to add document");
-    }
+    attribute::index_semconv_attribute(sem_conv_catalog.attributes_iter(), "semconv", "attribute", &fields, &mut index_writer);
 
     // Index metric groups
     for metric in sem_conv_catalog.metrics_iter() {
         index_writer
             .add_document(doc!(
-                source => "semconv",
-                r#type => "metric",
-                id => metric.name(),
-                brief => metric.brief(),
-                note => metric.note()
+                fields.source => "semconv",
+                fields.r#type => "metric",
+                fields.id => metric.name(),
+                fields.brief => metric.brief(),
+                fields.note => metric.note()
             ))
             .expect("Failed to add document");
     }
@@ -185,50 +185,29 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
             {
                 index_writer
                     .add_document(doc!(
-                        source => "schema",
-                        r#type => "resource/attribute",
-                        id => the_id.as_str(),
-                        brief => the_brief.as_str(),
-                        note => the_note.as_str()
+                        fields.source => "schema",
+                        fields.r#type => "resource/attribute",
+                        fields.id => the_id.as_str(),
+                        fields.brief => the_brief.as_str(),
+                        fields.note => the_note.as_str()
                     ))
                     .expect("Failed to add document");
             }
         }
     }
 
-    // Index metrics
-    for metric in schema.metrics() {
-        index_writer
-            .add_document(doc!(
-                source => "schema",
-                r#type => "metric",
-                id => metric.name(),
-                brief => metric.brief(),
-                note => metric.note()
-            ))
-            .expect("Failed to add document");
-    }
-    for metric_group in schema.metric_groups() {
-        index_writer
-            .add_document(doc!(
-                source => "schema",
-                r#type => "metric_group",
-                id => metric_group.name(),
-                brief => "",
-                note => ""
-            ))
-            .expect("Failed to add document");
-    }
+    metric::index(&schema, &fields, &mut index_writer);
+    metric_group::index(&schema, &fields, &mut index_writer);
 
     // Index events
     for event in schema.events() {
         index_writer
             .add_document(doc!(
-                source => "schema",
-                r#type => "event",
-                id => event.event_name.clone(),
-                brief => event.domain.clone(),
-                note => ""
+                fields.source => "schema",
+                fields.r#type => "event",
+                fields.id => event.event_name.clone(),
+                fields.brief => event.domain.clone(),
+                fields.note => ""
             ))
             .expect("Failed to add document");
     }
@@ -237,11 +216,11 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
     for span in schema.spans() {
         index_writer
             .add_document(doc!(
-                source => "schema",
-                r#type => "span",
-                id => span.span_name.clone(),
-                brief => "",
-                note => ""
+                fields.source => "schema",
+                fields.r#type => "span",
+                fields.id => span.span_name.clone(),
+                fields.brief => "",
+                fields.note => ""
             ))
             .expect("Failed to add document");
     }
@@ -255,6 +234,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
         .try_into()
         .expect("Failed to create reader");
     let searcher = reader.searcher();
+    let DocFields{source, r#type, id, brief, note} = fields;
     let query_parser = QueryParser::for_index(&index, vec![source, r#type, id, brief, note]);
 
     let mut search_area = TextArea::default();

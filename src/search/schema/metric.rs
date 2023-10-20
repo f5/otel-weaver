@@ -1,13 +1,34 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! Render metric.
+//! Utility functions to index and render metrics.
 
 use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
+use tantivy::{doc, IndexWriter};
+use weaver_schema::TelemetrySchema;
 
-use crate::search::schema::{attributes, tags};
+use crate::search::schema::{attribute, attributes, tags};
 use weaver_schema::univariate_metric::UnivariateMetric;
+use crate::search::DocFields;
+
+/// Build index for metrics.
+pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut IndexWriter) {
+    for metric in schema.metrics() {
+        index_writer
+            .add_document(doc!(
+                fields.source => "schema",
+                fields.r#type => "metric",
+                fields.id => metric.name(),
+                fields.brief => metric.brief(),
+                fields.note => metric.note()
+            ))
+            .expect("Failed to add document");
+        if let UnivariateMetric::Metric {attributes, ..} = metric {
+            attribute::index_schema_attribute(attributes.iter(), "schema", &format!("{}/attribute", metric.name()), fields, index_writer);
+        }
+    }
+}
 
 /// Render a metric details.
 pub fn widget(metric: Option<&UnivariateMetric>) -> Paragraph {
