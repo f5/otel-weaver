@@ -6,7 +6,39 @@ _A Schema-Driven Client SDK Generator for OpenTelemetry_
 >
 > This project is a work in progress and is not ready for production use.
 
+## OpenTelemetry Schema
+
+### Current Status
+
+The goals of the version 1.1.0 of the Telemetry Schema and the Semantic Convention Schema are
+summarized in the following diagram.
+
+![OTel Schema Today](docs/images/otel-schema-today.png)
+
+### Proposal
+
+The proposal is to extend the Telemetry Schema with application oriented sections, 
+combined with a command line tool to generate client SDK/API in various programming languages.
+
+![Proposal Summary](docs/images/proposal-summary.png)
+
+More specifically this project implements the OTel Weaver tool which is a schema-driven
+client SDK generator for OpenTelemetry. The OTel Weaver tool is a command line tool that
+can be used to generate a client SDK for a given language from a telemetry schema. This
+tool is extensible via both a template engine and WASM plugins to support new languages
+and new features.
+
 ![OTel Weaver Overview](docs/images/otel-weaver-overview.png)
+
+## Extensibility
+
+A template engine is used to let the community add support for new languages. The template
+engine is based on [Tera](https://tera.netlify.app/docs/).
+
+A WASM plugin system will be used to let the community add support for new features. The
+following diagram shows different integration scenarios with other tools and systems.
+
+![Integration scenarios](docs/images/otel-integration-scenarios.png)
 
 ## Usage
 
