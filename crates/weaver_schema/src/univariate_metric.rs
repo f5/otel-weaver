@@ -70,4 +70,12 @@ impl UnivariateMetric {
             UnivariateMetric::Metric { note, .. } => note.clone(),
         }
     }
+
+    /// Returns an attribute by its id.
+    pub fn attribute(&self, id: &str) -> Option<&Attribute> {
+        match self {
+            UnivariateMetric::Ref { attributes, .. } => attributes.iter().find(|a| a.id() == id),
+            UnivariateMetric::Metric { attributes, .. } => attributes.iter().find(|a| a.id() == id),
+        }
+    }
 }

@@ -1,11 +1,33 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! Render span.
+//! Utility functions to index and render spans.
 
-use crate::search::schema::{attributes, tags};
+use crate::search::schema::{attribute, attributes, tags};
+use crate::search::DocFields;
 use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
+use tantivy::{doc, IndexWriter};
+use weaver_schema::TelemetrySchema;
+
+/// Build index for spans.
+pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut IndexWriter) {
+    for span in schema.spans() {
+        index_writer
+            .add_document(doc!(
+                fields.path => format!("schema/span/{}", span.span_name),
+                fields.brief => "",
+                fields.note => ""
+            ))
+            .expect("Failed to add document");
+        attribute::index_schema_attribute(
+            span.attributes.iter(),
+            &format!("schema/span/{}", span.span_name),
+            fields,
+            index_writer,
+        );
+    }
+}
 
 /// Render a span details.
 pub fn widget(span: Option<&weaver_schema::span::Span>) -> Paragraph {

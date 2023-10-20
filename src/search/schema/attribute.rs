@@ -4,21 +4,24 @@
 
 use crate::search::schema::tags;
 use crate::search::semconv::examples;
+use crate::search::DocFields;
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::Paragraph;
 use tantivy::{doc, IndexWriter};
 use weaver_schema::attribute::Attribute;
-use crate::search::DocFields;
 
 /// Build index for semantic convention attributes.
-pub fn index_semconv_attribute<'a>(attributes: impl Iterator<Item = &'a weaver_semconv::attribute::Attribute>, source: &str, r#type: &str, fields: &DocFields, index_writer: &mut IndexWriter) {
+pub fn index_semconv_attributes<'a>(
+    attributes: impl Iterator<Item = &'a weaver_semconv::attribute::Attribute>,
+    path: &str,
+    fields: &DocFields,
+    index_writer: &mut IndexWriter,
+) {
     for attr in attributes {
         index_writer
             .add_document(doc!(
-                fields.source => source,
-                fields.r#type => r#type,
-                fields.id => attr.id(),
+                fields.path => format!("{}/attr/{}", path, attr.id()),
                 fields.brief => attr.brief(),
                 fields.note => attr.note()
             ))
@@ -27,26 +30,32 @@ pub fn index_semconv_attribute<'a>(attributes: impl Iterator<Item = &'a weaver_s
 }
 
 /// Build index for schema attributes.
-pub fn index_schema_attribute<'a>(attributes: impl Iterator<Item = &'a Attribute>, source: &str, r#type: &str, fields: &DocFields, index_writer: &mut IndexWriter) {
+pub fn index_schema_attribute<'a>(
+    attributes: impl Iterator<Item = &'a Attribute>,
+    path: &str,
+    fields: &DocFields,
+    index_writer: &mut IndexWriter,
+) {
     for attr in attributes {
-        if let Attribute::Id { id, brief, note, .. } = attr {
+        if let Attribute::Id {
+            id, brief, note, ..
+        } = attr
+        {
             index_writer
                 .add_document(doc!(
-                fields.source => source,
-                fields.r#type => r#type,
-                fields.id => id.clone(),
-                fields.brief => brief.clone(),
-                fields.note => note.clone()
-            ))
+                    fields.path => format!("{}/attr/{}", path, id),
+                    fields.brief => brief.clone(),
+                    fields.note => note.clone()
+                ))
                 .expect("Failed to add document");
         }
     }
 }
 
 /// Render an attribute details.
-pub fn widget(attribute: &Attribute) -> Paragraph {
+pub fn widget(attribute: Option<&Attribute>) -> Paragraph {
     match attribute {
-        Attribute::Id {
+        Some(Attribute::Id {
             id,
             r#type,
             brief,
@@ -59,7 +68,7 @@ pub fn widget(attribute: &Attribute) -> Paragraph {
             deprecated,
             tags,
             value,
-        } => {
+        }) => {
             let mut text = vec![
                 Line::from(vec![
                     Span::styled("Type   : ", Style::default().fg(Color::Yellow)),
@@ -131,6 +140,7 @@ pub fn widget(attribute: &Attribute) -> Paragraph {
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }
+        None => Paragraph::new(vec![Line::default()]),
         _ => Paragraph::new(vec![Line::from("Attribute not resolved!")]),
     }
 }

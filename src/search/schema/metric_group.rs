@@ -7,9 +7,9 @@ use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use tantivy::{doc, IndexWriter};
 
+use crate::search::DocFields;
 use weaver_schema::metric_group::{Metric, MetricGroup};
 use weaver_schema::TelemetrySchema;
-use crate::search::DocFields;
 
 use crate::search::schema::{attributes, tags};
 
@@ -18,9 +18,7 @@ pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut In
     for metric_group in schema.metric_groups() {
         index_writer
             .add_document(doc!(
-                fields.source => "schema",
-                fields.r#type => "metric_group",
-                fields.id => metric_group.name(),
+                fields.path => format!("schema/metric_group/{}", metric_group.name()),
                 fields.brief => "",
                 fields.note => ""
             ))

@@ -65,4 +65,9 @@ impl MetricGroup {
     pub fn name(&self) -> &str {
         &self.name
     }
+
+    /// Returns an attribute by its id.
+    pub fn attribute(&self, id: &str) -> Option<&Attribute> {
+        self.attributes.iter().find(|a| a.id() == id)
+    }
 }

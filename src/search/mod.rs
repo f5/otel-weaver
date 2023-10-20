@@ -22,14 +22,15 @@ use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema, STORED, TEXT};
-use tantivy::{doc, Index, IndexWriter, ReloadPolicy};
+use tantivy::{Index, IndexWriter, ReloadPolicy};
 use tui_textarea::TextArea;
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
 use weaver_schema::attribute::Attribute;
 use weaver_schema::TelemetrySchema;
-use crate::search::schema::{attribute, metric, metric_group};
+
+use crate::search::schema::{attribute, metric, metric_group, resource, span};
 
 mod schema;
 mod semconv;
@@ -61,9 +62,7 @@ pub struct SearchApp<'a> {
 
 /// A result item
 pub struct ResultItem {
-    source: String,
-    r#type: String,
-    id: String,
+    path: String,
     brief: String,
 }
 
@@ -76,9 +75,7 @@ pub struct StatefulResults {
 
 /// A struct representing all the fields in an indexed document.
 pub struct DocFields {
-    source: Field,
-    r#type: Field,
-    id: Field,
+    path: Field,
     brief: Field,
     note: Field,
 }
@@ -145,9 +142,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
 
     let mut schema_builder = Schema::builder();
     let fields = DocFields {
-        source: schema_builder.add_text_field("source", TEXT | STORED),
-        r#type: schema_builder.add_text_field("type", TEXT | STORED),
-        id: schema_builder.add_text_field("id", TEXT | STORED),
+        path: schema_builder.add_text_field("path", TEXT | STORED),
         brief: schema_builder.add_text_field("brief", TEXT | STORED),
         note: schema_builder.add_text_field("note", TEXT),
     };
@@ -158,72 +153,23 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
         .writer(10_000_000)
         .expect("Failed to create index writer");
 
-    attribute::index_semconv_attribute(sem_conv_catalog.attributes_iter(), "semconv", "attribute", &fields, &mut index_writer);
-
-    // Index metric groups
-    for metric in sem_conv_catalog.metrics_iter() {
-        index_writer
-            .add_document(doc!(
-                fields.source => "semconv",
-                fields.r#type => "metric",
-                fields.id => metric.name(),
-                fields.brief => metric.brief(),
-                fields.note => metric.note()
-            ))
-            .expect("Failed to add document");
-    }
-
-    // Index resources
-    if let Some(resource) = schema.resource() {
-        for attr in resource.attributes() {
-            if let Attribute::Id {
-                id: the_id,
-                brief: the_brief,
-                note: the_note,
-                ..
-            } = attr
-            {
-                index_writer
-                    .add_document(doc!(
-                        fields.source => "schema",
-                        fields.r#type => "resource/attribute",
-                        fields.id => the_id.as_str(),
-                        fields.brief => the_brief.as_str(),
-                        fields.note => the_note.as_str()
-                    ))
-                    .expect("Failed to add document");
-            }
-        }
-    }
-
-    metric::index(&schema, &fields, &mut index_writer);
+    attribute::index_semconv_attributes(
+        sem_conv_catalog.attributes_iter(),
+        "semconv",
+        &fields,
+        &mut index_writer,
+    );
+    metric::index_semconv_metrics(
+        sem_conv_catalog.metrics_iter(),
+        "semconv",
+        &fields,
+        &mut index_writer,
+    );
+    resource::index(&schema, &fields, &mut index_writer);
+    metric::index_schema_metrics(&schema, &fields, &mut index_writer);
     metric_group::index(&schema, &fields, &mut index_writer);
-
-    // Index events
-    for event in schema.events() {
-        index_writer
-            .add_document(doc!(
-                fields.source => "schema",
-                fields.r#type => "event",
-                fields.id => event.event_name.clone(),
-                fields.brief => event.domain.clone(),
-                fields.note => ""
-            ))
-            .expect("Failed to add document");
-    }
-
-    // Index spans
-    for span in schema.spans() {
-        index_writer
-            .add_document(doc!(
-                fields.source => "schema",
-                fields.r#type => "span",
-                fields.id => span.span_name.clone(),
-                fields.brief => "",
-                fields.note => ""
-            ))
-            .expect("Failed to add document");
-    }
+    schema::event::index(&schema, &fields, &mut index_writer);
+    span::index(&schema, &fields, &mut index_writer);
 
     index_writer
         .commit()
@@ -234,8 +180,8 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
         .try_into()
         .expect("Failed to create reader");
     let searcher = reader.searcher();
-    let DocFields{source, r#type, id, brief, note} = fields;
-    let query_parser = QueryParser::for_index(&index, vec![source, r#type, id, brief, note]);
+    let DocFields { path, brief, note } = fields;
+    let query_parser = QueryParser::for_index(&index, vec![path, brief, note]);
 
     let mut search_area = TextArea::default();
     search_area.set_block(
@@ -308,15 +254,11 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
                         .doc(doc_address)
                         .expect("Failed to retrieve document");
                     let values = retrieved_doc.field_values();
-                    let source = values[0].value().as_text().unwrap_or_default();
-                    let r#type = values[1].value().as_text().unwrap_or_default();
-                    let id = values[2].value().as_text().unwrap_or_default();
-                    let brief = values[3].value().as_text().unwrap_or_default();
+                    let path = values[0].value().as_text().unwrap_or_default();
+                    let brief = values[1].value().as_text().unwrap_or_default();
 
                     app.results.items.push(ResultItem {
-                        source: source.to_string(),
-                        r#type: r#type.to_string(),
-                        id: id.to_string(),
+                        path: path.to_string(),
                         brief: brief.to_string(),
                     });
                 }
@@ -330,7 +272,7 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
 
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);
     let normal_style = Style::default();
-    let header_cells = ["source:", "type:", "name:", "brief:"]
+    let header_cells = ["Path", "Brief"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(Color::Yellow)));
     let header = Row::new(header_cells)
@@ -343,9 +285,7 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         .iter()
         .map(|item| {
             let cells = vec![
-                Cell::from(item.source.clone()),
-                Cell::from(item.r#type.clone()),
-                Cell::from(item.id.clone()),
+                Cell::from(item.path.clone()),
                 Cell::from(item.brief.clone()),
             ];
             Row::new(cells).height(1).bottom_margin(0)
@@ -372,12 +312,7 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         )
         .highlight_style(selected_style)
         .highlight_symbol(">> ")
-        .widths(&[
-            Constraint::Max(8),
-            Constraint::Max(12),
-            Constraint::Max(30),
-            Constraint::Max(120),
-        ]);
+        .widths(&[Constraint::Max(50), Constraint::Max(120)]);
 
     frame.render_stateful_widget(content, inner_layout[0], &mut app.results.state);
 
@@ -393,43 +328,60 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
 
 fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Paragraph<'a> {
     let paragraph = if let Some(item) = item {
-        let source = item.source.as_str();
-        let r#type = item.r#type.as_str();
+        let path = item.path.as_str().split('/').collect::<Vec<&str>>();
 
-        match (source, r#type) {
-            ("semconv", "attribute") => semconv::attribute::widget(
-                app.schema
-                    .semantic_convention_catalog()
-                    .attribute(item.id.as_str()),
-            ),
-            ("semconv", "metric") => semconv::metric::widget(
-                app.schema
-                    .semantic_convention_catalog()
-                    .metric(item.id.as_str()),
-            ),
-            ("schema", "resource/attribute") => {
+        match path[..] {
+            ["semconv", "attr", id] => {
+                semconv::attribute::widget(app.schema.semantic_convention_catalog().attribute(id))
+            }
+            ["semconv", "metric", id] => {
+                semconv::metric::widget(app.schema.semantic_convention_catalog().metric(id))
+            }
+            ["schema", "resource", "attr", attr_id] => {
                 if let Some(resource) = app.schema.resource() {
-                    if let Some(attribute) = resource.attributes.iter().find(|attr| {
+                    attribute::widget(resource.attributes.iter().find(|attr| {
                         if let Attribute::Id { id, .. } = attr {
-                            id.as_str() == item.id.as_str()
+                            id.as_str() == attr_id
                         } else {
                             false
                         }
-                    }) {
-                        schema::attribute::widget(attribute)
-                    } else {
-                        Paragraph::new(vec![Line::default()])
-                    }
+                    }))
                 } else {
                     Paragraph::new(vec![Line::default()])
                 }
             }
-            ("schema", "metric") => schema::metric::widget(app.schema.metric(item.id.as_str())),
-            ("schema", "metric_group") => {
-                schema::metric_group::widget(app.schema.metric_group(item.id.as_str()))
-            }
-            ("schema", "event") => schema::event::widget(app.schema.event(item.id.as_str())),
-            ("schema", "span") => schema::span::widget(app.schema.span(item.id.as_str())),
+            ["schema", "metric", id] => metric::widget(app.schema.metric(id)),
+            ["schema", "metric", metric_id, "attr", attr_id] => attribute::widget(
+                app.schema
+                    .metric(metric_id)
+                    .iter()
+                    .flat_map(|m| m.attribute(attr_id))
+                    .next(),
+            ),
+            ["schema", "metric_group", id] => metric_group::widget(app.schema.metric_group(id)),
+            ["schema", "metric_group", metric_group_id, "attr", attr_id] => attribute::widget(
+                app.schema
+                    .metric_group(metric_group_id)
+                    .iter()
+                    .flat_map(|m| m.attribute(attr_id))
+                    .next(),
+            ),
+            ["schema", "event", id] => schema::event::widget(app.schema.event(id)),
+            ["schema", "event", event_id, "attr", attr_id] => attribute::widget(
+                app.schema
+                    .event(event_id)
+                    .iter()
+                    .flat_map(|m| m.attribute(attr_id))
+                    .next(),
+            ),
+            ["schema", "span", id] => schema::span::widget(app.schema.span(id)),
+            ["schema", "span", span_id, "attr", attr_id] => attribute::widget(
+                app.schema
+                    .span(span_id)
+                    .iter()
+                    .flat_map(|m| m.attribute(attr_id))
+                    .next(),
+            ),
             _ => Paragraph::new(vec![Line::default()]),
         }
     } else {

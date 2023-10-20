@@ -56,7 +56,7 @@ schema:
           - ref: server.address
     # Declaration of all the multivariate metrics
     metric_groups:
-      - id: http  # name of a multivariate metrics group
+      - name: http  # name of a multivariate metrics group
         attributes:
           - ref: server.address
           - ref: server.port

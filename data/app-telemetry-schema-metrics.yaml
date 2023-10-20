@@ -29,7 +29,7 @@ schema:
 #          - ref: network.protocol.version
 #          - ref: url.scheme
     metric_groups:
-      - id: http
+      - name: http
 #        attributes:
 #          - attribute_group_ref: server
 #          - ref: http.request.method

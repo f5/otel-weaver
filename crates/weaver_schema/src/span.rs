@@ -35,3 +35,10 @@ pub struct Span {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Tags>,
 }
+
+impl Span {
+    /// Returns an attribute by its name.
+    pub fn attribute(&self, id: &str) -> Option<&Attribute> {
+        self.attributes.iter().find(|a| a.id() == id)
+    }
+}

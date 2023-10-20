@@ -1,11 +1,33 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! Render span.
+//! Utility functions to index and render events.
 
-use crate::search::schema::{attributes, tags};
+use crate::search::schema::{attribute, attributes, tags};
+use crate::search::DocFields;
 use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
+use tantivy::{doc, IndexWriter};
+use weaver_schema::TelemetrySchema;
+
+/// Build index for events.
+pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut IndexWriter) {
+    for event in schema.events() {
+        index_writer
+            .add_document(doc!(
+                fields.path => format!("schema/event/{}", event.event_name),
+                fields.brief => "",
+                fields.note => ""
+            ))
+            .expect("Failed to add document");
+        attribute::index_schema_attribute(
+            event.attributes.iter(),
+            &format!("schema/event/{}", event.event_name),
+            fields,
+            index_writer,
+        );
+    }
+}
 
 /// Render a span details.
 pub fn widget(event: Option<&weaver_schema::event::Event>) -> Paragraph {

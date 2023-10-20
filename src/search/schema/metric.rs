@@ -9,23 +9,48 @@ use tantivy::{doc, IndexWriter};
 use weaver_schema::TelemetrySchema;
 
 use crate::search::schema::{attribute, attributes, tags};
-use weaver_schema::univariate_metric::UnivariateMetric;
 use crate::search::DocFields;
+use weaver_schema::univariate_metric::UnivariateMetric;
 
-/// Build index for metrics.
-pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut IndexWriter) {
-    for metric in schema.metrics() {
+/// Build index for semantic convention metrics.
+pub fn index_semconv_metrics<'a>(
+    metrics: impl Iterator<Item = &'a weaver_semconv::metric::Metric>,
+    path: &str,
+    fields: &DocFields,
+    index_writer: &mut IndexWriter,
+) {
+    for metric in metrics {
         index_writer
             .add_document(doc!(
-                fields.source => "schema",
-                fields.r#type => "metric",
-                fields.id => metric.name(),
+                fields.path => format!("{}/metric/{}", path, metric.name),
                 fields.brief => metric.brief(),
                 fields.note => metric.note()
             ))
             .expect("Failed to add document");
-        if let UnivariateMetric::Metric {attributes, ..} = metric {
-            attribute::index_schema_attribute(attributes.iter(), "schema", &format!("{}/attribute", metric.name()), fields, index_writer);
+    }
+}
+
+/// Build index for schema metrics.
+pub fn index_schema_metrics(
+    schema: &TelemetrySchema,
+    fields: &DocFields,
+    index_writer: &mut IndexWriter,
+) {
+    for metric in schema.metrics() {
+        index_writer
+            .add_document(doc!(
+                fields.path => format!("schema/metric/{}", metric.name()),
+                fields.brief => metric.brief(),
+                fields.note => metric.note()
+            ))
+            .expect("Failed to add document");
+        if let UnivariateMetric::Metric { attributes, .. } = metric {
+            attribute::index_schema_attribute(
+                attributes.iter(),
+                &format!("schema/metric/{}", metric.name()),
+                fields,
+                index_writer,
+            );
         }
     }
 }
