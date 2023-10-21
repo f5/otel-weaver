@@ -37,6 +37,6 @@ pub enum Commands {
     },
     /// List of supported languages
     Languages(LanguagesParams),
-    /// Search for attributes and metrics in a schema file
+    /// Search in a schema file
     Search(SearchParams),
 }
