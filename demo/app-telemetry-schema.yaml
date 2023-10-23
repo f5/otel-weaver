@@ -33,14 +33,6 @@ schema:
   resource_metrics:
     # Declaration of all the univariate metrics
     metrics:
-      - ref: jvm.thread.count
-        attributes:
-          - ref: server.address
-          - ref: server.port
-          - ref: network.protocol.name
-          - ref: network.protocol.version
-          - ref: url.scheme
-            requirement_level: required
       - ref: jvm.class.loaded
         attributes:
           - ref: server.address
@@ -76,8 +68,6 @@ schema:
             brief: The host of the request
             requirement_level: required
         metrics: # metrics sharing the same attributes
-          - ref: jvm.thread.count
-            # Note: u64 or f64 must be defined at this level
           - ref: jvm.class.loaded
           - ref: jvm.cpu.recent_utilization
 

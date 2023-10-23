@@ -6,39 +6,32 @@ _A Schema-Driven Client SDK Generator for OpenTelemetry_
 >
 > This project is a work in progress and is not ready for production use.
 
-## OpenTelemetry Schema
+## Overview
 
-### Current Status
+This project is based on the OpenTelemetry Schema format v1.2.0 defined in this
+[OTEP](https://github.com/lquerel/oteps/blob/main/text/0240-telemetry-schema-ext.md) 
+(which is yet to be submitted).
 
-The goals of the version 1.1.0 of the Telemetry Schema and the Semantic Convention Schema are
-summarized in the following diagram.
+The following diagram illustrates the relationships between the semantic
+conventions, the schema, and the various components of a telemetry pipeline.
 
-![OTel Schema Today](docs/images/otel-schema-today.png)
+![OTel Schema v1.2.0](docs/images/otel-schema-v1.2.0.png)
 
-### Proposal
+This project was presented at the Semantic Convention SIG meeting on October 23, 2023.
+The presentation slides can be accessed [here](https://docs.google.com/presentation/d/1nxt5VFlC1mUjZ8eecUYK4e4SxThpIVj1IRnIcodMsNI/edit?usp=sharing).
 
-The proposal is to extend the Telemetry Schema with application oriented sections, 
-combined with a command line tool to generate client SDK/API in various programming languages.
+### Architecture
 
-![Proposal Summary](docs/images/proposal-summary.png)
+The OTel Weaver tool is architecturally designed as a platform. By default, this
+tool incorporates a template engine that facilitates Client SDK/API generation
+across various programming languages. In the future, we plan to integrate a
+WASM plugin system, allowing the community to enhance the platform. This would
+pave the way for features like enterprise data catalog integration,
+documentation generation, dashboard creation, and more.
 
-More specifically this project implements the OTel Weaver tool which is a schema-driven
-client SDK generator for OpenTelemetry. The OTel Weaver tool is a command line tool that
-can be used to generate a client SDK for a given language from a telemetry schema. This
-tool is extensible via both a template engine and WASM plugins to support new languages
-and new features.
+Below is a diagram detailing the primary components of the OTel Weaver tool.
 
-![OTel Weaver Overview](docs/images/otel-weaver-overview.png)
-
-## Extensibility
-
-A template engine is used to let the community add support for new languages. The template
-engine is based on [Tera](https://tera.netlify.app/docs/).
-
-A WASM plugin system will be used to let the community add support for new features. The
-following diagram shows different integration scenarios with other tools and systems.
-
-![Integration scenarios](docs/images/otel-integration-scenarios.png)
+![OTel Weaver Platform](docs/images/otel-weaver-platform.png)
 
 ## Usage
 
@@ -126,6 +119,8 @@ weaver search --schema <path>
   - [ ] Add support for WASM plugins.
   - [ ] Add Tera filter to apply obfuscation, masking, ... based on tags and language configuration.
   - [X] Search engine for semantic convention catalog.
+    - [ ] Indexation of span events and links 
+    - [ ] Indexation of tags
 
 ## Questions
 - Should we support the equivalent of trace.SpanFromContext(context.TODO()) to get the current span? 

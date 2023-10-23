@@ -14,7 +14,6 @@ semantic_conventions:
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/session.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/source.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/url.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/user-agent.yaml
     # logs
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/logs/events.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/logs/general.yaml
@@ -32,8 +31,10 @@ semantic_conventions:
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/metrics/system-metrics.yaml
     # registry
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/registry/http.yaml
-  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/registry/url.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/registry/network.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/registry/rpc.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/registry/url.yaml
+  - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/registry/user-agent.yaml
     # resources
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/android.yaml
   - url: https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/model/resource/browser.yaml

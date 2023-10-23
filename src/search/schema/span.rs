@@ -26,6 +26,16 @@ pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut In
             fields,
             index_writer,
         );
+        for event in span.events.iter() {
+            index_writer
+                .add_document(doc!(
+                    fields.path => format!("schema/span/{}/event/{}", span.span_name, event.event_name),
+                    fields.brief => "",
+                    fields.note => ""
+                ))
+                .expect("Failed to add document");
+            attribute::index_schema_attribute(event.attributes.iter(), &format!("schema/span/{}/event/{}", span.span_name, event.event_name), fields, index_writer);
+        }
     }
 }
 
