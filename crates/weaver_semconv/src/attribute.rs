@@ -303,6 +303,13 @@ pub struct EnumEntries {
     pub note: Option<String>,
 }
 
+/// Implements a human readable display for EnumEntries.
+impl Display for EnumEntries {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "id={}, type={}", self.id, self.value)
+    }
+}
+
 /// The different types of values.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -316,6 +323,7 @@ pub enum Value {
     String(String),
 }
 
+/// Implements a human readable display for Value.
 impl Display for Value {
     /// Formats the value.
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -367,6 +375,17 @@ pub enum RequirementLevel {
     },
 }
 
+/// Implements a human readable display for RequirementLevel.
+impl Display for RequirementLevel {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RequirementLevel::Basic(brl) => write!(f, "{}", brl),
+            RequirementLevel::ConditionallyRequired { text } => write!(f, "conditionally required (condition: {})", text),
+            RequirementLevel::Recommended { text } => write!(f, "recommended ({})", text)
+        }
+    }
+}
+
 // Specifies the default requirement level as defined in the OTel
 // specification.
 impl Default for RequirementLevel {
@@ -385,4 +404,15 @@ pub enum BasicRequirementLevel {
     Recommended,
     /// An opt-in requirement level.
     OptIn,
+}
+
+/// Implements a human readable display for BasicRequirementLevel.
+impl Display for BasicRequirementLevel {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BasicRequirementLevel::Required => write!(f, "required"),
+            BasicRequirementLevel::Recommended => write!(f, "recommended"),
+            BasicRequirementLevel::OptIn => write!(f, "opt-in"),
+        }
+    }
 }

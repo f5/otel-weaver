@@ -188,7 +188,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
         Block::default()
             .borders(Borders::ALL)
             .title(" Search (press `Esc` or `Ctrl-C` to stop running) ")
-            .title_style(Style::default().fg(Color::Yellow)),
+            .title_style(Style::default().fg(Color::Green)),
     );
 
     // application state
@@ -308,7 +308,7 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
             Block::default()
                 .borders(Borders::ALL)
                 .title(" Search results ")
-                .title_style(Style::default().fg(Color::Yellow)),
+                .title_style(Style::default().fg(Color::Green)),
         )
         .highlight_style(selected_style)
         .highlight_symbol(">> ")
@@ -327,17 +327,21 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
 }
 
 fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Paragraph<'a> {
+    let mut area_title = "Details";
     let paragraph = if let Some(item) = item {
         let path = item.path.as_str().split('/').collect::<Vec<&str>>();
 
         match path[..] {
             ["semconv", "attr", id] => {
+                area_title = "Semantic Convention Attribute";
                 semconv::attribute::widget(app.schema.semantic_convention_catalog().attribute(id))
             }
             ["semconv", "metric", id] => {
+                area_title = "Semantic Convention Metric";
                 semconv::metric::widget(app.schema.semantic_convention_catalog().metric(id))
             }
             ["schema", "resource", "attr", attr_id] => {
+                area_title = "Schema Resource Attribute";
                 if let Some(resource) = app.schema.resource() {
                     attribute::widget(resource.attributes.iter().find(|attr| {
                         if let Attribute::Id { id, .. } = attr {
@@ -350,38 +354,62 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
                     Paragraph::new(vec![Line::default()])
                 }
             }
-            ["schema", "metric", id] => metric::widget(app.schema.metric(id)),
-            ["schema", "metric", metric_id, "attr", attr_id] => attribute::widget(
-                app.schema
-                    .metric(metric_id)
-                    .iter()
-                    .flat_map(|m| m.attribute(attr_id))
-                    .next(),
-            ),
-            ["schema", "metric_group", id] => metric_group::widget(app.schema.metric_group(id)),
-            ["schema", "metric_group", metric_group_id, "attr", attr_id] => attribute::widget(
-                app.schema
-                    .metric_group(metric_group_id)
-                    .iter()
-                    .flat_map(|m| m.attribute(attr_id))
-                    .next(),
-            ),
-            ["schema", "event", id] => schema::event::widget(app.schema.event(id)),
-            ["schema", "event", event_id, "attr", attr_id] => attribute::widget(
-                app.schema
-                    .event(event_id)
-                    .iter()
-                    .flat_map(|m| m.attribute(attr_id))
-                    .next(),
-            ),
-            ["schema", "span", id] => schema::span::widget(app.schema.span(id)),
-            ["schema", "span", span_id, "attr", attr_id] => attribute::widget(
-                app.schema
-                    .span(span_id)
-                    .iter()
-                    .flat_map(|m| m.attribute(attr_id))
-                    .next(),
-            ),
+            ["schema", "metric", id] => {
+                area_title = "Schema Metric";
+                metric::widget(app.schema.metric(id))
+            },
+            ["schema", "metric", metric_id, "attr", attr_id] => {
+                area_title = "Schema Metric Attribute";
+                attribute::widget(
+                    app.schema
+                        .metric(metric_id)
+                        .iter()
+                        .flat_map(|m| m.attribute(attr_id))
+                        .next(),
+                )
+            },
+            ["schema", "metric_group", id] => {
+                area_title = "Schema Metric Group";
+                metric_group::widget(app.schema.metric_group(id))
+            },
+            ["schema", "metric_group", metric_group_id, "attr", attr_id] => {
+                area_title = "Schema Metric Group";
+                attribute::widget(
+                    app.schema
+                        .metric_group(metric_group_id)
+                        .iter()
+                        .flat_map(|m| m.attribute(attr_id))
+                        .next(),
+                )
+            },
+            ["schema", "event", id] => {
+                area_title = "Schema Event";
+                schema::event::widget(app.schema.event(id))
+            },
+            ["schema", "event", event_id, "attr", attr_id] => {
+                area_title = "Schema Event Attribute";
+                attribute::widget(
+                    app.schema
+                        .event(event_id)
+                        .iter()
+                        .flat_map(|m| m.attribute(attr_id))
+                        .next(),
+                )
+            },
+            ["schema", "span", id] => {
+                area_title = "Schema Span";
+                span::widget(app.schema.span(id))
+            },
+            ["schema", "span", span_id, "attr", attr_id] => {
+                area_title = "Schema Span Attribute";
+                attribute::widget(
+                    app.schema
+                        .span(span_id)
+                        .iter()
+                        .flat_map(|m| m.attribute(attr_id))
+                        .next(),
+                )
+            },
             _ => Paragraph::new(vec![Line::default()]),
         }
     } else {
@@ -392,8 +420,8 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(" Details ")
-                .title_style(Style::default().fg(Color::Yellow))
+                .title(format!(" {} ", area_title))
+                .title_style(Style::default().fg(Color::Green))
                 .style(Style::default()),
         )
         .wrap(Wrap { trim: true })

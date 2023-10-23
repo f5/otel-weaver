@@ -71,38 +71,43 @@ pub fn widget(attribute: Option<&Attribute>) -> Paragraph {
         }) => {
             let mut text = vec![
                 Line::from(vec![
-                    Span::styled("Type   : ", Style::default().fg(Color::Yellow)),
-                    Span::raw("Attribute"),
-                ]),
-                Line::from(vec![
-                    Span::styled("Id     : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Id   : ", Style::default().fg(Color::Yellow)),
                     Span::raw(id),
                 ]),
                 Line::from(vec![
-                    Span::styled("Type   : ", Style::default().fg(Color::Yellow)),
-                    Span::raw(format!("{}", r#type)),
-                ]),
-                Line::from(vec![
-                    Span::styled("Brief  : ", Style::default().fg(Color::Yellow)),
-                    Span::raw(brief),
-                ]),
-                Line::from(vec![
-                    Span::styled("Note   : ", Style::default().fg(Color::Yellow)),
-                    Span::raw(note),
+                    Span::styled("Type : ", Style::default().fg(Color::Yellow)),
+                    Span::raw(format!("{}", r#type.to_string())),
                 ]),
             ];
 
-            text.push(Line::from(vec![
-                Span::styled("Requirement Level: ", Style::default().fg(Color::Yellow)),
-                Span::raw(format!("{:?}", requirement_level)),
-            ]));
-
+            // Tag
             if let Some(tag) = tag {
                 text.push(Line::from(vec![
-                    Span::styled("Tag    : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Tag  : ", Style::default().fg(Color::Yellow)),
                     Span::raw(tag),
                 ]));
             }
+
+            // Brief
+            if !brief.trim().is_empty() {
+                text.push(Line::from(""));
+                text.push(Line::from(Span::styled("Brief: ", Style::default().fg(Color::Yellow))));
+                text.push(Line::from(brief.as_str()));
+            }
+
+            // Note
+            if !note.trim().is_empty() {
+                text.push(Line::from(""));
+                text.push(Line::from(Span::styled("Note : ", Style::default().fg(Color::Yellow))));
+                text.push(Line::from(note.as_str()));
+            }
+
+            // Requirement Level
+            text.push(Line::from(""));
+            text.push(Line::from(vec![
+                Span::styled("Requirement Level: ", Style::default().fg(Color::Yellow)),
+                Span::raw(format!("{}", requirement_level)),
+            ]));
 
             if let Some(sampling_relevant) = sampling_relevant {
                 text.push(Line::from(vec![
@@ -114,14 +119,14 @@ pub fn widget(attribute: Option<&Attribute>) -> Paragraph {
             if let Some(stability) = stability {
                 text.push(Line::from(vec![
                     Span::styled("Stability: ", Style::default().fg(Color::Yellow)),
-                    Span::raw(format!("{:?}", stability)),
+                    Span::raw(format!("{}", stability)),
                 ]));
             }
 
             if let Some(deprecated) = deprecated {
                 text.push(Line::from(vec![
                     Span::styled("Deprecated: ", Style::default().fg(Color::Yellow)),
-                    Span::raw(format!("{:?}", deprecated)),
+                    Span::raw(format!("{}", deprecated)),
                 ]));
             }
 
@@ -137,6 +142,13 @@ pub fn widget(attribute: Option<&Attribute>) -> Paragraph {
             }
 
             tags::append_lines(tags.as_ref(), &mut text);
+
+            // Provenance
+            text.push(Line::from(""));
+            text.push(Line::from(vec![
+                Span::styled("Provenance: ", Style::default().fg(Color::Yellow)),
+                Span::raw(format!("NA")),
+            ]));
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }
