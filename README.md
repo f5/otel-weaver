@@ -35,40 +35,76 @@ Below is a diagram detailing the primary components of the OTel Weaver tool.
 
 ## Usage
 
-Resolve a schema and display the result on the standard output or write it to a file
-specified with the `--output` option. This command is mainly used to validate and debug
-a telemetry schema.
+```
+Usage: weaver [OPTIONS] [COMMAND]
+
+Commands:
+  resolve         Resolve a schema file and print the result
+  gen-client-sdk  Generate a client SDK (application)
+  languages       List of supported languages
+  search          Search in a schema file
+  help            Print this message or the help of the given subcommand(s)
+
+Options:
+  -d, --debug...  Turn debugging information on
+  -h, --help      Print help
+  -V, --version   Print version
+```
+
+### Command `resolve`
+
+This command resolves a schema and displays the result on the standard output.
+Alternatively, the result can be written to a file if specified using the
+`--output` option. This command is primarily used for validating and debugging
+telemetry schemas.
 
 ```bash
 weaver resolve --schema telemetry-schema.yaml --output telemetry-schema-resolved.yaml
 ```
 
-Generate a Rust OTel client SDK from a telemetry schema. An OTel client SDK can be used
-by an application to send telemetry data to an OTel collector. The generated SDK will use
-the protocol specified with the `--protocol` option. The default protocol is OTLP/gRPC.
+A "resolved schema" is one where:
+- All references have been resolved and expanded.
+- All overrides have been applied.
+
+- This resolved schema is what the code generator and upcoming plugins utilize.
+
+### Command `gen-client-sdk`
+
+This command generates a client SDK from a telemetry schema for a given language
+specified with the `--language` option.
 
 ```bash
-weaver gen-client-sdk --schema telemetry-schema.yaml --language rust --protocol otel-arrow
+weaver gen-client-sdk --schema telemetry-schema.yaml --language go
 ```
 
-Generate a Rust OTel client API from a telemetry schema. An OTel client API can be used
-by a third party library to send telemetry data to an OTel collector.
+In the future, users will be able to specify the protocol to use for the generated
+client SDK (i.e. OTLP or OTel Arrow Protocol) and few others options.
 
 ```bash
 weaver gen-client-api --schema telemetry-schema.yaml --language rust 
 ```
 
-List all the available languages for which a client SDK/API can be generated.
+### Command `languages`
+
+This command displays all the languages for which a client SDK/API can
+be generated.
 
 ```bash
 weaver languages
 ```
 
-Interactive terminal UI to search for attributes and metrics referenced in a given schema.
+### Command `search`
+
+This command provides an interactive terminal UI, allowing users to search for
+attributes and metrics specified within a given schema (including dependencies).
 
 ```bash
 weaver search --schema <path>
 ```
+
+This search engine leverages [Tantivy](https://github.com/quickwit-oss/tantivy) 
+and supports a simple [search syntax](https://docs.rs/tantivy/latest/tantivy/query/struct.QueryParser.html)
+in the search bar.
 
 ## ToDo
 **Telemetry Schema Improvements**
