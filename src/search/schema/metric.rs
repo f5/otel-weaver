@@ -57,7 +57,7 @@ pub fn index_schema_metrics(
 }
 
 /// Render a metric details.
-pub fn widget(metric: Option<&UnivariateMetric>) -> Paragraph {
+pub fn widget<'a>(metric: Option<&'a UnivariateMetric>, provenance: &'a str) -> Paragraph<'a> {
     match metric {
         Some(metric) => {
             let mut text = vec![Line::from(vec![
@@ -103,6 +103,11 @@ pub fn widget(metric: Option<&UnivariateMetric>) -> Paragraph {
                 attributes::append_lines(attributes.as_slice(), &mut text);
 
                 tags::append_lines(tags.as_ref(), &mut text);
+
+                // Provenance
+                text.push(Line::from(""));
+                text.push(Line::from(Span::styled("Provenance: ", Style::default().fg(Color::Yellow))));
+                text.push(Line::from(provenance));
             }
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }

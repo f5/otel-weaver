@@ -27,7 +27,7 @@ pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut In
 }
 
 /// Render a metric details.
-pub fn widget(metric_group: Option<&MetricGroup>) -> Paragraph {
+pub fn widget<'a>(metric_group: Option<&'a MetricGroup>, provenance: &'a str) -> Paragraph<'a> {
     match metric_group {
         Some(metric_group) => {
             let mut text = vec![Line::from(vec![
@@ -81,6 +81,11 @@ pub fn widget(metric_group: Option<&MetricGroup>) -> Paragraph {
             }
 
             tags::append_lines(metric_group.tags.as_ref(), &mut text);
+
+            // Provenance
+            text.push(Line::from(""));
+            text.push(Line::from(Span::styled("Provenance: ", Style::default().fg(Color::Yellow))));
+            text.push(Line::from(provenance));
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }

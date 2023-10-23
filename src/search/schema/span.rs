@@ -40,7 +40,7 @@ pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut In
 }
 
 /// Render a span details.
-pub fn widget(span: Option<&weaver_schema::span::Span>) -> Paragraph {
+pub fn widget<'a>(span: Option<&'a weaver_schema::span::Span>, provenance: &'a str) -> Paragraph<'a> {
     match span {
         Some(span) => {
             let mut text = vec![
@@ -84,6 +84,11 @@ pub fn widget(span: Option<&weaver_schema::span::Span>) -> Paragraph {
             }
 
             tags::append_lines(span.tags.as_ref(), &mut text);
+
+            // Provenance
+            text.push(Line::from(""));
+            text.push(Line::from(Span::styled("Provenance: ", Style::default().fg(Color::Yellow))));
+            text.push(Line::from(provenance));
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }

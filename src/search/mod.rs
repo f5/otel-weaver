@@ -6,23 +6,23 @@ use std::io;
 use std::path::PathBuf;
 
 use clap::Parser;
-use crossterm::event::DisableMouseCapture;
-use crossterm::event::EnableMouseCapture;
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use crossterm::event::DisableMouseCapture;
+use crossterm::event::EnableMouseCapture;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::Line;
-use ratatui::widgets::{Cell};
+use ratatui::widgets::Cell;
 use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
+use tantivy::{Index, IndexWriter, ReloadPolicy};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema, STORED, TEXT};
-use tantivy::{Index, IndexWriter, ReloadPolicy};
 use tui_textarea::TextArea;
 
 use weaver_logger::Logger;
@@ -349,15 +349,15 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
                         } else {
                             false
                         }
-                    }))
+                    }), app.schema.schema_url.as_str())
                 } else {
                     Paragraph::new(vec![Line::default()])
                 }
             }
             ["schema", "metric", id] => {
                 area_title = "Schema Metric";
-                metric::widget(app.schema.metric(id))
-            },
+                metric::widget(app.schema.metric(id), app.schema.schema_url.as_str())
+            }
             ["schema", "metric", metric_id, "attr", attr_id] => {
                 area_title = "Schema Metric Attribute";
                 attribute::widget(
@@ -366,12 +366,13 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
                         .iter()
                         .flat_map(|m| m.attribute(attr_id))
                         .next(),
+                    app.schema.schema_url.as_str(),
                 )
-            },
+            }
             ["schema", "metric_group", id] => {
                 area_title = "Schema Metric Group";
-                metric_group::widget(app.schema.metric_group(id))
-            },
+                metric_group::widget(app.schema.metric_group(id), app.schema.schema_url.as_str())
+            }
             ["schema", "metric_group", metric_group_id, "attr", attr_id] => {
                 area_title = "Schema Metric Group";
                 attribute::widget(
@@ -380,12 +381,13 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
                         .iter()
                         .flat_map(|m| m.attribute(attr_id))
                         .next(),
+                    app.schema.schema_url.as_str(),
                 )
-            },
+            }
             ["schema", "event", id] => {
                 area_title = "Schema Event";
-                schema::event::widget(app.schema.event(id))
-            },
+                schema::event::widget(app.schema.event(id), app.schema.schema_url.as_str())
+            }
             ["schema", "event", event_id, "attr", attr_id] => {
                 area_title = "Schema Event Attribute";
                 attribute::widget(
@@ -394,12 +396,13 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
                         .iter()
                         .flat_map(|m| m.attribute(attr_id))
                         .next(),
+                    app.schema.schema_url.as_str(),
                 )
-            },
+            }
             ["schema", "span", id] => {
                 area_title = "Schema Span";
-                span::widget(app.schema.span(id))
-            },
+                span::widget(app.schema.span(id), app.schema.schema_url.as_str())
+            }
             ["schema", "span", span_id, "attr", attr_id] => {
                 area_title = "Schema Span Attribute";
                 attribute::widget(
@@ -408,8 +411,9 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
                         .iter()
                         .flat_map(|m| m.attribute(attr_id))
                         .next(),
+                    app.schema.schema_url.as_str(),
                 )
-            },
+            }
             _ => Paragraph::new(vec![Line::default()]),
         }
     } else {

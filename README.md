@@ -115,6 +115,7 @@ in the search bar.
 - [ ] Add support for group constraints `any_of`, ...
 - [ ] Support more than 2 levels of telemetry schema inheritance.
 - [ ] Minimize number of declaration duplications in the resolved schema (especially for attributes).
+- [X] Add provenance (i.e. URL or file) for each definition.
 - [X] Add support for group extends.
 - [X] Add support for group of attributes (in general and for metrics).
 - [X] Support attribute value everywhere (not only in resource).

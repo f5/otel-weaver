@@ -53,7 +53,7 @@ pub fn index_schema_attribute<'a>(
 }
 
 /// Render an attribute details.
-pub fn widget(attribute: Option<&Attribute>) -> Paragraph {
+pub fn widget<'a>(attribute: Option<&'a Attribute>, provenance: &'a str) -> Paragraph<'a> {
     match attribute {
         Some(Attribute::Id {
             id,
@@ -145,10 +145,8 @@ pub fn widget(attribute: Option<&Attribute>) -> Paragraph {
 
             // Provenance
             text.push(Line::from(""));
-            text.push(Line::from(vec![
-                Span::styled("Provenance: ", Style::default().fg(Color::Yellow)),
-                Span::raw(format!("NA")),
-            ]));
+            text.push(Line::from(Span::styled("Provenance: ", Style::default().fg(Color::Yellow))));
+            text.push(Line::from(provenance));
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }
