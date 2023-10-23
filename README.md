@@ -105,6 +105,8 @@ in the search bar.
 ## ToDo
 **Telemetry Schema Improvements**
 - [ ] Support local/enterprise semantic convention.
+- [ ] Add support for enum types (i.e. allow custom values).
+- [ ] Add support for template types.
 - [ ] Add support for `all` in telemetry schema versions section.
 - [ ] Add support for `span_events` in telemetry schema versions section.
 - [ ] Add support for `apply_to_spans` in telemetry schema versions section.

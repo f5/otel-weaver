@@ -31,6 +31,11 @@ pub struct Span {
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub links: Vec<SpanLink>,
+    /// Brief description of the span.
+    pub brief: Option<String>,
+    /// Longer description.
+    /// It defaults to an empty string.
+    pub note: Option<String>,
     /// A set of tags for the span.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Tags>,

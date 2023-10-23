@@ -20,6 +20,11 @@ pub struct MetricGroup {
     /// The metrics of the metric group.
     #[serde(default)]
     pub metrics: Vec<Metric>,
+    /// Brief description of the metric group.
+    pub brief: Option<String>,
+    /// Longer description.
+    /// It defaults to an empty string.
+    pub note: Option<String>,
     /// A set of tags for the metric group.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Tags>,
