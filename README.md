@@ -104,15 +104,15 @@ in the search bar.
 
 ## ToDo
 **Telemetry Schema Improvements**
-- [ ] Minimize number of declaration duplications in the resolved schema (especially for attributes).
 - [ ] Support local/enterprise semantic convention.
-- [ ] Support multiple level of telemetry schema inheritance.
 - [ ] Add support for `all` in telemetry schema versions section.
 - [ ] Add support for `span_events` in telemetry schema versions section.
 - [ ] Add support for `apply_to_spans` in telemetry schema versions section.
 - [ ] Add support for `apply_to_metrics` in telemetry schema metrics versions section.
 - [ ] Add support for `split` in telemetry schema metrics versions section.
 - [ ] Add support for group constraints `any_of`, ...
+- [ ] Support more than 2 levels of telemetry schema inheritance.
+- [ ] Minimize number of declaration duplications in the resolved schema (especially for attributes).
 - [X] Add support for group extends.
 - [X] Add support for group of attributes (in general and for metrics).
 - [X] Support attribute value everywhere (not only in resource).
@@ -151,20 +151,12 @@ in the search bar.
   - [ ] Add support for WASM plugins.
   - [ ] Add Tera filter to apply obfuscation, masking, ... based on tags and language configuration.
   - [X] Search engine for semantic convention catalog.
-    - [ ] Indexation of span events and links 
+    - [X] Indexation of span events and links 
     - [ ] Indexation of tags
 
 ## Questions
+- Should we make the search command an independent tool?
 - Should we support the equivalent of trace.SpanFromContext(context.TODO()) to get the current span? 
-
-## How to Contribute
-- Add support for a new language
-  - [Via Tera templates](docs/contribution.md#via-tera-templates)
-  - [Via WASM plugin](docs/contribution.md#via-wasm-plugin)
-- Create other WASM plugins for
-  - [Schema validation](docs/contribution.md#schema-validation-plugin)
-  - [Schema export](docs/contribution.md#schema-export-plugin)
-  - [Variable resolver](docs/contribution.md#variable-resolver-plugin)
 
 ## Other links
 - [Internal crates interdependencies](docs/dependencies.md)
