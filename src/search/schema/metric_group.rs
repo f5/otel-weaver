@@ -7,10 +7,10 @@ use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use tantivy::{doc, IndexWriter};
 
-use crate::search::DocFields;
 use weaver_schema::metric_group::{Metric, MetricGroup};
 use weaver_schema::TelemetrySchema;
 
+use crate::search::DocFields;
 use crate::search::schema::{attributes, tags};
 
 /// Build index for metrics.
@@ -57,9 +57,7 @@ pub fn widget(metric_group: Option<&MetricGroup>) -> Paragraph {
                     } = metric
                     {
                         let mut properties = vec![];
-                        if let Some(instrument) = instrument {
-                            properties.push(format!("instrument={:?}", instrument));
-                        }
+                        properties.push(format!("instrument={:?}", instrument));
                         if let Some(unit) = unit {
                             properties.push(format!("unit={}", unit));
                         }

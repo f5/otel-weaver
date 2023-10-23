@@ -7,13 +7,13 @@
 //! can be found [here](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md).
 
 #![deny(
-    missing_docs,
-    clippy::print_stdout,
-    unstable_features,
-    unused_import_braces,
-    unused_qualifications,
-    unused_results,
-    unused_extern_crates
+missing_docs,
+clippy::print_stdout,
+unstable_features,
+unused_import_braces,
+unused_qualifications,
+unused_results,
+unused_extern_crates
 )]
 
 use std::collections::{HashMap, HashSet};
@@ -119,11 +119,22 @@ pub enum Error {
     },
 }
 
-/// An attribute with its source (path or URL).
+/// An attribute definition with its provenance (path or URL).
 #[derive(Debug, Clone)]
-struct AttributeWithSource {
-    attribute: Attribute,
-    path_or_url: String,
+pub struct AttributeWithProvenance {
+    /// The attribute definition.
+    pub attribute: Attribute,
+    /// The provenance of the attribute (path or URL).
+    pub provenance: String,
+}
+
+/// A metric definition with its provenance (path or URL).
+#[derive(Debug, Clone)]
+pub struct MetricWithProvenance {
+    /// The metric definition.
+    pub metric: Metric,
+    /// The provenance of the metric (path or URL).
+    pub provenance: String,
 }
 
 /// A semantic convention catalog is a collection of semantic convention
@@ -137,12 +148,12 @@ pub struct SemConvCatalog {
     /// semantic convention group.
     ///
     /// This collection contains all the attributes defined in the catalog.
-    all_attributes: HashMap<String, AttributeWithSource>,
+    all_attributes: HashMap<String, AttributeWithProvenance>,
 
     /// Metrics indexed by their respective id.
     ///
     /// This collection contains all the metrics defined in the catalog.
-    all_metrics: HashMap<String, Metric>,
+    all_metrics: HashMap<String, MetricWithProvenance>,
 
     /// Collection of attribute ids index by group id and defined in a
     /// `resource` semantic convention group.
@@ -353,17 +364,30 @@ impl SemConvCatalog {
                                 error: "Metric without name".to_string(),
                             });
                         };
+                        let instrument = if let Some(instrument) = group.instrument.as_ref() {
+                            instrument.clone()
+                        } else {
+                            return Err(Error::InvalidMetric {
+                                path_or_url: path_or_url.to_string(),
+                                group_id: group.id.clone(),
+                                error: "Metric without instrument definition".to_string(),
+                            });
+                        };
 
                         let prev_val = self.all_metrics.insert(
                             metric_name.clone(),
-                            Metric {
-                                name: metric_name.clone(),
-                                brief: group.brief.clone(),
-                                note: group.note.clone(),
-                                attributes: group.attributes.clone(),
-                                instrument: group.instrument.clone(),
-                                unit: group.unit.clone(),
-                            },
+                            MetricWithProvenance {
+                                metric: Metric {
+                                    name: metric_name.clone(),
+                                    brief: group.brief.clone(),
+                                    note: group.note.clone(),
+                                    attributes: group.attributes.clone(),
+                                    instrument,
+                                    unit: group.unit.clone(),
+                                },
+                                provenance: path_or_url.to_string(),
+                            }
+                            ,
                         );
                         if prev_val.is_some() {
                             return Err(Error::DuplicateMetricName {
@@ -431,6 +455,7 @@ impl SemConvCatalog {
                         }
                     }
                     metric
+                        .metric
                         .attributes
                         .extend(inherited_attributes.iter().cloned());
                 } else {
@@ -472,6 +497,13 @@ impl SemConvCatalog {
             .map(|attr| &attr.attribute)
     }
 
+    /// Returns an attribute definition and its provenance from its reference
+    /// or `None` if the reference does not exist.
+    pub fn attribute_with_provenance(&self, attr_ref: &str) -> Option<&AttributeWithProvenance> {
+        self.all_attributes
+            .get(attr_ref)
+    }
+
     /// Returns a map id -> attribute definition from an attribute group reference.
     /// Or an error if the reference does not exist.
     pub fn attributes(
@@ -506,18 +538,23 @@ impl SemConvCatalog {
     }
 
     /// Returns an iterator over all the attributes defined in the catalog.
-    pub fn attributes_iter(&self) -> impl Iterator<Item = &Attribute> {
+    pub fn attributes_iter(&self) -> impl Iterator<Item=&Attribute> {
         self.all_attributes.values().map(|attr| &attr.attribute)
     }
 
     /// Returns an iterator over all the metrics defined in the catalog.
-    pub fn metrics_iter(&self) -> impl Iterator<Item = &Metric> {
-        self.all_metrics.values()
+    pub fn metrics_iter(&self) -> impl Iterator<Item=&Metric> {
+        self.all_metrics.values().map(|metric| &metric.metric)
     }
 
     /// Returns a metric definition from its name or `None` if the
     /// name does not exist.
     pub fn metric(&self, metric_name: &str) -> Option<&Metric> {
+        self.all_metrics.get(metric_name).map(|metric| &metric.metric)
+    }
+
+    /// Returns a metric definition and its provenance from its name
+    pub fn metric_with_provenance(&self, metric_name: &str) -> Option<&MetricWithProvenance> {
         self.all_metrics.get(metric_name)
     }
 
@@ -567,14 +604,14 @@ impl SemConvCatalog {
                     }
                     let prev_val = self.all_attributes.insert(
                         fq_attr_id.clone(),
-                        AttributeWithSource {
+                        AttributeWithProvenance {
                             attribute: attr,
-                            path_or_url: path_or_url.clone(),
+                            provenance: path_or_url.clone(),
                         },
                     );
                     if let Some(prev_val) = prev_val {
                         return Err(Error::DuplicateAttributeId {
-                            origin_path_or_url: prev_val.path_or_url.clone(),
+                            origin_path_or_url: prev_val.provenance.clone(),
                             path_or_url: path_or_url.clone(),
                             id: fq_attr_id.clone(),
                         });

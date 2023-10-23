@@ -20,7 +20,7 @@ pub struct Metric {
     #[serde(default)]
     pub attributes: Vec<Attribute>,
     /// Type of the metric (e.g. gauge, histogram, ...).
-    pub instrument: Option<Instrument>,
+    pub instrument: Instrument,
     /// Unit of the metric.
     pub unit: Option<String>,
 }

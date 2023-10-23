@@ -5,23 +5,27 @@
 use ratatui::prelude::{Color, Line, Span, Style};
 use ratatui::widgets::Paragraph;
 
-use crate::search::semconv::examples;
 use weaver_semconv::attribute::Attribute;
+use weaver_semconv::AttributeWithProvenance;
 
-pub fn widget(attribute: Option<&Attribute>) -> Paragraph {
+use crate::search::semconv::examples;
+
+pub fn widget(attribute: Option<&AttributeWithProvenance>) -> Paragraph {
     match attribute.as_ref() {
-        Some(Attribute::Id {
-            id,
-            r#type,
-            brief,
-            examples,
-            tag,
-            requirement_level,
-            sampling_relevant,
-            note,
-            stability,
-            deprecated,
-        }) => {
+        Some(AttributeWithProvenance {
+                 attribute: Attribute::Id {
+                     id,
+                     r#type,
+                     brief,
+                     examples,
+                     tag,
+                     requirement_level,
+                     sampling_relevant,
+                     note,
+                     stability,
+                     deprecated,
+                 }, provenance
+             }) => {
             let mut text = vec![
                 Line::from(vec![
                     Span::styled("Id   : ", Style::default().fg(Color::Yellow)),
@@ -89,10 +93,8 @@ pub fn widget(attribute: Option<&Attribute>) -> Paragraph {
 
             // Provenance
             text.push(Line::from(""));
-            text.push(Line::from(vec![
-                Span::styled("Provenance: ", Style::default().fg(Color::Yellow)),
-                Span::raw(format!("NA")),
-            ]));
+            text.push(Line::from(Span::styled("Provenance: ", Style::default().fg(Color::Yellow))));
+            text.push(Line::from(provenance.as_str()));
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
         }

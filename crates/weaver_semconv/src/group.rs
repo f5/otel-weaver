@@ -2,10 +2,12 @@
 
 //! A group specification.
 
+use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
 use crate::attribute::{Attribute, AttributeType, PrimitiveOrArrayType};
+use crate::group::Instrument::{Counter, Gauge, Histogram, UpDownCounter};
 use crate::stability::Stability;
 
 /// Groups contain the list of semantic conventions and it is the root node of
@@ -258,4 +260,16 @@ pub enum Instrument {
     Gauge,
     /// A histogram metric.
     Histogram,
+}
+
+/// Implements a human readable display for the instrument.
+impl Display for Instrument {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UpDownCounter => write!(f, "updowncounter"),
+            Counter => write!(f, "counter"),
+            Gauge => write!(f, "gauge"),
+            Histogram => write!(f, "histogram")
+        }
+    }
 }

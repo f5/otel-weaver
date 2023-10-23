@@ -56,7 +56,7 @@ pub enum Metric {
         #[serde(default)]
         attributes: Vec<Attribute>,
         /// Type of the metric (e.g. gauge, histogram, ...).
-        instrument: Option<Instrument>,
+        instrument: Instrument,
         /// Unit of the metric.
         unit: Option<String>,
         /// A set of tags for the metric.

@@ -17,7 +17,7 @@ use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::Line;
-use ratatui::widgets::Cell;
+use ratatui::widgets::{Cell};
 use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
@@ -186,8 +186,8 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
     let mut search_area = TextArea::default();
     search_area.set_block(
         Block::default()
-            .borders(Borders::ALL)
-            .title(" Search (press `Esc` or `Ctrl-C` to stop running) ")
+            .borders(Borders::TOP)
+            .title("Search (press `Esc` or `Ctrl-C` to stop running) ")
             .title_style(Style::default().fg(Color::Green)),
     );
 
@@ -294,7 +294,7 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
 
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(1), Constraint::Length(3)])
+        .constraints([Constraint::Min(1), Constraint::Length(2)])
         .split(frame.size());
 
     let inner_layout = Layout::default()
@@ -306,8 +306,8 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         .header(header)
         .block(
             Block::default()
-                .borders(Borders::ALL)
-                .title(" Search results ")
+                .borders(Borders::TOP.union(Borders::RIGHT))
+                .title("Search results ")
                 .title_style(Style::default().fg(Color::Green)),
         )
         .highlight_style(selected_style)
@@ -334,11 +334,11 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
         match path[..] {
             ["semconv", "attr", id] => {
                 area_title = "Semantic Convention Attribute";
-                semconv::attribute::widget(app.schema.semantic_convention_catalog().attribute(id))
+                semconv::attribute::widget(app.schema.semantic_convention_catalog().attribute_with_provenance(id))
             }
             ["semconv", "metric", id] => {
                 area_title = "Semantic Convention Metric";
-                semconv::metric::widget(app.schema.semantic_convention_catalog().metric(id))
+                semconv::metric::widget(app.schema.semantic_convention_catalog().metric_with_provenance(id))
             }
             ["schema", "resource", "attr", attr_id] => {
                 area_title = "Schema Resource Attribute";
@@ -419,9 +419,10 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
     paragraph
         .block(
             Block::default()
-                .borders(Borders::ALL)
-                .title(format!(" {} ", area_title))
+                .borders(Borders::TOP)
+                .title(format!("{} ", area_title))
                 .title_style(Style::default().fg(Color::Green))
+                //.padding(Padding::new(1,0,0,0))
                 .style(Style::default()),
         )
         .wrap(Wrap { trim: true })

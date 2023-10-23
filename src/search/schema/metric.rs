@@ -6,15 +6,16 @@ use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use tantivy::{doc, IndexWriter};
-use weaver_schema::TelemetrySchema;
 
-use crate::search::schema::{attribute, attributes, tags};
-use crate::search::DocFields;
+use weaver_schema::TelemetrySchema;
 use weaver_schema::univariate_metric::UnivariateMetric;
+
+use crate::search::DocFields;
+use crate::search::schema::{attribute, attributes, tags};
 
 /// Build index for semantic convention metrics.
 pub fn index_semconv_metrics<'a>(
-    metrics: impl Iterator<Item = &'a weaver_semconv::metric::Metric>,
+    metrics: impl Iterator<Item=&'a weaver_semconv::metric::Metric>,
     path: &str,
     fields: &DocFields,
     index_writer: &mut IndexWriter,
@@ -87,14 +88,10 @@ pub fn widget(metric: Option<&UnivariateMetric>) -> Paragraph {
                     Span::raw(note),
                 ]));
 
-                attributes::append_lines(attributes.as_slice(), &mut text);
-
-                if let Some(instrument) = instrument {
-                    text.push(Line::from(vec![
-                        Span::styled("Instrument: ", Style::default().fg(Color::Yellow)),
-                        Span::raw(format!("{:?}", instrument)),
-                    ]));
-                }
+                text.push(Line::from(vec![
+                    Span::styled("Instrument: ", Style::default().fg(Color::Yellow)),
+                    Span::raw(format!("{:?}", instrument)),
+                ]));
 
                 if let Some(unit) = unit {
                     text.push(Line::from(vec![
@@ -102,6 +99,8 @@ pub fn widget(metric: Option<&UnivariateMetric>) -> Paragraph {
                         Span::raw(unit),
                     ]));
                 }
+
+                attributes::append_lines(attributes.as_slice(), &mut text);
 
                 tags::append_lines(tags.as_ref(), &mut text);
             }
