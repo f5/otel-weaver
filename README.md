@@ -80,10 +80,6 @@ weaver gen-client-sdk --schema telemetry-schema.yaml --language go
 In the future, users will be able to specify the protocol to use for the generated
 client SDK (i.e. OTLP or OTel Arrow Protocol) and few others options.
 
-```bash
-weaver gen-client-api --schema telemetry-schema.yaml --language rust 
-```
-
 ### Command `languages`
 
 This command displays all the languages for which a client SDK/API can
