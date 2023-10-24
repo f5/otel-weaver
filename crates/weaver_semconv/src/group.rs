@@ -2,8 +2,8 @@
 
 //! A group specification.
 
-use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 use validator::{Validate, ValidationError};
 
 use crate::attribute::{Attribute, AttributeType, PrimitiveOrArrayType};
@@ -269,7 +269,7 @@ impl Display for Instrument {
             UpDownCounter => write!(f, "updowncounter"),
             Counter => write!(f, "counter"),
             Gauge => write!(f, "gauge"),
-            Histogram => write!(f, "histogram")
+            Histogram => write!(f, "histogram"),
         }
     }
 }

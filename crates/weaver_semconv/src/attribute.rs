@@ -380,8 +380,10 @@ impl Display for RequirementLevel {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             RequirementLevel::Basic(brl) => write!(f, "{}", brl),
-            RequirementLevel::ConditionallyRequired { text } => write!(f, "conditionally required (condition: {})", text),
-            RequirementLevel::Recommended { text } => write!(f, "recommended ({})", text)
+            RequirementLevel::ConditionallyRequired { text } => {
+                write!(f, "conditionally required (condition: {})", text)
+            }
+            RequirementLevel::Recommended { text } => write!(f, "recommended ({})", text),
         }
     }
 }

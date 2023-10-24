@@ -33,6 +33,14 @@ schema:
   resource_metrics:
     # Declaration of all the univariate metrics
     metrics:
+      - ref: jvm.thread.count
+        attributes:
+          - ref: server.address
+          - ref: server.port
+          - ref: network.protocol.name
+          - ref: network.protocol.version
+          - ref: url.scheme
+            requirement_level: required
       - ref: jvm.class.loaded
         attributes:
           - ref: server.address

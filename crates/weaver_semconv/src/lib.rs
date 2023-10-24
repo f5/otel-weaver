@@ -7,13 +7,13 @@
 //! can be found [here](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md).
 
 #![deny(
-missing_docs,
-clippy::print_stdout,
-unstable_features,
-unused_import_braces,
-unused_qualifications,
-unused_results,
-unused_extern_crates
+    missing_docs,
+    clippy::print_stdout,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications,
+    unused_results,
+    unused_extern_crates
 )]
 
 use std::collections::{HashMap, HashSet};
@@ -386,8 +386,7 @@ impl SemConvCatalog {
                                     unit: group.unit.clone(),
                                 },
                                 provenance: path_or_url.to_string(),
-                            }
-                            ,
+                            },
                         );
                         if prev_val.is_some() {
                             return Err(Error::DuplicateMetricName {
@@ -500,8 +499,7 @@ impl SemConvCatalog {
     /// Returns an attribute definition and its provenance from its reference
     /// or `None` if the reference does not exist.
     pub fn attribute_with_provenance(&self, attr_ref: &str) -> Option<&AttributeWithProvenance> {
-        self.all_attributes
-            .get(attr_ref)
+        self.all_attributes.get(attr_ref)
     }
 
     /// Returns a map id -> attribute definition from an attribute group reference.
@@ -538,19 +536,21 @@ impl SemConvCatalog {
     }
 
     /// Returns an iterator over all the attributes defined in the catalog.
-    pub fn attributes_iter(&self) -> impl Iterator<Item=&Attribute> {
+    pub fn attributes_iter(&self) -> impl Iterator<Item = &Attribute> {
         self.all_attributes.values().map(|attr| &attr.attribute)
     }
 
     /// Returns an iterator over all the metrics defined in the catalog.
-    pub fn metrics_iter(&self) -> impl Iterator<Item=&Metric> {
+    pub fn metrics_iter(&self) -> impl Iterator<Item = &Metric> {
         self.all_metrics.values().map(|metric| &metric.metric)
     }
 
     /// Returns a metric definition from its name or `None` if the
     /// name does not exist.
     pub fn metric(&self, metric_name: &str) -> Option<&Metric> {
-        self.all_metrics.get(metric_name).map(|metric| &metric.metric)
+        self.all_metrics
+            .get(metric_name)
+            .map(|metric| &metric.metric)
     }
 
     /// Returns a metric definition and its provenance from its name

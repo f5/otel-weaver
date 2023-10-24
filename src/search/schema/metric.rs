@@ -7,15 +7,15 @@ use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use tantivy::{doc, IndexWriter};
 
-use weaver_schema::TelemetrySchema;
 use weaver_schema::univariate_metric::UnivariateMetric;
+use weaver_schema::TelemetrySchema;
 
-use crate::search::DocFields;
 use crate::search::schema::{attribute, attributes, tags};
+use crate::search::DocFields;
 
 /// Build index for semantic convention metrics.
 pub fn index_semconv_metrics<'a>(
-    metrics: impl Iterator<Item=&'a weaver_semconv::metric::Metric>,
+    metrics: impl Iterator<Item = &'a weaver_semconv::metric::Metric>,
     path: &str,
     fields: &DocFields,
     index_writer: &mut IndexWriter,
@@ -106,7 +106,10 @@ pub fn widget<'a>(metric: Option<&'a UnivariateMetric>, provenance: &'a str) -> 
 
                 // Provenance
                 text.push(Line::from(""));
-                text.push(Line::from(Span::styled("Provenance: ", Style::default().fg(Color::Yellow))));
+                text.push(Line::from(Span::styled(
+                    "Provenance: ",
+                    Style::default().fg(Color::Yellow),
+                )));
                 text.push(Line::from(provenance));
             }
             Paragraph::new(text).style(Style::default().fg(Color::Gray))

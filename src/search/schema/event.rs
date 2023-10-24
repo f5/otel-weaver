@@ -30,7 +30,10 @@ pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut In
 }
 
 /// Render a span details.
-pub fn widget<'a>(event: Option<&'a weaver_schema::event::Event>, provenance: &'a str) -> Paragraph<'a> {
+pub fn widget<'a>(
+    event: Option<&'a weaver_schema::event::Event>,
+    provenance: &'a str,
+) -> Paragraph<'a> {
     match event {
         Some(event) => {
             let mut text = vec![
@@ -53,7 +56,10 @@ pub fn widget<'a>(event: Option<&'a weaver_schema::event::Event>, provenance: &'
 
             // Provenance
             text.push(Line::from(""));
-            text.push(Line::from(Span::styled("Provenance: ", Style::default().fg(Color::Yellow))));
+            text.push(Line::from(Span::styled(
+                "Provenance: ",
+                Style::default().fg(Color::Yellow),
+            )));
             text.push(Line::from(provenance));
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))

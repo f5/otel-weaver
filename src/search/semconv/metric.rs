@@ -30,14 +30,20 @@ pub fn widget(metric: Option<&MetricWithProvenance>) -> Paragraph {
             // Brief
             if !metric.brief.trim().is_empty() {
                 text.push(Line::from(""));
-                text.push(Line::from(Span::styled("Brief     : ", Style::default().fg(Color::Yellow))));
+                text.push(Line::from(Span::styled(
+                    "Brief     : ",
+                    Style::default().fg(Color::Yellow),
+                )));
                 text.push(Line::from(metric.brief.as_str()));
             }
 
             // Note
             if !metric.note.trim().is_empty() {
                 text.push(Line::from(""));
-                text.push(Line::from(Span::styled("Note      : ", Style::default().fg(Color::Yellow))));
+                text.push(Line::from(Span::styled(
+                    "Note      : ",
+                    Style::default().fg(Color::Yellow),
+                )));
                 text.push(Line::from(metric.note.as_str()));
             }
 
@@ -47,7 +53,7 @@ pub fn widget(metric: Option<&MetricWithProvenance>) -> Paragraph {
             text.push(Line::from(""));
             text.push(Line::from(vec![
                 Span::styled("Provenance: ", Style::default().fg(Color::Yellow)),
-                Span::raw(format!("{}", provenance)),
+                Span::raw(provenance.to_string()),
             ]));
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))

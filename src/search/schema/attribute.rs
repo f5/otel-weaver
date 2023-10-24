@@ -76,7 +76,7 @@ pub fn widget<'a>(attribute: Option<&'a Attribute>, provenance: &'a str) -> Para
                 ]),
                 Line::from(vec![
                     Span::styled("Type : ", Style::default().fg(Color::Yellow)),
-                    Span::raw(format!("{}", r#type.to_string())),
+                    Span::raw(r#type.to_string()),
                 ]),
             ];
 
@@ -91,14 +91,20 @@ pub fn widget<'a>(attribute: Option<&'a Attribute>, provenance: &'a str) -> Para
             // Brief
             if !brief.trim().is_empty() {
                 text.push(Line::from(""));
-                text.push(Line::from(Span::styled("Brief: ", Style::default().fg(Color::Yellow))));
+                text.push(Line::from(Span::styled(
+                    "Brief: ",
+                    Style::default().fg(Color::Yellow),
+                )));
                 text.push(Line::from(brief.as_str()));
             }
 
             // Note
             if !note.trim().is_empty() {
                 text.push(Line::from(""));
-                text.push(Line::from(Span::styled("Note : ", Style::default().fg(Color::Yellow))));
+                text.push(Line::from(Span::styled(
+                    "Note : ",
+                    Style::default().fg(Color::Yellow),
+                )));
                 text.push(Line::from(note.as_str()));
             }
 
@@ -126,7 +132,7 @@ pub fn widget<'a>(attribute: Option<&'a Attribute>, provenance: &'a str) -> Para
             if let Some(deprecated) = deprecated {
                 text.push(Line::from(vec![
                     Span::styled("Deprecated: ", Style::default().fg(Color::Yellow)),
-                    Span::raw(format!("{}", deprecated)),
+                    Span::raw(deprecated.to_string()),
                 ]));
             }
 
@@ -145,7 +151,10 @@ pub fn widget<'a>(attribute: Option<&'a Attribute>, provenance: &'a str) -> Para
 
             // Provenance
             text.push(Line::from(""));
-            text.push(Line::from(Span::styled("Provenance: ", Style::default().fg(Color::Yellow))));
+            text.push(Line::from(Span::styled(
+                "Provenance: ",
+                Style::default().fg(Color::Yellow),
+            )));
             text.push(Line::from(provenance));
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))

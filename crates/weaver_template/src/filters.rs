@@ -218,6 +218,56 @@ pub fn without_value(value: &Value, _: &HashMap<String, Value>) -> Result<Value>
     Ok(Value::Array(without_values))
 }
 
+/// Retain only attributes with a valid enum type.
+pub fn with_enum(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
+    let mut with_enums = vec![];
+    match value {
+        Value::Array(attributes) => {
+            for attr in attributes {
+                match attr {
+                    Value::Object(fields) => {
+                        if let Some(Value::Object(type_value)) = fields.get("type") {
+                            if type_value.get("members").is_some() {
+                                with_enums.push(attr.clone());
+                            }
+                        }
+                    }
+                    _ => with_enums.push(attr.clone()),
+                }
+            }
+        }
+        _ => return Ok(value.clone()),
+    }
+
+    Ok(Value::Array(with_enums))
+}
+
+/// Retain only attributes without a enum type.
+pub fn without_enum(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
+    let mut without_enums = vec![];
+    match value {
+        Value::Array(attributes) => {
+            for attr in attributes {
+                match attr {
+                    Value::Object(fields) => {
+                        if let Some(Value::Object(type_value)) = fields.get("type") {
+                            if type_value.get("members").is_none() {
+                                without_enums.push(attr.clone());
+                            }
+                        } else {
+                            without_enums.push(attr.clone());
+                        }
+                    }
+                    _ => without_enums.push(attr.clone()),
+                }
+            }
+        }
+        _ => return Ok(value.clone()),
+    }
+
+    Ok(Value::Array(without_enums))
+}
+
 /// Filter to map an OTel type to a language type.
 pub struct TypeMapping {
     pub type_mapping: HashMap<String, String>,
@@ -225,12 +275,26 @@ pub struct TypeMapping {
 
 impl Filter for TypeMapping {
     /// Map an OTel type to a language type.
-    fn filter(&self, value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-        let otel_type = try_get_value!("type_mapping", "value", String, value);
-
-        match self.type_mapping.get(&otel_type) {
-            Some(language_type) => Ok(Value::String(language_type.clone())),
-            None => Err(tera::Error::msg(format!("Filter type_mapping: could not find a conversion for {}. To resolve this, create or extend the type_mapping in the config.yaml file.", otel_type)))
+    fn filter(&self, value: &Value, ctx: &HashMap<String, Value>) -> Result<Value> {
+        match value {
+            Value::String(otel_type) => {
+                match self.type_mapping.get(otel_type) {
+                    Some(language_type) => Ok(Value::String(language_type.clone())),
+                    None => Err(tera::Error::msg(format!("Filter type_mapping: could not find a conversion for {}. To resolve this, create or extend the type_mapping in the config.yaml file.", otel_type)))
+                }
+            }
+            Value::Object(otel_enum) => {
+                if !otel_enum.contains_key("members") {
+                    return Err(tera::Error::msg(format!("Filter type_mapping: expected an enum with a members array, got {:?}", value)))
+                }
+                let enum_name = match ctx.get("enum") {
+                    Some(Value::String(v)) => v.clone(),
+                    Some(_) => return Err(tera::Error::msg(format!("Filter type_mapping: expected a string for the enum parameter, got {:?}", ctx.get("enum")))),
+                    _ => return Err(tera::Error::msg("Filter type_mapping: expected an enum parameter".to_string()))
+                };
+                Ok(Value::String(enum_name))
+            }
+            _ => Err(tera::Error::msg(format!("Filter type_mapping: expected a string or an object, got {:?}", value)))
         }
     }
 }

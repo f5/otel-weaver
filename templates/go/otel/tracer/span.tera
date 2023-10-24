@@ -43,7 +43,7 @@ func StartWithContext(
 ) *{{span_name | struct_name}}Span {
     ctx, span := client.Tracer.Start(ctx, "{{ span_name }}",
     {%- for attr in attributes | with_value %}
-        trace.WithAttributes(attribute.{{ attr.id | function_name }}Key.{{attr.type | type_mapping | function_name}}({{attr.value | value}})),
+        trace.WithAttributes(attribute.{{ attr.id | function_name }}Key.{{attr.type | type_mapping(enum=attr.id) | function_name}}({{attr.value | value}})),
     {%- endfor %}
     {%- for attr in attributes | required | without_value %}
         trace.WithAttributes({{ attr.id | arg_name }}.Attribute()),
@@ -101,7 +101,7 @@ func (s *{{span_name | struct_name}}Span) Event{{ event.event_name | function_na
 ) *{{span_name | struct_name}}Span {
     eventOptions := []trace.EventOption{
     {%- for attr in event.attributes | with_value %}
-        trace.WithAttributes(attribute.{{ attr.id | function_name }}Key.{{attr.type | type_mapping | function_name}}({{attr.value | value}})),
+        trace.WithAttributes(attribute.{{ attr.id | function_name }}Key.{{attr.type | type_mapping(enum=attr.id) | function_name}}({{attr.value | value}})),
     {%- endfor %}
     {%- for attr in event.attributes | required %}
         trace.WithAttributes({{ attr.id | field_name }}.Attribute()),
@@ -120,8 +120,8 @@ func (s *{{span_name | struct_name}}Span) Event{{ event.event_name | function_na
 {% for attr in attributes | not_required | without_value %}
 // Attr{{ attr.id | function_name }} sets the optional attribute `{{ attr.id }}` for the span.
 // {{ [attr.brief, attr.note, "", "# Examples", attr.examples] | comment(prefix="// ") }}
-func (s *{{span_name | struct_name}}Span) {{attr.id | function_name}}OptAttr(value {{ attr.type | type_mapping }}) *{{span_name | struct_name}}Span {
-    s.span.SetAttributes(attribute.{{ attr.id | field_name }}Key.{{ attr.type | type_mapping | function_name }}(value))
+func (s *{{span_name | struct_name}}Span) {{attr.id | function_name}}OptAttr(value {{ attr.type | type_mapping(enum=attr.id | struct_name) }}) *{{span_name | struct_name}}Span {
+    s.span.SetAttributes(attribute.{{ attr.id | field_name }}Key.{{ attr.type | type_mapping(enum=attr.id) | function_name }}(value))
     return s
 }
 {% endfor %}

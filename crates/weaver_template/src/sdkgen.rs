@@ -127,6 +127,8 @@ impl ClientSdkGenerator {
         tera.register_filter("value", filters::value);
         tera.register_filter("with_value", filters::with_value);
         tera.register_filter("without_value", filters::without_value);
+        tera.register_filter("with_enum", filters::with_enum);
+        tera.register_filter("without_enum", filters::without_enum);
         tera.register_filter("comment", filters::comment);
         tera.register_filter(
             "type_mapping",
@@ -327,7 +329,7 @@ impl ClientSdkGenerator {
             log.error(&format!("{}", err));
             let mut cause = err.source();
             while let Some(e) = cause {
-                log.error(&format!("Caused by: {}", e));
+                log.error(&format!("- caused by: {}", e));
                 cause = e.source();
             }
             process::exit(1);

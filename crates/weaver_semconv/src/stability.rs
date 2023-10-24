@@ -2,8 +2,8 @@
 
 //! Stability specification.
 
-use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 
 /// The level of stability for a definition.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -23,7 +23,7 @@ impl Display for Stability {
         match self {
             Stability::Deprecated => write!(f, "deprecated"),
             Stability::Experimental => write!(f, "experimental"),
-            Stability::Stable => write!(f, "stable")
+            Stability::Stable => write!(f, "stable"),
         }
     }
 }

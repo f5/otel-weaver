@@ -105,7 +105,8 @@ in the search bar.
 ## ToDo
 **Telemetry Schema Improvements**
 - [ ] Support local/enterprise semantic convention.
-- [ ] Add support for enum types (i.e. allow custom values).
+- [X] Add support for close enum types (i.e. allow custom values=false).
+- [ ] Add support for open enum types (i.e. allow custom values=true).
 - [ ] Add support for template types.
 - [ ] Add support for `all` in telemetry schema versions section.
 - [ ] Add support for `span_events` in telemetry schema versions section.
@@ -161,7 +162,9 @@ in the search bar.
 - Should we make the search command an independent tool?
 - Should we support the equivalent of trace.SpanFromContext(context.TODO()) to get the current span? 
 
-## Other links
+## Links
+- [OTEP](https://github.com/lquerel/oteps/blob/main/text/0240-telemetry-schema-ext.md)
+- Meta/Facebook's [positional paper](https://research.facebook.com/publications/positional-paper-schema-first-application-telemetry/) presenting a similar approach but based on Thrift+Annotations+Automations.
 - [Internal crates interdependencies](docs/dependencies.md)
 - [OpenTelemetry Schema File Format v1.1.0](https://opentelemetry.io/docs/specs/otel/schemas/file_format_v1.1.0/)
 - [OpenTelemetry Semantic Convention File Format](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md)

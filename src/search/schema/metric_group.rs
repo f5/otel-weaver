@@ -10,8 +10,8 @@ use tantivy::{doc, IndexWriter};
 use weaver_schema::metric_group::{Metric, MetricGroup};
 use weaver_schema::TelemetrySchema;
 
-use crate::search::DocFields;
 use crate::search::schema::{attributes, tags};
+use crate::search::DocFields;
 
 /// Build index for metrics.
 pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut IndexWriter) {
@@ -84,7 +84,10 @@ pub fn widget<'a>(metric_group: Option<&'a MetricGroup>, provenance: &'a str) ->
 
             // Provenance
             text.push(Line::from(""));
-            text.push(Line::from(Span::styled("Provenance: ", Style::default().fg(Color::Yellow))));
+            text.push(Line::from(Span::styled(
+                "Provenance: ",
+                Style::default().fg(Color::Yellow),
+            )));
             text.push(Line::from(provenance));
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))

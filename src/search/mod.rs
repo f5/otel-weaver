@@ -6,23 +6,23 @@ use std::io;
 use std::path::PathBuf;
 
 use clap::Parser;
+use crossterm::event::DisableMouseCapture;
+use crossterm::event::EnableMouseCapture;
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use crossterm::event::DisableMouseCapture;
-use crossterm::event::EnableMouseCapture;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::Line;
 use ratatui::widgets::Cell;
 use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
-use tantivy::{Index, IndexWriter, ReloadPolicy};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema, STORED, TEXT};
+use tantivy::{Index, IndexWriter, ReloadPolicy};
 use tui_textarea::TextArea;
 
 use weaver_logger::Logger;
@@ -54,7 +54,7 @@ pub struct SearchApp<'a> {
     results: StatefulResults,
 
     searcher: tantivy::Searcher,
-    query_parser: tantivy::query::QueryParser,
+    query_parser: QueryParser,
     current_query: Option<String>,
 
     should_quit: bool,
@@ -334,22 +334,33 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
         match path[..] {
             ["semconv", "attr", id] => {
                 area_title = "Semantic Convention Attribute";
-                semconv::attribute::widget(app.schema.semantic_convention_catalog().attribute_with_provenance(id))
+                semconv::attribute::widget(
+                    app.schema
+                        .semantic_convention_catalog()
+                        .attribute_with_provenance(id),
+                )
             }
             ["semconv", "metric", id] => {
                 area_title = "Semantic Convention Metric";
-                semconv::metric::widget(app.schema.semantic_convention_catalog().metric_with_provenance(id))
+                semconv::metric::widget(
+                    app.schema
+                        .semantic_convention_catalog()
+                        .metric_with_provenance(id),
+                )
             }
             ["schema", "resource", "attr", attr_id] => {
                 area_title = "Schema Resource Attribute";
                 if let Some(resource) = app.schema.resource() {
-                    attribute::widget(resource.attributes.iter().find(|attr| {
-                        if let Attribute::Id { id, .. } = attr {
-                            id.as_str() == attr_id
-                        } else {
-                            false
-                        }
-                    }), app.schema.schema_url.as_str())
+                    attribute::widget(
+                        resource.attributes.iter().find(|attr| {
+                            if let Attribute::Id { id, .. } = attr {
+                                id.as_str() == attr_id
+                            } else {
+                                false
+                            }
+                        }),
+                        app.schema.schema_url.as_str(),
+                    )
                 } else {
                     Paragraph::new(vec![Line::default()])
                 }

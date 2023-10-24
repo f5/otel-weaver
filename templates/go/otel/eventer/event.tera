@@ -42,7 +42,7 @@ func EventWithContext(
 
     ctx, span := client.Tracer.Start(ctx, "{{ event_name }}",
     {%- for attr in attributes | with_value %}
-        trace.WithAttributes(attribute.{{ attr.id | function_name }}Key.{{attr.type | type_mapping | function_name}}({{attr.value | value}})),
+        trace.WithAttributes(attribute.{{ attr.id | function_name }}Key.{{attr.type | type_mapping(enum=attr.id) | function_name}}({{attr.value | value}})),
     {%- endfor %}
     {%- for attr in attributes | required | without_value %}
         trace.WithAttributes({{ attr.id | arg_name }}.Attribute()),

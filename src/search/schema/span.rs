@@ -34,13 +34,21 @@ pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut In
                     fields.note => ""
                 ))
                 .expect("Failed to add document");
-            attribute::index_schema_attribute(event.attributes.iter(), &format!("schema/span/{}/event/{}", span.span_name, event.event_name), fields, index_writer);
+            attribute::index_schema_attribute(
+                event.attributes.iter(),
+                &format!("schema/span/{}/event/{}", span.span_name, event.event_name),
+                fields,
+                index_writer,
+            );
         }
     }
 }
 
 /// Render a span details.
-pub fn widget<'a>(span: Option<&'a weaver_schema::span::Span>, provenance: &'a str) -> Paragraph<'a> {
+pub fn widget<'a>(
+    span: Option<&'a weaver_schema::span::Span>,
+    provenance: &'a str,
+) -> Paragraph<'a> {
     match span {
         Some(span) => {
             let mut text = vec![
@@ -87,7 +95,10 @@ pub fn widget<'a>(span: Option<&'a weaver_schema::span::Span>, provenance: &'a s
 
             // Provenance
             text.push(Line::from(""));
-            text.push(Line::from(Span::styled("Provenance: ", Style::default().fg(Color::Yellow))));
+            text.push(Line::from(Span::styled(
+                "Provenance: ",
+                Style::default().fg(Color::Yellow),
+            )));
             text.push(Line::from(provenance));
 
             Paragraph::new(text).style(Style::default().fg(Color::Gray))
