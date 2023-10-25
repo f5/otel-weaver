@@ -6,23 +6,23 @@ use std::io;
 use std::path::PathBuf;
 
 use clap::Parser;
-use crossterm::event::DisableMouseCapture;
-use crossterm::event::EnableMouseCapture;
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use crossterm::event::DisableMouseCapture;
+use crossterm::event::EnableMouseCapture;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{CrosstermBackend, Terminal};
-use ratatui::style::{Color, Modifier, Style};
+use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::Line;
-use ratatui::widgets::Cell;
 use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
+use ratatui::widgets::Cell;
+use tantivy::{Index, IndexWriter, ReloadPolicy};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema, STORED, TEXT};
-use tantivy::{Index, IndexWriter, ReloadPolicy};
 use tui_textarea::TextArea;
 
 use weaver_logger::Logger;
@@ -187,8 +187,9 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
     search_area.set_block(
         Block::default()
             .borders(Borders::TOP)
+            .border_style(Style::default().fg(Color::Rgb(85,109,89)))
             .title("Search (press `Esc` or `Ctrl-C` to stop running) ")
-            .title_style(Style::default().fg(Color::Green)),
+            .title_style(Style::default().fg(Color::Rgb(238, 238, 238))),
     );
 
     // application state
@@ -270,11 +271,14 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         }
     });
 
-    let selected_style = Style::default().add_modifier(Modifier::REVERSED);
+    let title_color = Color::Rgb(238, 238, 238);
+    let selected_style = Style::default()
+        .bg(Color::Rgb(106, 47, 47))
+        .fg(title_color.clone());
     let normal_style = Style::default();
-    let header_cells = ["Path", "Brief"]
+    let header_cells = ["Path:", "Brief:"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Yellow)));
+        .map(|h| Cell::from(*h).style(Style::default().fg(title_color.clone())));
     let header = Row::new(header_cells)
         .style(normal_style)
         .height(1)
@@ -285,8 +289,8 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         .iter()
         .map(|item| {
             let cells = vec![
-                Cell::from(item.path.clone()),
-                Cell::from(item.brief.clone()),
+                Cell::from(item.path.clone()).fg(Color::Rgb(128, 208, 163)),
+                Cell::from(item.brief.clone()).fg(Color::Rgb(204, 204, 204)),
             ];
             Row::new(cells).height(1).bottom_margin(0)
         })
@@ -307,8 +311,9 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         .block(
             Block::default()
                 .borders(Borders::TOP.union(Borders::RIGHT))
+                .border_style(Style::default().fg(Color::Rgb(85,109,89)))
                 .title("Search results ")
-                .title_style(Style::default().fg(Color::Green)),
+                .title_style(Style::default().fg(title_color.clone())),
         )
         .highlight_style(selected_style)
         .highlight_symbol(">> ")
@@ -321,12 +326,12 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         Some(i) => app.results.items.get(i),
         None => None,
     };
-    frame.render_widget(detail_area(app, item), inner_layout[1]);
+    frame.render_widget(detail_area(app, item, title_color), inner_layout[1]);
 
     frame.render_widget(app.search_area.widget(), outer_layout[1]);
 }
 
-fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Paragraph<'a> {
+fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>, title_color: Color) -> Paragraph<'a> {
     let mut area_title = "Details";
     let paragraph = if let Some(item) = item {
         let path = item.path.as_str().split('/').collect::<Vec<&str>>();
@@ -436,7 +441,7 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Para
             Block::default()
                 .borders(Borders::TOP)
                 .title(format!("{} ", area_title))
-                .title_style(Style::default().fg(Color::Green))
+                .title_style(Style::default().fg(title_color))
                 //.padding(Padding::new(1,0,0,0))
                 .style(Style::default()),
         )
