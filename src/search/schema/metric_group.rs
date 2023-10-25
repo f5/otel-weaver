@@ -2,7 +2,7 @@
 
 //! Utility functions to index and render metric groups.
 
-use ratatui::prelude::{Color, Line, Style};
+use ratatui::prelude::{Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use tantivy::{doc, IndexWriter};
@@ -11,8 +11,8 @@ use weaver_schema::metric_group::{Metric, MetricGroup};
 use weaver_schema::TelemetrySchema;
 
 use crate::search::schema::{attributes, tags};
-use crate::search::DocFields;
 use crate::search::theme::ThemeConfig;
+use crate::search::DocFields;
 
 /// Build index for metrics.
 pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut IndexWriter) {

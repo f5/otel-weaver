@@ -3,13 +3,13 @@
 //! Utility functions to index and render spans.
 
 use crate::search::schema::{attribute, attributes, tags};
+use crate::search::theme::ThemeConfig;
 use crate::search::DocFields;
-use ratatui::prelude::{Color, Line, Style};
+use ratatui::prelude::{Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use tantivy::{doc, IndexWriter};
 use weaver_schema::TelemetrySchema;
-use crate::search::theme::ThemeConfig;
 
 /// Build index for spans.
 pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut IndexWriter) {

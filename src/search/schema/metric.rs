@@ -2,7 +2,7 @@
 
 //! Utility functions to index and render metrics.
 
-use ratatui::prelude::{Color, Line, Style};
+use ratatui::prelude::{Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use tantivy::{doc, IndexWriter};
@@ -11,8 +11,8 @@ use weaver_schema::univariate_metric::UnivariateMetric;
 use weaver_schema::TelemetrySchema;
 
 use crate::search::schema::{attribute, attributes, tags};
-use crate::search::DocFields;
 use crate::search::theme::ThemeConfig;
+use crate::search::DocFields;
 
 /// Build index for semantic convention metrics.
 pub fn index_semconv_metrics<'a>(

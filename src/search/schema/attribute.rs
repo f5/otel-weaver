@@ -4,13 +4,13 @@
 
 use crate::search::schema::tags;
 use crate::search::semconv::examples;
+use crate::search::theme::ThemeConfig;
 use crate::search::DocFields;
-use ratatui::style::{Color, Style};
+use ratatui::style::Style;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::Paragraph;
 use tantivy::{doc, IndexWriter};
 use weaver_schema::attribute::Attribute;
-use crate::search::theme::ThemeConfig;
 
 /// Build index for semantic convention attributes.
 pub fn index_semconv_attributes<'a>(

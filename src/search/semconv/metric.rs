@@ -2,7 +2,7 @@
 
 //! Render semantic convention attributes.
 
-use ratatui::prelude::{Color, Line, Span, Style};
+use ratatui::prelude::{Line, Span, Style};
 use ratatui::widgets::Paragraph;
 
 use crate::search::theme::ThemeConfig;

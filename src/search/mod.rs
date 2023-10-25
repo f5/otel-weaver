@@ -23,8 +23,8 @@ use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema, STORED, TEXT};
 use tantivy::{Index, IndexWriter, ReloadPolicy};
-use tui_textarea::TextArea;
 use theme::ThemeConfig;
+use tui_textarea::TextArea;
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
@@ -283,7 +283,9 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         }
     });
 
-    let selected_style = Style::default().bg(Color::Rgb(106, 47, 47)).fg(app.theme.title);
+    let selected_style = Style::default()
+        .bg(Color::Rgb(106, 47, 47))
+        .fg(app.theme.title);
     let normal_style = Style::default();
     let header_cells = ["Path:", "Brief:"]
         .iter()
@@ -341,10 +343,7 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
     frame.render_widget(app.search_area.widget(), outer_layout[1]);
 }
 
-fn detail_area<'a>(
-    app: &'a SearchApp<'a>,
-    item: Option<&'a ResultItem>,
-) -> Paragraph<'a> {
+fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Paragraph<'a> {
     let mut area_title = "Details";
     let paragraph = if let Some(item) = item {
         let path = item.path.as_str().split('/').collect::<Vec<&str>>();
