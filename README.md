@@ -33,6 +33,25 @@ Below is a diagram detailing the primary components of the OTel Weaver tool.
 
 ![OTel Weaver Platform](docs/images/otel-weaver-platform.png)
 
+## Install
+
+Currently, there is no binary distribution available. To install the tool, you
+must build it from source. To do so, you need to have Rust installed on your
+system.
+
+To build the tool:
+- In debug mode, run the following command:
+  ```
+  cargo build
+  ```
+- In release mode, run the following command:
+  ```
+  cargo build --release
+  ```
+
+The generated `weaver` binary will be located in the `target/debug` directory
+for debug mode or the `target/release` directory for release mode.
+
 ## Usage
 
 ```
