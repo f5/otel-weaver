@@ -19,6 +19,7 @@ use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::Line;
 use ratatui::widgets::Cell;
 use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
+use ratatui::Frame;
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema, STORED, TEXT};
@@ -39,7 +40,6 @@ mod theme;
 
 type Err = Box<dyn std::error::Error>;
 type Result<T> = std::result::Result<T, Err>;
-pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<std::io::Stderr>>;
 
 /// Parameters for the `search` command
 #[derive(Parser)]
