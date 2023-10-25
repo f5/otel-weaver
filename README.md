@@ -182,13 +182,18 @@ in the search bar.
 - Should we support the equivalent of trace.SpanFromContext(context.TODO()) to get the current span? 
 
 ## Links
+
+Internal links:
+- [Internal crates interdependencies](docs/dependencies.md)
+- [Change log](CHANGELOG.md)
+
+External links:
 - [OpenTelemetry Semantic Convention File Format](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md)
 - [OpenTelemetry Schema File Format v1.1.0](https://opentelemetry.io/docs/specs/otel/schemas/file_format_v1.1.0/)
 - OpenTelemetry Telemetry Schema v1.2.0 [OTEP](https://github.com/lquerel/oteps/blob/main/text/0240-telemetry-schema-ext.md).
 - Presentation slides from the Semantic Convention SIG meeting on October 23, 2023 [here](https://docs.google.com/presentation/d/1nxt5VFlC1mUjZ8eecUYK4e4SxThpIVj1IRnIcodMsNI/edit?usp=sharing).
 - Meta/Facebook's [positional paper](https://research.facebook.com/publications/positional-paper-schema-first-application-telemetry/) 
   presenting a similar approach but based on Thrift+Annotations+Automations.
-- [Internal crates interdependencies](docs/dependencies.md)
 
 ## Contributing
 
