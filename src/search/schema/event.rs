@@ -3,7 +3,7 @@
 //! Utility functions to index and render events.
 
 use crate::search::schema::{attribute, attributes, tags};
-use crate::search::DocFields;
+use crate::search::{ColorConfig, DocFields};
 use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
@@ -33,32 +33,33 @@ pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut In
 pub fn widget<'a>(
     event: Option<&'a weaver_schema::event::Event>,
     provenance: &'a str,
+    colors: &'a ColorConfig,
 ) -> Paragraph<'a> {
     match event {
         Some(event) => {
             let mut text = vec![
                 Line::from(vec![
-                    Span::styled("Type      : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Type      : ", Style::default().fg(colors.label)),
                     Span::raw("Event (schema)"),
                 ]),
                 Line::from(vec![
-                    Span::styled("Name      : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Name      : ", Style::default().fg(colors.label)),
                     Span::raw(&event.event_name),
                 ]),
                 Line::from(vec![
-                    Span::styled("Domain    : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Domain    : ", Style::default().fg(colors.label)),
                     Span::raw(&event.domain),
                 ]),
             ];
 
-            attributes::append_lines(event.attributes.as_slice(), &mut text);
-            tags::append_lines(event.tags.as_ref(), &mut text);
+            attributes::append_lines(event.attributes.as_slice(), &mut text, colors);
+            tags::append_lines(event.tags.as_ref(), &mut text, colors);
 
             // Provenance
             text.push(Line::from(""));
             text.push(Line::from(Span::styled(
                 "Provenance: ",
-                Style::default().fg(Color::Yellow),
+                Style::default().fg(colors.label),
             )));
             text.push(Line::from(provenance));
 

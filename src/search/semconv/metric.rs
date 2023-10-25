@@ -5,24 +5,28 @@
 use ratatui::prelude::{Color, Line, Span, Style};
 use ratatui::widgets::Paragraph;
 
+use crate::search::ColorConfig;
 use weaver_semconv::MetricWithProvenance;
 
 use crate::search::semconv::attributes;
 
-pub fn widget(metric: Option<&MetricWithProvenance>) -> Paragraph {
+pub fn widget<'a>(
+    metric: Option<&'a MetricWithProvenance>,
+    colors: &'a ColorConfig,
+) -> Paragraph<'a> {
     match metric {
         Some(MetricWithProvenance { metric, provenance }) => {
             let mut text = vec![
                 Line::from(vec![
-                    Span::styled("Name      : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Name      : ", Style::default().fg(colors.label)),
                     Span::raw(metric.name.clone()),
                 ]),
                 Line::from(vec![
-                    Span::styled("Instrument: ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Instrument: ", Style::default().fg(colors.label)),
                     Span::raw(format!("{:?}", metric.instrument)),
                 ]),
                 Line::from(vec![
-                    Span::styled("Unit      : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Unit      : ", Style::default().fg(colors.label)),
                     Span::raw(metric.unit.clone().unwrap_or_default()),
                 ]),
             ];
@@ -32,7 +36,7 @@ pub fn widget(metric: Option<&MetricWithProvenance>) -> Paragraph {
                 text.push(Line::from(""));
                 text.push(Line::from(Span::styled(
                     "Brief     : ",
-                    Style::default().fg(Color::Yellow),
+                    Style::default().fg(colors.label),
                 )));
                 text.push(Line::from(metric.brief.as_str()));
             }
@@ -42,17 +46,17 @@ pub fn widget(metric: Option<&MetricWithProvenance>) -> Paragraph {
                 text.push(Line::from(""));
                 text.push(Line::from(Span::styled(
                     "Note      : ",
-                    Style::default().fg(Color::Yellow),
+                    Style::default().fg(colors.label),
                 )));
                 text.push(Line::from(metric.note.as_str()));
             }
 
-            attributes::append_lines(metric.attributes.as_slice(), &mut text);
+            attributes::append_lines(metric.attributes.as_slice(), &mut text, colors);
 
             // Provenance
             text.push(Line::from(""));
             text.push(Line::from(vec![
-                Span::styled("Provenance: ", Style::default().fg(Color::Yellow)),
+                Span::styled("Provenance: ", Style::default().fg(colors.label)),
                 Span::raw(provenance.to_string()),
             ]));
 

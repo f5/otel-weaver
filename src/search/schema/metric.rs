@@ -11,7 +11,7 @@ use weaver_schema::univariate_metric::UnivariateMetric;
 use weaver_schema::TelemetrySchema;
 
 use crate::search::schema::{attribute, attributes, tags};
-use crate::search::DocFields;
+use crate::search::{ColorConfig, DocFields};
 
 /// Build index for semantic convention metrics.
 pub fn index_semconv_metrics<'a>(
@@ -57,11 +57,15 @@ pub fn index_schema_metrics(
 }
 
 /// Render a metric details.
-pub fn widget<'a>(metric: Option<&'a UnivariateMetric>, provenance: &'a str) -> Paragraph<'a> {
+pub fn widget<'a>(
+    metric: Option<&'a UnivariateMetric>,
+    provenance: &'a str,
+    colors: &'a ColorConfig,
+) -> Paragraph<'a> {
     match metric {
         Some(metric) => {
             let mut text = vec![Line::from(vec![
-                Span::styled("Type      : ", Style::default().fg(Color::Yellow)),
+                Span::styled("Type      : ", Style::default().fg(colors.label)),
                 Span::raw("Metric (schema)"),
             ])];
 
@@ -76,39 +80,39 @@ pub fn widget<'a>(metric: Option<&'a UnivariateMetric>, provenance: &'a str) -> 
             } = metric
             {
                 text.push(Line::from(vec![
-                    Span::styled("Name      : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Name      : ", Style::default().fg(colors.label)),
                     Span::raw(name),
                 ]));
                 text.push(Line::from(vec![
-                    Span::styled("Brief     : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Brief     : ", Style::default().fg(colors.label)),
                     Span::raw(brief),
                 ]));
                 text.push(Line::from(vec![
-                    Span::styled("Note      : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Note      : ", Style::default().fg(colors.label)),
                     Span::raw(note),
                 ]));
 
                 text.push(Line::from(vec![
-                    Span::styled("Instrument: ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Instrument: ", Style::default().fg(colors.label)),
                     Span::raw(format!("{:?}", instrument)),
                 ]));
 
                 if let Some(unit) = unit {
                     text.push(Line::from(vec![
-                        Span::styled("Unit      : ", Style::default().fg(Color::Yellow)),
+                        Span::styled("Unit      : ", Style::default().fg(colors.label)),
                         Span::raw(unit),
                     ]));
                 }
 
-                attributes::append_lines(attributes.as_slice(), &mut text);
+                attributes::append_lines(attributes.as_slice(), &mut text, colors);
 
-                tags::append_lines(tags.as_ref(), &mut text);
+                tags::append_lines(tags.as_ref(), &mut text, colors);
 
                 // Provenance
                 text.push(Line::from(""));
                 text.push(Line::from(Span::styled(
                     "Provenance: ",
-                    Style::default().fg(Color::Yellow),
+                    Style::default().fg(colors.label),
                 )));
                 text.push(Line::from(provenance));
             }

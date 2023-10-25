@@ -2,14 +2,15 @@
 
 //! Render examples
 
-use ratatui::prelude::{Color, Line, Span, Style};
+use crate::search::ColorConfig;
+use ratatui::prelude::{Line, Span, Style};
 use weaver_semconv::attribute::Examples;
 
 /// Append examples to the text.
-pub fn append_lines(examples: &Examples, text: &mut Vec<Line>) {
+pub fn append_lines(examples: &Examples, text: &mut Vec<Line>, colors: &ColorConfig) {
     text.push(Line::from(Span::styled(
         "Examples: ",
-        Style::default().fg(Color::Yellow),
+        Style::default().fg(colors.label),
     )));
     match examples {
         Examples::Int(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),

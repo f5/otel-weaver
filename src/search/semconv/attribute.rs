@@ -5,12 +5,16 @@
 use ratatui::prelude::{Color, Line, Span, Style};
 use ratatui::widgets::Paragraph;
 
+use crate::search::ColorConfig;
 use weaver_semconv::attribute::Attribute;
 use weaver_semconv::AttributeWithProvenance;
 
 use crate::search::semconv::examples;
 
-pub fn widget(attribute: Option<&AttributeWithProvenance>) -> Paragraph {
+pub fn widget<'a>(
+    attribute: Option<&'a AttributeWithProvenance>,
+    colors: &'a ColorConfig,
+) -> Paragraph<'a> {
     match attribute.as_ref() {
         Some(AttributeWithProvenance {
             attribute:
@@ -30,11 +34,11 @@ pub fn widget(attribute: Option<&AttributeWithProvenance>) -> Paragraph {
         }) => {
             let mut text = vec![
                 Line::from(vec![
-                    Span::styled("Id   : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Id   : ", Style::default().fg(colors.label)),
                     Span::raw(id),
                 ]),
                 Line::from(vec![
-                    Span::styled("Type : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Type : ", Style::default().fg(colors.label)),
                     Span::raw(format!("{}", r#type)),
                 ]),
             ];
@@ -42,7 +46,7 @@ pub fn widget(attribute: Option<&AttributeWithProvenance>) -> Paragraph {
             // Tag
             if let Some(tag) = tag {
                 text.push(Line::from(vec![
-                    Span::styled("Tag  : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Tag  : ", Style::default().fg(colors.label)),
                     Span::raw(tag),
                 ]));
             }
@@ -52,7 +56,7 @@ pub fn widget(attribute: Option<&AttributeWithProvenance>) -> Paragraph {
                 text.push(Line::from(""));
                 text.push(Line::from(Span::styled(
                     "Brief: ",
-                    Style::default().fg(Color::Yellow),
+                    Style::default().fg(colors.label),
                 )));
                 text.push(Line::from(brief.as_str()));
             }
@@ -62,7 +66,7 @@ pub fn widget(attribute: Option<&AttributeWithProvenance>) -> Paragraph {
                 text.push(Line::from(""));
                 text.push(Line::from(Span::styled(
                     "Note : ",
-                    Style::default().fg(Color::Yellow),
+                    Style::default().fg(colors.label),
                 )));
                 text.push(Line::from(note.as_str()));
             }
@@ -70,40 +74,40 @@ pub fn widget(attribute: Option<&AttributeWithProvenance>) -> Paragraph {
             // Requirement Level
             text.push(Line::from(""));
             text.push(Line::from(vec![
-                Span::styled("Requirement Level: ", Style::default().fg(Color::Yellow)),
+                Span::styled("Requirement Level: ", Style::default().fg(colors.label)),
                 Span::raw(format!("{}", requirement_level)),
             ]));
 
             if let Some(sampling_relevant) = sampling_relevant {
                 text.push(Line::from(vec![
-                    Span::styled("Sampling Relevant: ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Sampling Relevant: ", Style::default().fg(colors.label)),
                     Span::raw(sampling_relevant.to_string()),
                 ]));
             }
 
             if let Some(stability) = stability {
                 text.push(Line::from(vec![
-                    Span::styled("Stability: ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Stability: ", Style::default().fg(colors.label)),
                     Span::raw(format!("{}", stability)),
                 ]));
             }
 
             if let Some(deprecated) = deprecated {
                 text.push(Line::from(vec![
-                    Span::styled("Deprecated: ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Deprecated: ", Style::default().fg(colors.label)),
                     Span::raw(deprecated.to_string()),
                 ]));
             }
 
             if let Some(examples) = examples {
-                examples::append_lines(examples, &mut text);
+                examples::append_lines(examples, &mut text, colors);
             }
 
             // Provenance
             text.push(Line::from(""));
             text.push(Line::from(Span::styled(
                 "Provenance: ",
-                Style::default().fg(Color::Yellow),
+                Style::default().fg(colors.label),
             )));
             text.push(Line::from(provenance.as_str()));
 

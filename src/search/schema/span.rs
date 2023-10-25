@@ -3,7 +3,7 @@
 //! Utility functions to index and render spans.
 
 use crate::search::schema::{attribute, attributes, tags};
-use crate::search::DocFields;
+use crate::search::{ColorConfig, DocFields};
 use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
@@ -48,33 +48,34 @@ pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut In
 pub fn widget<'a>(
     span: Option<&'a weaver_schema::span::Span>,
     provenance: &'a str,
+    colors: &'a ColorConfig,
 ) -> Paragraph<'a> {
     match span {
         Some(span) => {
             let mut text = vec![
                 Line::from(vec![
-                    Span::styled("Type      : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Type      : ", Style::default().fg(colors.label)),
                     Span::raw("Span (schema)"),
                 ]),
                 Line::from(vec![
-                    Span::styled("Name      : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Name      : ", Style::default().fg(colors.label)),
                     Span::raw(&span.span_name),
                 ]),
             ];
 
             if let Some(kind) = span.kind.as_ref() {
                 text.push(Line::from(vec![
-                    Span::styled("Kind      : ", Style::default().fg(Color::Yellow)),
+                    Span::styled("Kind      : ", Style::default().fg(colors.label)),
                     Span::raw(format!("{:?}", kind)),
                 ]));
             }
 
-            attributes::append_lines(span.attributes.as_slice(), &mut text);
+            attributes::append_lines(span.attributes.as_slice(), &mut text, colors);
 
             if !span.events.is_empty() {
                 text.push(Line::from(Span::styled(
                     "Events    : ",
-                    Style::default().fg(Color::Yellow),
+                    Style::default().fg(colors.label),
                 )));
                 for event in span.events.iter() {
                     text.push(Line::from(Span::raw(format!("- {} ", event.event_name))));
@@ -84,20 +85,20 @@ pub fn widget<'a>(
             if !span.links.is_empty() {
                 text.push(Line::from(Span::styled(
                     "Links     : ",
-                    Style::default().fg(Color::Yellow),
+                    Style::default().fg(colors.label),
                 )));
                 for link in span.links.iter() {
                     text.push(Line::from(Span::raw(format!("- {} ", link.link_name))));
                 }
             }
 
-            tags::append_lines(span.tags.as_ref(), &mut text);
+            tags::append_lines(span.tags.as_ref(), &mut text, colors);
 
             // Provenance
             text.push(Line::from(""));
             text.push(Line::from(Span::styled(
                 "Provenance: ",
-                Style::default().fg(Color::Yellow),
+                Style::default().fg(colors.label),
             )));
             text.push(Line::from(provenance));
 

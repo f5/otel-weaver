@@ -2,18 +2,19 @@
 
 //! Tags rendering.
 
-use ratatui::prelude::{Color, Line, Span, Style};
+use crate::search::ColorConfig;
+use ratatui::prelude::{Line, Span, Style};
 use weaver_schema::tags::Tags;
 
 /// Append tags to the text.
-pub fn append_lines(tags: Option<&Tags>, text: &mut Vec<Line>) {
+pub fn append_lines<'a>(tags: Option<&'a Tags>, text: &mut Vec<Line>, colors: &'a ColorConfig) {
     if let Some(tags) = tags {
         if tags.is_empty() {
             return;
         }
         text.push(Line::from(Span::styled(
             "Tags      : ",
-            Style::default().fg(Color::Yellow),
+            Style::default().fg(colors.label),
         )));
         for (k, v) in tags.iter() {
             text.push(Line::from(Span::raw(format!("  - {}={} ", k, v))));

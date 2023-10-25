@@ -6,23 +6,23 @@ use std::io;
 use std::path::PathBuf;
 
 use clap::Parser;
+use crossterm::event::DisableMouseCapture;
+use crossterm::event::EnableMouseCapture;
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use crossterm::event::DisableMouseCapture;
-use crossterm::event::EnableMouseCapture;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::Line;
-use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
 use ratatui::widgets::Cell;
-use tantivy::{Index, IndexWriter, ReloadPolicy};
+use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema, STORED, TEXT};
+use tantivy::{Index, IndexWriter, ReloadPolicy};
 use tui_textarea::TextArea;
 
 use weaver_logger::Logger;
@@ -58,6 +58,13 @@ pub struct SearchApp<'a> {
     current_query: Option<String>,
 
     should_quit: bool,
+
+    colors: ColorConfig,
+}
+
+/// Color configurations
+pub struct ColorConfig {
+    label: Color,
 }
 
 /// A result item
@@ -187,7 +194,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
     search_area.set_block(
         Block::default()
             .borders(Borders::TOP)
-            .border_style(Style::default().fg(Color::Rgb(85,109,89)))
+            .border_style(Style::default().fg(Color::Rgb(85, 109, 89)))
             .title("Search (press `Esc` or `Ctrl-C` to stop running) ")
             .title_style(Style::default().fg(Color::Rgb(238, 238, 238))),
     );
@@ -201,6 +208,9 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
         query_parser,
         current_query: None,
         should_quit: false,
+        colors: ColorConfig {
+            label: Color::Rgb(128, 208, 163),
+        },
     };
 
     search_tui(&mut app).unwrap_or_else(|e| {
@@ -272,13 +282,11 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
     });
 
     let title_color = Color::Rgb(238, 238, 238);
-    let selected_style = Style::default()
-        .bg(Color::Rgb(106, 47, 47))
-        .fg(title_color.clone());
+    let selected_style = Style::default().bg(Color::Rgb(106, 47, 47)).fg(title_color);
     let normal_style = Style::default();
     let header_cells = ["Path:", "Brief:"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(title_color.clone())));
+        .map(|h| Cell::from(*h).style(Style::default().fg(title_color)));
     let header = Row::new(header_cells)
         .style(normal_style)
         .height(1)
@@ -302,18 +310,19 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         .split(frame.size());
 
     let inner_layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
         .split(outer_layout[0]);
 
     let content = Table::new(rows)
         .header(header)
         .block(
             Block::default()
-                .borders(Borders::TOP.union(Borders::RIGHT))
-                .border_style(Style::default().fg(Color::Rgb(85,109,89)))
+                //.borders(Borders::TOP.union(Borders::RIGHT))
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Rgb(85, 109, 89)))
                 .title("Search results ")
-                .title_style(Style::default().fg(title_color.clone())),
+                .title_style(Style::default().fg(title_color)),
         )
         .highlight_style(selected_style)
         .highlight_symbol(">> ")
@@ -331,7 +340,11 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
     frame.render_widget(app.search_area.widget(), outer_layout[1]);
 }
 
-fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>, title_color: Color) -> Paragraph<'a> {
+fn detail_area<'a>(
+    app: &'a SearchApp<'a>,
+    item: Option<&'a ResultItem>,
+    title_color: Color,
+) -> Paragraph<'a> {
     let mut area_title = "Details";
     let paragraph = if let Some(item) = item {
         let path = item.path.as_str().split('/').collect::<Vec<&str>>();
@@ -343,6 +356,7 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>, title_c
                     app.schema
                         .semantic_convention_catalog()
                         .attribute_with_provenance(id),
+                    &app.colors,
                 )
             }
             ["semconv", "metric", id] => {
@@ -351,6 +365,7 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>, title_c
                     app.schema
                         .semantic_convention_catalog()
                         .metric_with_provenance(id),
+                    &app.colors,
                 )
             }
             ["schema", "resource", "attr", attr_id] => {
@@ -365,6 +380,7 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>, title_c
                             }
                         }),
                         app.schema.schema_url.as_str(),
+                        &app.colors,
                     )
                 } else {
                     Paragraph::new(vec![Line::default()])
@@ -372,7 +388,11 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>, title_c
             }
             ["schema", "metric", id] => {
                 area_title = "Schema Metric";
-                metric::widget(app.schema.metric(id), app.schema.schema_url.as_str())
+                metric::widget(
+                    app.schema.metric(id),
+                    app.schema.schema_url.as_str(),
+                    &app.colors,
+                )
             }
             ["schema", "metric", metric_id, "attr", attr_id] => {
                 area_title = "Schema Metric Attribute";
@@ -383,11 +403,16 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>, title_c
                         .flat_map(|m| m.attribute(attr_id))
                         .next(),
                     app.schema.schema_url.as_str(),
+                    &app.colors,
                 )
             }
             ["schema", "metric_group", id] => {
                 area_title = "Schema Metric Group";
-                metric_group::widget(app.schema.metric_group(id), app.schema.schema_url.as_str())
+                metric_group::widget(
+                    app.schema.metric_group(id),
+                    app.schema.schema_url.as_str(),
+                    &app.colors,
+                )
             }
             ["schema", "metric_group", metric_group_id, "attr", attr_id] => {
                 area_title = "Schema Metric Group";
@@ -398,11 +423,16 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>, title_c
                         .flat_map(|m| m.attribute(attr_id))
                         .next(),
                     app.schema.schema_url.as_str(),
+                    &app.colors,
                 )
             }
             ["schema", "event", id] => {
                 area_title = "Schema Event";
-                schema::event::widget(app.schema.event(id), app.schema.schema_url.as_str())
+                schema::event::widget(
+                    app.schema.event(id),
+                    app.schema.schema_url.as_str(),
+                    &app.colors,
+                )
             }
             ["schema", "event", event_id, "attr", attr_id] => {
                 area_title = "Schema Event Attribute";
@@ -413,11 +443,16 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>, title_c
                         .flat_map(|m| m.attribute(attr_id))
                         .next(),
                     app.schema.schema_url.as_str(),
+                    &app.colors,
                 )
             }
             ["schema", "span", id] => {
                 area_title = "Schema Span";
-                span::widget(app.schema.span(id), app.schema.schema_url.as_str())
+                span::widget(
+                    app.schema.span(id),
+                    app.schema.schema_url.as_str(),
+                    &app.colors,
+                )
             }
             ["schema", "span", span_id, "attr", attr_id] => {
                 area_title = "Schema Span Attribute";
@@ -428,6 +463,7 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>, title_c
                         .flat_map(|m| m.attribute(attr_id))
                         .next(),
                     app.schema.schema_url.as_str(),
+                    &app.colors,
                 )
             }
             _ => Paragraph::new(vec![Line::default()]),
@@ -439,7 +475,8 @@ fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>, title_c
     paragraph
         .block(
             Block::default()
-                .borders(Borders::TOP)
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Rgb(85, 109, 89)))
                 .title(format!("{} ", area_title))
                 .title_style(Style::default().fg(title_color))
                 //.padding(Padding::new(1,0,0,0))
