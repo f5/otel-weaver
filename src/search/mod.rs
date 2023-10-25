@@ -24,6 +24,7 @@ use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema, STORED, TEXT};
 use tantivy::{Index, IndexWriter, ReloadPolicy};
 use tui_textarea::TextArea;
+use theme::ThemeConfig;
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
@@ -34,6 +35,7 @@ use crate::search::schema::{attribute, metric, metric_group, resource, span};
 
 mod schema;
 mod semconv;
+mod theme;
 
 type Err = Box<dyn std::error::Error>;
 type Result<T> = std::result::Result<T, Err>;
@@ -59,12 +61,7 @@ pub struct SearchApp<'a> {
 
     should_quit: bool,
 
-    colors: ColorConfig,
-}
-
-/// Color configurations
-pub struct ColorConfig {
-    label: Color,
+    theme: ThemeConfig,
 }
 
 /// A result item
@@ -190,13 +187,20 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
     let DocFields { path, brief, note } = fields;
     let query_parser = QueryParser::for_index(&index, vec![path, brief, note]);
 
+    let theme = ThemeConfig {
+        title: Color::Rgb(238, 238, 238),
+        border: Color::Rgb(85, 109, 89),
+        label: Color::Rgb(128, 208, 163),
+        value: Color::Rgb(204, 204, 204),
+    };
+
     let mut search_area = TextArea::default();
     search_area.set_block(
         Block::default()
             .borders(Borders::TOP)
-            .border_style(Style::default().fg(Color::Rgb(85, 109, 89)))
+            .border_style(Style::default().fg(theme.border))
             .title("Search (press `Esc` or `Ctrl-C` to stop running) ")
-            .title_style(Style::default().fg(Color::Rgb(238, 238, 238))),
+            .title_style(Style::default().fg(theme.title)),
     );
 
     // application state
@@ -208,9 +212,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
         query_parser,
         current_query: None,
         should_quit: false,
-        colors: ColorConfig {
-            label: Color::Rgb(128, 208, 163),
-        },
+        theme,
     };
 
     search_tui(&mut app).unwrap_or_else(|e| {
@@ -281,12 +283,11 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         }
     });
 
-    let title_color = Color::Rgb(238, 238, 238);
-    let selected_style = Style::default().bg(Color::Rgb(106, 47, 47)).fg(title_color);
+    let selected_style = Style::default().bg(Color::Rgb(106, 47, 47)).fg(app.theme.title);
     let normal_style = Style::default();
     let header_cells = ["Path:", "Brief:"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(title_color)));
+        .map(|h| Cell::from(*h).style(Style::default().fg(app.theme.title)));
     let header = Row::new(header_cells)
         .style(normal_style)
         .height(1)
@@ -297,8 +298,8 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         .iter()
         .map(|item| {
             let cells = vec![
-                Cell::from(item.path.clone()).fg(Color::Rgb(128, 208, 163)),
-                Cell::from(item.brief.clone()).fg(Color::Rgb(204, 204, 204)),
+                Cell::from(item.path.clone()).fg(app.theme.label),
+                Cell::from(item.brief.clone()).fg(app.theme.value),
             ];
             Row::new(cells).height(1).bottom_margin(0)
         })
@@ -320,9 +321,9 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
             Block::default()
                 //.borders(Borders::TOP.union(Borders::RIGHT))
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Rgb(85, 109, 89)))
+                .border_style(Style::default().fg(app.theme.border))
                 .title("Search results ")
-                .title_style(Style::default().fg(title_color)),
+                .title_style(Style::default().fg(app.theme.value)),
         )
         .highlight_style(selected_style)
         .highlight_symbol(">> ")
@@ -335,7 +336,7 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         Some(i) => app.results.items.get(i),
         None => None,
     };
-    frame.render_widget(detail_area(app, item, title_color), inner_layout[1]);
+    frame.render_widget(detail_area(app, item), inner_layout[1]);
 
     frame.render_widget(app.search_area.widget(), outer_layout[1]);
 }
@@ -343,7 +344,6 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
 fn detail_area<'a>(
     app: &'a SearchApp<'a>,
     item: Option<&'a ResultItem>,
-    title_color: Color,
 ) -> Paragraph<'a> {
     let mut area_title = "Details";
     let paragraph = if let Some(item) = item {
@@ -356,7 +356,7 @@ fn detail_area<'a>(
                     app.schema
                         .semantic_convention_catalog()
                         .attribute_with_provenance(id),
-                    &app.colors,
+                    &app.theme,
                 )
             }
             ["semconv", "metric", id] => {
@@ -365,7 +365,7 @@ fn detail_area<'a>(
                     app.schema
                         .semantic_convention_catalog()
                         .metric_with_provenance(id),
-                    &app.colors,
+                    &app.theme,
                 )
             }
             ["schema", "resource", "attr", attr_id] => {
@@ -380,7 +380,7 @@ fn detail_area<'a>(
                             }
                         }),
                         app.schema.schema_url.as_str(),
-                        &app.colors,
+                        &app.theme,
                     )
                 } else {
                     Paragraph::new(vec![Line::default()])
@@ -391,7 +391,7 @@ fn detail_area<'a>(
                 metric::widget(
                     app.schema.metric(id),
                     app.schema.schema_url.as_str(),
-                    &app.colors,
+                    &app.theme,
                 )
             }
             ["schema", "metric", metric_id, "attr", attr_id] => {
@@ -403,7 +403,7 @@ fn detail_area<'a>(
                         .flat_map(|m| m.attribute(attr_id))
                         .next(),
                     app.schema.schema_url.as_str(),
-                    &app.colors,
+                    &app.theme,
                 )
             }
             ["schema", "metric_group", id] => {
@@ -411,7 +411,7 @@ fn detail_area<'a>(
                 metric_group::widget(
                     app.schema.metric_group(id),
                     app.schema.schema_url.as_str(),
-                    &app.colors,
+                    &app.theme,
                 )
             }
             ["schema", "metric_group", metric_group_id, "attr", attr_id] => {
@@ -423,7 +423,7 @@ fn detail_area<'a>(
                         .flat_map(|m| m.attribute(attr_id))
                         .next(),
                     app.schema.schema_url.as_str(),
-                    &app.colors,
+                    &app.theme,
                 )
             }
             ["schema", "event", id] => {
@@ -431,7 +431,7 @@ fn detail_area<'a>(
                 schema::event::widget(
                     app.schema.event(id),
                     app.schema.schema_url.as_str(),
-                    &app.colors,
+                    &app.theme,
                 )
             }
             ["schema", "event", event_id, "attr", attr_id] => {
@@ -443,7 +443,7 @@ fn detail_area<'a>(
                         .flat_map(|m| m.attribute(attr_id))
                         .next(),
                     app.schema.schema_url.as_str(),
-                    &app.colors,
+                    &app.theme,
                 )
             }
             ["schema", "span", id] => {
@@ -451,7 +451,7 @@ fn detail_area<'a>(
                 span::widget(
                     app.schema.span(id),
                     app.schema.schema_url.as_str(),
-                    &app.colors,
+                    &app.theme,
                 )
             }
             ["schema", "span", span_id, "attr", attr_id] => {
@@ -463,7 +463,7 @@ fn detail_area<'a>(
                         .flat_map(|m| m.attribute(attr_id))
                         .next(),
                     app.schema.schema_url.as_str(),
-                    &app.colors,
+                    &app.theme,
                 )
             }
             _ => Paragraph::new(vec![Line::default()]),
@@ -476,9 +476,9 @@ fn detail_area<'a>(
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Rgb(85, 109, 89)))
+                .border_style(Style::default().fg(app.theme.border))
                 .title(format!("{} ", area_title))
-                .title_style(Style::default().fg(title_color))
+                .title_style(Style::default().fg(app.theme.title))
                 //.padding(Padding::new(1,0,0,0))
                 .style(Style::default()),
         )

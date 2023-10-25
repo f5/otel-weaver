@@ -11,7 +11,8 @@ use weaver_schema::metric_group::{Metric, MetricGroup};
 use weaver_schema::TelemetrySchema;
 
 use crate::search::schema::{attributes, tags};
-use crate::search::{ColorConfig, DocFields};
+use crate::search::DocFields;
+use crate::search::theme::ThemeConfig;
 
 /// Build index for metrics.
 pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut IndexWriter) {
@@ -30,26 +31,26 @@ pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut In
 pub fn widget<'a>(
     metric_group: Option<&'a MetricGroup>,
     provenance: &'a str,
-    colors: &'a ColorConfig,
+    theme: &'a ThemeConfig,
 ) -> Paragraph<'a> {
     match metric_group {
         Some(metric_group) => {
             let mut text = vec![Line::from(vec![
-                Span::styled("Type      : ", Style::default().fg(colors.label)),
+                Span::styled("Type      : ", Style::default().fg(theme.label)),
                 Span::raw("Metric Group (schema)"),
             ])];
 
             text.push(Line::from(vec![
-                Span::styled("Name      : ", Style::default().fg(colors.label)),
+                Span::styled("Name      : ", Style::default().fg(theme.label)),
                 Span::raw(metric_group.name.clone()),
             ]));
 
-            attributes::append_lines(metric_group.attributes.as_slice(), &mut text, colors);
+            attributes::append_lines(metric_group.attributes.as_slice(), &mut text, theme);
 
             if !metric_group.metrics.is_empty() {
                 text.push(Line::from(Span::styled(
                     "Metrics   : ",
-                    Style::default().fg(colors.label),
+                    Style::default().fg(theme.label),
                 )));
                 for metric in metric_group.metrics.iter() {
                     if let Metric::Metric {
@@ -84,17 +85,17 @@ pub fn widget<'a>(
                 }
             }
 
-            tags::append_lines(metric_group.tags.as_ref(), &mut text, colors);
+            tags::append_lines(metric_group.tags.as_ref(), &mut text, theme);
 
             // Provenance
             text.push(Line::from(""));
             text.push(Line::from(Span::styled(
                 "Provenance: ",
-                Style::default().fg(colors.label),
+                Style::default().fg(theme.label),
             )));
             text.push(Line::from(provenance));
 
-            Paragraph::new(text).style(Style::default().fg(Color::Gray))
+            Paragraph::new(text).style(Style::default().fg(theme.value))
         }
         None => Paragraph::new(vec![Line::default()]),
     }

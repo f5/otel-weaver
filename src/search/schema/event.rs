@@ -3,12 +3,13 @@
 //! Utility functions to index and render events.
 
 use crate::search::schema::{attribute, attributes, tags};
-use crate::search::{ColorConfig, DocFields};
+use crate::search::DocFields;
 use ratatui::prelude::{Color, Line, Style};
 use ratatui::text::Span;
 use ratatui::widgets::Paragraph;
 use tantivy::{doc, IndexWriter};
 use weaver_schema::TelemetrySchema;
+use crate::search::theme::ThemeConfig;
 
 /// Build index for events.
 pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut IndexWriter) {
@@ -33,37 +34,37 @@ pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut In
 pub fn widget<'a>(
     event: Option<&'a weaver_schema::event::Event>,
     provenance: &'a str,
-    colors: &'a ColorConfig,
+    theme: &'a ThemeConfig,
 ) -> Paragraph<'a> {
     match event {
         Some(event) => {
             let mut text = vec![
                 Line::from(vec![
-                    Span::styled("Type      : ", Style::default().fg(colors.label)),
+                    Span::styled("Type      : ", Style::default().fg(theme.label)),
                     Span::raw("Event (schema)"),
                 ]),
                 Line::from(vec![
-                    Span::styled("Name      : ", Style::default().fg(colors.label)),
+                    Span::styled("Name      : ", Style::default().fg(theme.label)),
                     Span::raw(&event.event_name),
                 ]),
                 Line::from(vec![
-                    Span::styled("Domain    : ", Style::default().fg(colors.label)),
+                    Span::styled("Domain    : ", Style::default().fg(theme.label)),
                     Span::raw(&event.domain),
                 ]),
             ];
 
-            attributes::append_lines(event.attributes.as_slice(), &mut text, colors);
-            tags::append_lines(event.tags.as_ref(), &mut text, colors);
+            attributes::append_lines(event.attributes.as_slice(), &mut text, theme);
+            tags::append_lines(event.tags.as_ref(), &mut text, theme);
 
             // Provenance
             text.push(Line::from(""));
             text.push(Line::from(Span::styled(
                 "Provenance: ",
-                Style::default().fg(colors.label),
+                Style::default().fg(theme.label),
             )));
             text.push(Line::from(provenance));
 
-            Paragraph::new(text).style(Style::default().fg(Color::Gray))
+            Paragraph::new(text).style(Style::default().fg(theme.value))
         }
         None => Paragraph::new(vec![Line::default()]),
     }

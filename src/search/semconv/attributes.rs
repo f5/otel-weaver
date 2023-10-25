@@ -2,17 +2,17 @@
 
 //! Attribute rendering.
 
-use crate::search::ColorConfig;
+use crate::search::theme::ThemeConfig;
 use ratatui::style::Style;
 use ratatui::text::{Line, Span};
 use weaver_semconv::attribute::{Attribute, BasicRequirementLevel, RequirementLevel};
 
 /// Append attributes to the text.
-pub fn append_lines(attributes: &[Attribute], text: &mut Vec<Line>, colors: &ColorConfig) {
+pub fn append_lines(attributes: &[Attribute], text: &mut Vec<Line>, theme: &ThemeConfig) {
     if !attributes.is_empty() {
         text.push(Line::from(Span::styled(
             "Attributes: ",
-            Style::default().fg(colors.label),
+            Style::default().fg(theme.label),
         )));
         for attr in attributes.iter() {
             if let Attribute::Id {
