@@ -1,7 +1,6 @@
 use clap::Parser;
 
-use weaver_logger::{ConsoleLogger, Logger};
-use weaver_cache::Cache;
+use weaver_logger::ConsoleLogger;
 
 use crate::cli::{Cli, Commands};
 use crate::gen_client_api::command_gen_client_api;

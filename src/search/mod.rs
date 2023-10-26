@@ -26,6 +26,7 @@ use tantivy::schema::{Field, Schema, STORED, TEXT};
 use tantivy::{Index, IndexWriter, ReloadPolicy};
 use theme::ThemeConfig;
 use tui_textarea::TextArea;
+use weaver_cache::Cache;
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
@@ -137,6 +138,10 @@ impl StatefulResults {
 
 /// Search for attributes and metrics in a schema file
 pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
+    let _cache = Cache::try_new().unwrap_or_else(|e| {
+        log.error(&e.to_string());
+        std::process::exit(1);
+    });
     let schema = SchemaResolver::resolve_schema_file(params.schema.clone(), log.clone())
         .unwrap_or_else(|e| {
             log.error(&format!("{}", e));
