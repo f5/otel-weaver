@@ -141,6 +141,10 @@ pub struct MetricWithProvenance {
 /// specifications indexed by group id.
 #[derive(Default, Debug)]
 pub struct SemConvCatalog {
+    /// The number of semantic convention assets added in the catalog.
+    /// A asset can be a semantic convention loaded from a file or an URL.
+    asset_count: usize,
+
     /// A collection of semantic convention specifications loaded in the catalog.
     specs: Vec<(String, SemConvSpec)>,
 
@@ -258,7 +262,23 @@ impl SemConvCatalog {
         Ok(())
     }
 
-    /// Downloads and returns the semantic convention spec from an URL or an error.
+    /// Loads and returns the semantic convention spec from a file.
+    pub fn load_sem_conv_spec_from_file(
+        sem_conv_path: &Path,
+    ) -> Result<(String, SemConvSpec), Error> {
+        let spec = SemConvSpec::load_from_file(sem_conv_path)?;
+        if let Err(e) = spec.validate() {
+            return Err(Error::InvalidCatalog {
+                path_or_url: sem_conv_path.display().to_string(),
+                line: None,
+                column: None,
+                error: e.to_string(),
+            });
+        }
+        Ok((sem_conv_path.display().to_string(), spec))
+    }
+
+    /// Downloads and returns the semantic convention spec from an URL.
     pub fn load_sem_conv_spec_from_url(sem_conv_url: &str) -> Result<(String, SemConvSpec), Error> {
         let spec = SemConvSpec::load_from_url(sem_conv_url)?;
         if let Err(e) = spec.validate() {
@@ -272,6 +292,11 @@ impl SemConvCatalog {
         Ok((sem_conv_url.to_string(), spec))
     }
 
+    /// Returns the number of semantic convention assets added in the catalog.
+    pub fn asset_count(&self) -> usize {
+        self.asset_count
+    }
+
     /// Append a list of semantic convention specs to the catalog.
     pub fn append_sem_conv_specs(&mut self, specs: Vec<(String, SemConvSpec)>) {
         self.specs.extend(specs);
@@ -280,6 +305,7 @@ impl SemConvCatalog {
     /// Append a semantic convention spec to the catalog.
     pub fn append_sem_conv_spec(&mut self, spec: (String, SemConvSpec)) {
         self.specs.push(spec);
+        self.asset_count += 1;
     }
 
     /// Resolves all the references present in the semantic convention catalog.

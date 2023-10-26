@@ -12,10 +12,11 @@ weaver_logger = {  path = "../weaver_logger" }
 weaver_semconv = { path = "../weaver_semconv" }
 weaver_schema = { path = "../weaver_schema" }
 weaver_version = { path = "../weaver_version" }
+weaver_cache = { path = "../weaver_cache" }
 
 regex.workspace = true
 thiserror.workspace = true
 rayon.workspace = true
 
 url = "2.4.1"
-
+walkdir = "2.4.0"

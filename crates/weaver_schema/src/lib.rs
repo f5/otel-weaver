@@ -118,9 +118,21 @@ pub struct TelemetrySchema {
 /// A semantic convention import.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct SemConvImport {
-    /// The URL of the semantic convention.
-    pub url: String,
+#[serde(untagged)]
+pub enum SemConvImport {
+    /// Variant to import a semantic convention from a URL.
+    Url {
+        /// The URL of the semantic convention.
+        url: String,
+    },
+    /// Variant to import semantic conventions from a git repo.
+    GitUrl {
+        /// The git URL of the semantic convention git repo.
+        git_url: String,
+        /// An optional path to the semantic convention directory containing
+        /// the semantic convention files.
+        path: Option<String>,
+    },
 }
 
 impl TelemetrySchema {

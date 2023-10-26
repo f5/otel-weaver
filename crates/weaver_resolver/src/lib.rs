@@ -9,12 +9,15 @@
 use std::path::Path;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering::Relaxed;
+use std::time::Instant;
 
 use rayon::iter::IntoParallelRefIterator;
 use rayon::iter::ParallelIterator;
 use regex::Regex;
 use url::Url;
+use walkdir::DirEntry;
 
+use weaver_cache::Cache;
 use weaver_logger::Logger;
 use weaver_schema::{SemConvImport, TelemetrySchema};
 use weaver_semconv::{ResolverConfig, SemConvCatalog, SemConvSpec};
@@ -56,8 +59,11 @@ pub enum Error {
     },
 
     /// A semantic convention error.
-    #[error("Semantic convention error (error: {0:?})")]
-    SemConvError(weaver_semconv::Error),
+    #[error("Semantic convention error: {message}")]
+    SemConvError {
+        /// The error that occurred.
+        message: String,
+    },
 
     /// Failed to resolve an attribute.
     #[error("Failed to resolve the attribute '{id}'")]
@@ -91,10 +97,12 @@ impl SchemaResolver {
     /// Loads a telemetry schema file and returns the resolved schema.
     pub fn resolve_schema_file<P: AsRef<Path> + Clone>(
         schema_path: P,
+        cache: &Cache,
         log: impl Logger + Clone + Sync,
     ) -> Result<TelemetrySchema, Error> {
         let mut schema = Self::load_schema_from_path(schema_path.clone(), log.clone())?;
-        let sem_conv_catalog = Self::semantic_catalog_from_schema(&schema, log.clone())?;
+        let sem_conv_catalog = Self::semantic_catalog_from_schema(&schema, cache, log.clone())?;
+        let start = Instant::now();
 
         // Merges the versions of the parent schema into the current schema.
         schema.merge_versions();
@@ -121,8 +129,9 @@ impl SchemaResolver {
             resolve_spans(schema, &sem_conv_catalog, version_changes)?;
         }
         log.success(&format!(
-            "Resolved schema '{}'",
-            schema_path.as_ref().display()
+            "Resolved schema '{}' ({:.2}s)",
+            schema_path.as_ref().display(),
+            start.elapsed().as_secs_f32()
         ));
 
         schema.semantic_conventions.clear();
@@ -136,6 +145,7 @@ impl SchemaResolver {
         schema_path: P,
         log: impl Logger + Clone + Sync,
     ) -> Result<TelemetrySchema, Error> {
+        let start = Instant::now();
         log.loading(&format!(
             "Loading schema '{}'",
             schema_path.as_ref().display()
@@ -149,8 +159,9 @@ impl SchemaResolver {
             Error::TelemetrySchemaError(e)
         })?;
         log.success(&format!(
-            "Loaded schema '{}'",
-            schema_path.as_ref().display()
+            "Loaded schema '{}' ({:.2}s)",
+            schema_path.as_ref().display(),
+            start.elapsed().as_secs_f32()
         ));
 
         let parent_schema = Self::load_parent_schema(&schema, log.clone())?;
@@ -161,19 +172,24 @@ impl SchemaResolver {
     /// Loads a semantic convention catalog from the given schema path.
     pub fn semantic_catalog_from_schema(
         schema: &TelemetrySchema,
+        cache: &Cache,
         log: impl Logger + Clone + Sync,
     ) -> Result<SemConvCatalog, Error> {
+        let start = Instant::now();
         let semantic_conventions = schema.merged_semantic_conventions();
         let mut sem_conv_catalog =
-            Self::create_semantic_convention_catalog(&semantic_conventions, log.clone())?;
+            Self::create_semantic_convention_catalog(&semantic_conventions, cache, log.clone())?;
         let _ = sem_conv_catalog
             .resolve(ResolverConfig::default())
-            .map_err(Error::SemConvError)?;
+            .map_err(|e| Error::SemConvError {
+                message: e.to_string(),
+            })?;
         log.success(&format!(
-            "Loaded {} semantic convention files ({} attributes, {} metrics)",
-            semantic_conventions.len(),
+            "Loaded {} semantic convention files containing the definition of {} attributes and {} metrics ({:.2}s)",
+            sem_conv_catalog.asset_count(),
             sem_conv_catalog.attribute_count(),
-            sem_conv_catalog.metric_count()
+            sem_conv_catalog.metric_count(),
+            start.elapsed().as_secs_f32()
         ));
 
         Ok(sem_conv_catalog)
@@ -184,6 +200,7 @@ impl SchemaResolver {
         schema: &TelemetrySchema,
         log: impl Logger,
     ) -> Result<Option<TelemetrySchema>, Error> {
+        let start = Instant::now();
         // Load the parent schema and merge it into the current schema.
         let parent_schema = if let Some(parent_schema_url) = schema.parent_schema_url.as_ref() {
             log.loading(&format!("Loading parent schema '{}'", parent_schema_url));
@@ -217,7 +234,11 @@ impl SchemaResolver {
                 })?
             };
 
-            log.success(&format!("Loaded schema '{}' (parent)", parent_schema_url));
+            log.success(&format!(
+                "Loaded parent schema '{}' ({:.2}s)",
+                parent_schema_url,
+                start.elapsed().as_secs_f32()
+            ));
             Some(parent_schema)
         } else {
             None
@@ -229,6 +250,7 @@ impl SchemaResolver {
     /// Creates a semantic convention catalog from the given telemetry schema.
     fn create_semantic_convention_catalog(
         sem_convs: &[SemConvImport],
+        cache: &Cache,
         log: impl Logger + Sync,
     ) -> Result<SemConvCatalog, Error> {
         // Load all the semantic convention catalogs.
@@ -237,29 +259,31 @@ impl SchemaResolver {
         let loaded_files_count = AtomicUsize::new(0);
         let error_count = AtomicUsize::new(0);
 
-        let result: Vec<Result<(String, SemConvSpec), weaver_semconv::Error>> = sem_convs
+        let result: Vec<Result<(String, SemConvSpec), Error>> = sem_convs
             .par_iter()
-            .map(|sem_conv_import| {
-                let result = SemConvCatalog::load_sem_conv_spec_from_url(&sem_conv_import.url);
-                if result.is_err() {
-                    error_count.fetch_add(1, Relaxed);
+            .flat_map(|sem_conv_import| {
+                let results = Self::import_sem_conv_specs(sem_conv_import, cache);
+                for result in results.iter() {
+                    if result.is_err() {
+                        error_count.fetch_add(1, Relaxed);
+                    }
+                    loaded_files_count.fetch_add(1, Relaxed);
+                    if error_count.load(Relaxed) == 0 {
+                        log.loading(&format!(
+                            "Loaded {}/{} semantic convention files (no error detected)",
+                            loaded_files_count.load(Relaxed),
+                            total_file_count
+                        ));
+                    } else {
+                        log.loading(&format!(
+                            "Loaded {}/{} semantic convention files ({} error(s) detected)",
+                            loaded_files_count.load(Relaxed),
+                            total_file_count,
+                            error_count.load(Relaxed)
+                        ));
+                    }
                 }
-                loaded_files_count.fetch_add(1, Relaxed);
-                if error_count.load(Relaxed) == 0 {
-                    log.loading(&format!(
-                        "Loaded {}/{} semantic convention files (no error detected)",
-                        loaded_files_count.load(Relaxed),
-                        total_file_count
-                    ));
-                } else {
-                    log.loading(&format!(
-                        "Loaded {}/{} semantic convention files ({} error(s) detected)",
-                        loaded_files_count.load(Relaxed),
-                        total_file_count,
-                        error_count.load(Relaxed)
-                    ));
-                }
-                result
+                results
             })
             .collect();
 
@@ -270,7 +294,7 @@ impl SchemaResolver {
             }
             Err(e) => {
                 log.error(&e.to_string());
-                errors.push(Error::SemConvError(e));
+                errors.push(e);
             }
         });
 
@@ -278,19 +302,97 @@ impl SchemaResolver {
 
         Ok(sem_conv_catalog)
     }
+
+    /// Imports the semantic convention specifications from the given import declaration.
+    /// This function returns a vector of results because the import declaration can be a
+    /// URL or a git URL (containing potentially multiple semantic convention specifications).
+    fn import_sem_conv_specs(
+        import_decl: &SemConvImport,
+        cache: &Cache,
+    ) -> Vec<Result<(String, SemConvSpec), Error>> {
+        match import_decl {
+            SemConvImport::Url { url } => {
+                let spec = SemConvCatalog::load_sem_conv_spec_from_url(url).map_err(|e| {
+                    Error::SemConvError {
+                        message: e.to_string(),
+                    }
+                });
+                vec![spec]
+            }
+            SemConvImport::GitUrl { git_url, path } => {
+                fn is_hidden(entry: &DirEntry) -> bool {
+                    entry
+                        .file_name()
+                        .to_str()
+                        .map(|s| s.starts_with('.'))
+                        .unwrap_or(false)
+                }
+                fn is_semantic_convention_file(entry: &DirEntry) -> bool {
+                    let path = entry.path();
+                    let extension = path.extension().unwrap_or_else(|| std::ffi::OsStr::new(""));
+                    let file_name = path.file_name().unwrap_or_else(|| std::ffi::OsStr::new(""));
+                    path.is_file()
+                        && (extension == "yaml" || extension == "yml")
+                        && file_name != "schema-next.yaml"
+                }
+
+                let mut result = vec![];
+                let git_repo = cache.git_repo(git_url.clone(), path.clone()).map_err(|e| {
+                    Error::SemConvError {
+                        message: e.to_string(),
+                    }
+                });
+
+                if let Ok(git_repo) = git_repo {
+                    // Loads the semantic convention specifications from the git repo.
+                    // All yaml files are recursively loaded from the given path.
+                    for entry in walkdir::WalkDir::new(git_repo)
+                        .into_iter()
+                        .filter_entry(|e| !is_hidden(e))
+                    {
+                        match entry {
+                            Ok(entry) => {
+                                if is_semantic_convention_file(&entry) {
+                                    let spec =
+                                        SemConvCatalog::load_sem_conv_spec_from_file(entry.path())
+                                            .map_err(|e| Error::SemConvError {
+                                                message: e.to_string(),
+                                            });
+                                    result.push(spec);
+                                }
+                            }
+                            Err(e) => result.push(Err(Error::SemConvError {
+                                message: e.to_string(),
+                            })),
+                        }
+                    }
+                }
+
+                result
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use weaver_logger::ConsoleLogger;
+    use weaver_cache::Cache;
+    use weaver_logger::{ConsoleLogger, Logger};
 
     use crate::SchemaResolver;
 
     #[test]
     fn resolve_schema() {
         let log = ConsoleLogger::new(0);
-        let schema =
-            SchemaResolver::resolve_schema_file("../../data/app-telemetry-schema.yaml", log);
+        let mut cache = Cache::try_new().unwrap_or_else(|e| {
+            log.error(&e.to_string());
+            std::process::exit(1);
+        });
+        let schema = SchemaResolver::resolve_schema_file(
+            "../../data/app-telemetry-schema.yaml",
+            &mut cache,
+            log,
+        );
         assert!(schema.is_ok(), "{:#?}", schema.err().unwrap());
     }
 }

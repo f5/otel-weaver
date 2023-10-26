@@ -11,6 +11,7 @@ edition.workspace = true
 weaver_logger = { path = "../weaver_logger" }
 weaver_resolver = { path = "../weaver_resolver" }
 weaver_schema = { path = "../weaver_schema" }
+weaver_cache = { path = "../weaver_cache" }
 
 tera = "1.19.1"
 textwrap = "0.16.0"

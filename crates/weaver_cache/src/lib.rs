@@ -10,6 +10,7 @@ use std::fs::create_dir_all;
 use std::num::NonZeroU32;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
+use std::sync::Mutex;
 
 use crate::Error::GitError;
 use gix::clone::PrepareFetch;
@@ -55,11 +56,14 @@ pub enum Error {
 #[derive(Default)]
 pub struct Cache {
     path: PathBuf,
-    git_repo_dirs: std::collections::HashMap<String, GitRepo>,
+    git_repo_dirs: Mutex<std::collections::HashMap<String, GitRepo>>,
 }
 
 /// A git repo that is cloned into a tempdir.
 struct GitRepo {
+    /// Need to allow dead code because we need to keep the tempdir live
+    /// for the lifetime of the GitRepo.
+    #[allow(dead_code)]
     temp_dir: TempDir,
     path: PathBuf,
 }
@@ -83,9 +87,20 @@ impl Cache {
     }
 
     /// The given repo_url is cloned into the cache and the path to the repo is returned.
-    pub fn git_repo(&mut self, repo_url: &str, path: &str) -> Result<PathBuf, Error> {
+    /// The optional path parameter is relative to the root of the repo.
+    /// The intent is to allow the caller to specify a subdirectory of the repo and
+    /// use a sparse checkout once `gitoxide` supports it. In the meantime, the
+    /// path is checked to exist in the repo and an error is returned if it doesn't.
+    /// If the path exists in the repo, the returned pathbuf is the path to the
+    /// subdirectory in the git repo directory.
+    pub fn git_repo(&self, repo_url: String, path: Option<String>) -> Result<PathBuf, Error> {
         // Checks if a tempdir already exists for this repo
-        if let Some(git_repo_dir) = self.git_repo_dirs.get(repo_url) {
+        if let Some(git_repo_dir) = self
+            .git_repo_dirs
+            .lock()
+            .expect("git_repo_dirs lock failed")
+            .get(&repo_url)
+        {
             return Ok(git_repo_dir.path.clone());
         }
 
@@ -103,7 +118,7 @@ impl Cache {
         // Clones the repo into the tempdir.
         // Use shallow clone to save time and space.
         let mut fetch = PrepareFetch::new(
-            repo_url,
+            repo_url.as_str(),
             git_repo_path,
             Kind::WithWorktree,
             create::Options {
@@ -132,23 +147,33 @@ impl Cache {
                 message: e.to_string(),
             })?;
 
-        // Checks the existence of the path in the repo.
-        // If the path doesn't exist, returns an error.
-        if !git_repo_path.join(path).exists() {
-            return Err(Error::GitError {
-                repo_url: repo_url.to_string(),
-                message: format!("Path `{}` not found in repo", path),
-            });
-        }
+        // Determines the path to the repo.
+        let git_repo_path = if let Some(path) = &path {
+            // Checks the existence of the path in the repo.
+            // If the path doesn't exist, returns an error.
+            if !git_repo_path.join(path).exists() {
+                return Err(Error::GitError {
+                    repo_url: repo_url.to_string(),
+                    message: format!("Path `{}` not found in repo", path),
+                });
+            }
+
+            git_repo_path.join(path)
+        } else {
+            git_repo_path.to_path_buf()
+        };
 
         // Adds the repo to the git_repo_dirs hashmap.
-        self.git_repo_dirs.insert(
-            repo_url.to_string(),
-            GitRepo {
-                temp_dir: git_repo_dir,
-                path: git_repo_path.join(path),
-            },
-        );
+        self.git_repo_dirs
+            .lock()
+            .expect("git_repo_dirs lock failed")
+            .insert(
+                repo_url.to_string(),
+                GitRepo {
+                    temp_dir: git_repo_dir,
+                    path: git_repo_path,
+                },
+            );
 
         Ok(git_repo_pathbuf)
     }
@@ -163,10 +188,10 @@ mod tests {
     #[test]
     #[ignore]
     fn test_cache() {
-        let mut cache = Cache::try_new().unwrap();
+        let cache = Cache::try_new().unwrap();
         let result = cache.git_repo(
-            "https://github.com/open-telemetry/semantic-conventions.git",
-            "model",
+            "https://github.com/open-telemetry/semantic-conventions.git".into(),
+            Some("model".into()),
         );
         assert!(result.is_ok());
         assert!(result.unwrap().exists());

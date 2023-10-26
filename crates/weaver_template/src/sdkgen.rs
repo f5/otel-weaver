@@ -11,6 +11,7 @@ use glob::{glob, Paths};
 use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
 use tera::{Context, Tera};
+use weaver_cache::Cache;
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
@@ -158,7 +159,12 @@ impl ClientSdkGenerator {
         schema_path: PathBuf,
         output_dir: PathBuf,
     ) -> Result<(), crate::Error> {
-        let schema = SchemaResolver::resolve_schema_file(schema_path.clone(), log.clone())
+        let cache = Cache::try_new().unwrap_or_else(|e| {
+            log.error(&e.to_string());
+            std::process::exit(1);
+        });
+
+        let schema = SchemaResolver::resolve_schema_file(schema_path.clone(), &cache, log.clone())
             .map_err(|e| InvalidTelemetrySchema {
                 schema: schema_path.clone(),
                 error: format!("{}", e),

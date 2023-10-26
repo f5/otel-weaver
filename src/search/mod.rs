@@ -138,11 +138,11 @@ impl StatefulResults {
 
 /// Search for attributes and metrics in a schema file
 pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
-    let _cache = Cache::try_new().unwrap_or_else(|e| {
+    let cache = Cache::try_new().unwrap_or_else(|e| {
         log.error(&e.to_string());
         std::process::exit(1);
     });
-    let schema = SchemaResolver::resolve_schema_file(params.schema.clone(), log.clone())
+    let schema = SchemaResolver::resolve_schema_file(params.schema.clone(), &cache, log.clone())
         .unwrap_or_else(|e| {
             log.error(&format!("{}", e));
             std::process::exit(1);
