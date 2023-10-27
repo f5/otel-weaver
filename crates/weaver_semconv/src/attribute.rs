@@ -154,6 +154,14 @@ impl Attribute {
             Attribute::Id { note, .. } => note.clone(),
         }
     }
+
+    /// Returns the tag of the attribute (if any).
+    pub fn tag(&self) -> Option<String> {
+        match self {
+            Attribute::Ref { tag, .. } => tag.clone(),
+            Attribute::Id { tag, .. } => tag.clone(),
+        }
+    }
 }
 
 /// The different types of attributes.

@@ -17,11 +17,15 @@ use crate::search::DocFields;
 /// Build index for metrics.
 pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut IndexWriter) {
     for metric_group in schema.metric_groups() {
+        let tags: String = metric_group.tags()
+            .map_or("".to_string(), |tags| tags.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", "));
+
         index_writer
             .add_document(doc!(
                 fields.path => format!("schema/metric_group/{}", metric_group.name()),
                 fields.brief => "",
-                fields.note => ""
+                fields.note => "",
+                fields.tag => tags.as_str(),
             ))
             .expect("Failed to add document");
     }

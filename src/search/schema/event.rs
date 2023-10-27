@@ -14,11 +14,15 @@ use weaver_schema::TelemetrySchema;
 /// Build index for events.
 pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut IndexWriter) {
     for event in schema.events() {
+        let tags: String = event.tags.clone()
+            .map_or("".to_string(), |tags| tags.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", "));
+
         index_writer
             .add_document(doc!(
                 fields.path => format!("schema/event/{}", event.event_name),
                 fields.brief => "",
-                fields.note => ""
+                fields.note => "",
+                fields.tag => tags.as_str(),
             ))
             .expect("Failed to add document");
         attribute::index_schema_attribute(

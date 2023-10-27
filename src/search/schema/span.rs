@@ -14,11 +14,15 @@ use weaver_schema::TelemetrySchema;
 /// Build index for spans.
 pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut IndexWriter) {
     for span in schema.spans() {
+        let tags: String = span.tags.clone()
+            .map_or("".to_string(), |tags| tags.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", "));
+
         index_writer
             .add_document(doc!(
                 fields.path => format!("schema/span/{}", span.span_name),
                 fields.brief => "",
-                fields.note => ""
+                fields.note => "",
+                fields.tag => tags.as_str(),
             ))
             .expect("Failed to add document");
         attribute::index_schema_attribute(
@@ -28,11 +32,15 @@ pub fn index(schema: &TelemetrySchema, fields: &DocFields, index_writer: &mut In
             index_writer,
         );
         for event in span.events.iter() {
+            let tags: String = event.tags.clone()
+                .map_or("".to_string(), |tags| tags.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", "));
+
             index_writer
                 .add_document(doc!(
                     fields.path => format!("schema/span/{}/event/{}", span.span_name, event.event_name),
                     fields.brief => "",
-                    fields.note => ""
+                    fields.note => "",
+                    fields.tag => tags.as_str(),
                 ))
                 .expect("Failed to add document");
             attribute::index_schema_attribute(

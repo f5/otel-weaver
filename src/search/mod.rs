@@ -83,6 +83,7 @@ pub struct DocFields {
     path: Field,
     brief: Field,
     note: Field,
+    tag: Field,
 }
 
 impl StatefulResults {
@@ -160,6 +161,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
         path: schema_builder.add_text_field("path", TEXT | STORED),
         brief: schema_builder.add_text_field("brief", TEXT | STORED),
         note: schema_builder.add_text_field("note", TEXT),
+        tag: schema_builder.add_text_field("tag", TEXT),
     };
 
     let index_schema = schema_builder.build();
@@ -195,8 +197,8 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
         .try_into()
         .expect("Failed to create reader");
     let searcher = reader.searcher();
-    let DocFields { path, brief, note } = fields;
-    let query_parser = QueryParser::for_index(&index, vec![path, brief, note]);
+    let DocFields { path, brief, note, tag } = fields;
+    let query_parser = QueryParser::for_index(&index, vec![path, brief, note, tag]);
 
     let theme = ThemeConfig {
         title: Color::Rgb(238, 238, 238),
@@ -207,7 +209,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
 
     let mut search_area = TextArea::default();
     search_area.set_cursor_line_style(Style::default());
-    search_area.set_placeholder_text("Enter search terms or use path: or brief: prefixes to target specific fields. AND and OR operators are supported.");
+    search_area.set_placeholder_text("Enter search terms, operators, or use path:, brief:, tag:, or note: prefixes to target specific fields.");
     search_area.set_block(
         Block::default()
             .borders(Borders::TOP)

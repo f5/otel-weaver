@@ -26,7 +26,8 @@ pub fn index_semconv_metrics<'a>(
             .add_document(doc!(
                 fields.path => format!("{}/metric/{}", path, metric.name),
                 fields.brief => metric.brief(),
-                fields.note => metric.note()
+                fields.note => metric.note(),
+                fields.tag => "",
             ))
             .expect("Failed to add document");
     }
@@ -39,11 +40,15 @@ pub fn index_schema_metrics(
     index_writer: &mut IndexWriter,
 ) {
     for metric in schema.metrics() {
+        let tags: String = metric.tags()
+            .map_or("".to_string(), |tags| tags.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", "));
+
         index_writer
             .add_document(doc!(
                 fields.path => format!("schema/metric/{}", metric.name()),
                 fields.brief => metric.brief(),
-                fields.note => metric.note()
+                fields.note => metric.note(),
+                fields.tag => tags.as_str(),
             ))
             .expect("Failed to add document");
         if let UnivariateMetric::Metric { attributes, .. } = metric {

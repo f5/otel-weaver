@@ -24,7 +24,8 @@ pub fn index_semconv_attributes<'a>(
             .add_document(doc!(
                 fields.path => format!("{}/attr/{}", path, attr.id()),
                 fields.brief => attr.brief(),
-                fields.note => attr.note()
+                fields.note => attr.note(),
+                fields.tag => attr.tag().unwrap_or_default().as_str(),
             ))
             .expect("Failed to add document");
     }
@@ -39,14 +40,18 @@ pub fn index_schema_attribute<'a>(
 ) {
     for attr in attributes {
         if let Attribute::Id {
-            id, brief, note, ..
+            id, brief, note, tags, ..
         } = attr
         {
+            let tags: String = tags.as_ref()
+                .map_or("".to_string(), |tags| tags.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", "));
+
             index_writer
                 .add_document(doc!(
                     fields.path => format!("{}/attr/{}", path, id),
                     fields.brief => brief.clone(),
-                    fields.note => note.clone()
+                    fields.note => note.clone(),
+                    fields.tag => tags.as_str(),
                 ))
                 .expect("Failed to add document");
         }

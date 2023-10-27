@@ -75,4 +75,9 @@ impl MetricGroup {
     pub fn attribute(&self, id: &str) -> Option<&Attribute> {
         self.attributes.iter().find(|a| a.id() == id)
     }
+
+    /// Returns the tags of the metric group.
+    pub fn tags(&self) -> Option<&Tags> {
+        self.tags.as_ref()
+    }
 }

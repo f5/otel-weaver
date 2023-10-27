@@ -71,6 +71,14 @@ impl UnivariateMetric {
         }
     }
 
+    /// Returns the tags of the metric.
+    pub fn tags(&self) -> Option<&Tags> {
+        match self {
+            UnivariateMetric::Ref { tags, .. } => tags.as_ref(),
+            UnivariateMetric::Metric { tags, .. } => tags.as_ref(),
+        }
+    }
+
     /// Returns an attribute by its id.
     pub fn attribute(&self, id: &str) -> Option<&Attribute> {
         match self {
