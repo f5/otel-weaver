@@ -329,7 +329,7 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
 
     let inner_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
+        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
         .split(outer_layout[0]);
 
     let content = Table::new(rows)
@@ -346,14 +346,14 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         .highlight_symbol(">> ")
         .widths(&[Constraint::Max(50), Constraint::Max(120)]);
 
-    frame.render_stateful_widget(content, inner_layout[0], &mut app.results.state);
+    frame.render_stateful_widget(content, inner_layout[1], &mut app.results.state);
 
     // Detail area
     let item = match app.results.state.selected() {
         Some(i) => app.results.items.get(i),
         None => None,
     };
-    frame.render_widget(detail_area(app, item), inner_layout[1]);
+    frame.render_widget(detail_area(app, item), inner_layout[0]);
 
     frame.render_widget(app.search_area.widget(), outer_layout[1]);
 }
