@@ -96,6 +96,9 @@ impl StatefulResults {
 
     /// Selects the next item in the list
     fn next(&mut self) {
+        if self.items.is_empty() {
+            return;
+        }
         let i = match self.state.selected() {
             Some(i) => {
                 if i >= self.items.len() - 1 {
@@ -111,6 +114,9 @@ impl StatefulResults {
 
     /// Selects the previous item in the list
     fn previous(&mut self) {
+        if self.items.is_empty() {
+            return;
+        }
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -200,6 +206,8 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
     };
 
     let mut search_area = TextArea::default();
+    search_area.set_cursor_line_style(Style::default());
+    search_area.set_placeholder_text("Enter search terms or use path: or brief: prefixes to target specific fields. AND and OR operators are supported.");
     search_area.set_block(
         Block::default()
             .borders(Borders::TOP)
@@ -501,11 +509,14 @@ fn update(app: &mut SearchApp) -> Result<()> {
                     }
                     KeyCode::Up => app.results.previous(),
                     KeyCode::Down => app.results.next(),
-                    _ => {}
+                    KeyCode::Enter => {}
+                    _ => {
+                        app.search_area.input(event);
+                    }
                 }
             }
         }
-        app.search_area.input(event);
+        // app.search_area.input(event);
     }
 
     Ok(())
