@@ -196,7 +196,7 @@ impl Display for AttributeType {
                     .map(|m| m.id.clone())
                     .collect::<Vec<String>>()
                     .join(", ");
-                write!(f, "[{}]", entries)
+                write!(f, "enum {{{}}}", entries)
             }
         }
     }

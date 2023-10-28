@@ -346,7 +346,7 @@ impl SchemaResolver {
                 if let Ok(git_repo) = git_repo {
                     // Loads the semantic convention specifications from the git repo.
                     // All yaml files are recursively loaded from the given path.
-                    for entry in walkdir::WalkDir::new(git_repo)
+                    for entry in walkdir::WalkDir::new(git_repo.clone())
                         .into_iter()
                         .filter_entry(|e| !is_hidden(e))
                     {
@@ -358,7 +358,16 @@ impl SchemaResolver {
                                             .map_err(|e| Error::SemConvError {
                                                 message: e.to_string(),
                                             });
-                                    result.push(spec);
+                                    result.push(match spec {
+                                        Ok((path, spec)) => {
+                                            // Replace the local path with the git URL combined with the relative path
+                                            // of the semantic convention file.
+                                            let prefix = git_repo.to_str().map(|s| s.to_string()).unwrap_or_default();
+                                            let path = format!("{}/{}", git_url, &path[prefix.len()+1..]);
+                                            Ok((path, spec))
+                                        }
+                                        Err(e) => Err(e)
+                                    });
                                 }
                             }
                             Err(e) => result.push(Err(Error::SemConvError {
