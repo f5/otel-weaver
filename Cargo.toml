@@ -51,7 +51,7 @@ clap = { version = "4.4.7", features = ["derive"] }
 crossterm = "0.27.0"
 ratatui = "0.24.0"
 tui-textarea = "0.3"
-tantivy = "0.21.0"
+tantivy = "0.21.1"
 
 # workspace dependencies
 serde.workspace = true
