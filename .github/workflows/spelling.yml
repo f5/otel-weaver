@@ -3,7 +3,7 @@ name: Spelling
 permissions:
   contents: read
 
-on: [pull_request]
+on: [push, pull_request]
 
 env:
   RUST_BACKTRACE: 1
