@@ -37,7 +37,7 @@ Below is a diagram detailing the primary components of the OTel Weaver tool.
 
 Currently, there is no binary distribution available. To install the tool, you
 must build it from source. To do so, you need to have Rust installed on your
-system.
+system (see [Install Rust](https://www.rust-lang.org/tools/install)).
 
 To build the tool:
 - In debug mode, run the following command:
