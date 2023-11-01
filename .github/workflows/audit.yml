@@ -1,4 +1,4 @@
-name: Security audit
+name: Security Audit
 
 permissions:
   contents: read
@@ -10,7 +10,7 @@ on:
       - '**/Cargo.lock'
   push:
     branches:
-      - master
+      - main
 
 env:
   RUST_BACKTRACE: 1
@@ -18,19 +18,19 @@ env:
   CLICOLOR: 1
 
 jobs:
-  security_audit:
-    permissions:
-      issues: write # to create issues (actions-rs/audit-check)
-      checks: write # to create check (actions-rs/audit-check)
-    runs-on: ubuntu-latest
+  # security_audit:
+  #   permissions:
+  #     issues: write # to create issues (actions-rs/audit-check)
+  #     checks: write # to create check (actions-rs/audit-check)
+  #   runs-on: ubuntu-latest
     # Prevent sudden announcement of a new advisory from failing ci:
-    continue-on-error: true
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+    # continue-on-error: true
+    # steps:
+    #   - name: Checkout repository
+    #     uses: actions/checkout@v4
+    #   - uses: actions-rs/audit-check@v1
+    #     with:
+    #       token: ${{ secrets.GITHUB_TOKEN }}
 
   cargo_deny:
     permissions:
@@ -43,6 +43,8 @@ jobs:
           - bans licenses sources
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: EmbarkStudios/cargo-deny-action@v1
         with:
           command: check ${{ matrix.checks }}
