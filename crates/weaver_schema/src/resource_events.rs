@@ -25,6 +25,11 @@ pub struct ResourceEvents {
 }
 
 impl ResourceEvents {
+    /// Returns the number of events.
+    pub fn events_count(&self) -> usize {
+        self.events.len()
+    }
+
     /// Returns an event by name or None if not found.
     pub fn event(&self, event_name: &str) -> Option<&Event> {
         self.events

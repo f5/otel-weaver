@@ -25,6 +25,11 @@ pub struct ResourceSpans {
 }
 
 impl ResourceSpans {
+    /// Returns the number of spans.
+    pub fn spans_count(&self) -> usize {
+        self.spans.len()
+    }
+
     /// Returns a slice of spans.
     pub fn spans(&self) -> Vec<&Span> {
         self.spans.iter().collect()

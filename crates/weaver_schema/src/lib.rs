@@ -231,6 +231,39 @@ impl TelemetrySchema {
         &self.semantic_convention_catalog
     }
 
+    /// Returns the number of metrics.
+    pub fn metrics_count(&self) -> usize {
+        self.schema
+            .as_ref()
+            .map_or(0, |schema| schema.metrics_count())
+    }
+
+    /// Returns the number of metric groups.
+    pub fn metric_groups_count(&self) -> usize {
+        self.schema
+            .as_ref()
+            .map_or(0, |schema| schema.metric_groups_count())
+    }
+
+    /// Returns the number of events.
+    pub fn events_count(&self) -> usize {
+        self.schema
+            .as_ref()
+            .map_or(0, |schema| schema.events_count())
+    }
+
+    /// Returns the number of spans.
+    pub fn spans_count(&self) -> usize {
+        self.schema
+            .as_ref()
+            .map_or(0, |schema| schema.spans_count())
+    }
+
+    /// Returns the number of versions.
+    pub fn version_count(&self) -> usize {
+        self.versions.as_ref().map_or(0, |versions| versions.len())
+    }
+
     /// Returns the metric by name or None if not found.
     pub fn metric(&self, metric_name: &str) -> Option<&univariate_metric::UnivariateMetric> {
         self.schema

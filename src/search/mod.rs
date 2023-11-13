@@ -14,7 +14,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::layout::{Constraint, Direction, Layout};
-use ratatui::prelude::{CrosstermBackend, Terminal};
+use ratatui::prelude::{CrosstermBackend, Span, Terminal};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::Line;
 use ratatui::widgets::Cell;
@@ -24,10 +24,10 @@ use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema, STORED, TEXT};
 use tantivy::{Index, IndexWriter, ReloadPolicy};
-use theme::ThemeConfig;
 use tui_textarea::TextArea;
-use weaver_cache::Cache;
 
+use theme::ThemeConfig;
+use weaver_cache::Cache;
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
 use weaver_schema::attribute::Attribute;
@@ -267,6 +267,7 @@ fn search_tui(app: &mut SearchApp<'_>) -> Result<()> {
 }
 
 fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
+    let empty_search_box = app.search_area.is_empty();
     app.search_area.lines().iter().for_each(|query| {
         if let Some(current_query) = app.current_query.as_ref() {
             if current_query == query {
@@ -358,9 +359,57 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         Some(i) => app.results.items.get(i),
         None => None,
     };
-    frame.render_widget(detail_area(app, item), inner_layout[0]);
-
+    if empty_search_box {
+        frame.render_widget(summary_area(app), inner_layout[0]);
+    } else {
+        frame.render_widget(detail_area(app, item), inner_layout[0]);
+    }
     frame.render_widget(app.search_area.widget(), outer_layout[1]);
+}
+
+fn summary_area<'a>(app: &'a SearchApp<'a>) -> Paragraph<'a> {
+    let area_title = "Summary";
+    let semconv_catalog = app.schema.semantic_convention_catalog();
+    let text = vec![
+        Line::from(""),
+        Line::from("Telemetry schema:"),
+        Line::from(format!("- URL: {}", app.schema.schema_url)),
+        Line::from(format!("- Parent schema URL: {}", app.schema.parent_schema_url.clone().unwrap_or_default())),
+        Line::from(format!("- {} metrics", app.schema.metrics_count())),
+        Line::from(format!("- {} metric groups", app.schema.metric_groups_count())),
+        Line::from(format!("- {} events", app.schema.events_count())),
+        Line::from(format!("- {} spans", app.schema.spans_count())),
+        Line::from(format!("- {} versions", app.schema.version_count())),
+        Line::from(""),
+        Line::from(vec![
+            Span::raw("Semantic convention catalog:"),
+        ]),
+        Line::from(vec![
+            Span::raw(format!("- {} files.", semconv_catalog.asset_count())),
+        ]),
+        Line::from(vec![
+            Span::raw(format!("- {} attributes.", semconv_catalog.attribute_count())),
+        ]),
+        Line::from(vec![
+            Span::raw(format!("- {} metrics.", semconv_catalog.metric_count())),
+        ]),
+        Line::from(""),
+        Line::from(""),
+        Line::from(">> Enter search terms, operators, or use path:, brief:, tag:, or note: prefixes to target specific fields."),
+    ];
+
+    let paragraph = Paragraph::new(text).style(Style::default().fg(app.theme.value));
+
+    paragraph
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(app.theme.border))
+                .title(format!("{} ", area_title))
+                .title_style(Style::default().fg(app.theme.title))
+                .style(Style::default()),
+        )
+        .wrap(Wrap { trim: true })
 }
 
 fn detail_area<'a>(app: &'a SearchApp<'a>, item: Option<&'a ResultItem>) -> Paragraph<'a> {

@@ -7,13 +7,13 @@
 //! can be found [here](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md).
 
 #![deny(
-missing_docs,
-clippy::print_stdout,
-unstable_features,
-unused_import_braces,
-unused_qualifications,
-unused_results,
-unused_extern_crates
+    missing_docs,
+    clippy::print_stdout,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications,
+    unused_results,
+    unused_extern_crates
 )]
 
 use std::collections::{HashMap, HashSet};
@@ -490,8 +490,6 @@ impl SemConvCatalog {
                     });
                 }
             } else {
-                println!("Ref: {}", metric_to_resolve.r#ref);
-                println!("Groups: {:#?}", self.attr_grp_group_attributes.keys());
                 warnings.push(ResolverWarning {
                     error: Error::InvalidMetric {
                         path_or_url: metric_to_resolve.path_or_url,
@@ -565,12 +563,12 @@ impl SemConvCatalog {
     }
 
     /// Returns an iterator over all the attributes defined in the catalog.
-    pub fn attributes_iter(&self) -> impl Iterator<Item=&Attribute> {
+    pub fn attributes_iter(&self) -> impl Iterator<Item = &Attribute> {
         self.all_attributes.values().map(|attr| &attr.attribute)
     }
 
     /// Returns an iterator over all the metrics defined in the catalog.
-    pub fn metrics_iter(&self) -> impl Iterator<Item=&Metric> {
+    pub fn metrics_iter(&self) -> impl Iterator<Item = &Metric> {
         self.all_metrics.values().map(|metric| &metric.metric)
     }
 
@@ -710,7 +708,7 @@ impl SemConvSpec {
 
 #[cfg(test)]
 mod tests {
-    use std::{dbg, vec};
+    use std::vec;
 
     use super::*;
 
