@@ -15,6 +15,7 @@ pub fn append_lines(examples: &Examples, text: &mut Vec<Line>, theme: &ThemeConf
     match examples {
         Examples::Int(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),
         Examples::Double(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),
+        Examples::Bool(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),
         Examples::String(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),
         Examples::Ints(vals) => {
             for v in vals.iter() {
@@ -22,6 +23,11 @@ pub fn append_lines(examples: &Examples, text: &mut Vec<Line>, theme: &ThemeConf
             }
         }
         Examples::Doubles(vals) => {
+            for v in vals.iter() {
+                text.push(Line::from(Span::raw(format!("- {}", v))));
+            }
+        }
+        Examples::Bools(vals) => {
             for v in vals.iter() {
                 text.push(Line::from(Span::raw(format!("- {}", v))));
             }

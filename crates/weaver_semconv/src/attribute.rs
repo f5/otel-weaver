@@ -348,6 +348,8 @@ impl Display for Value {
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
 pub enum Examples {
+    /// A boolean example.
+    Bool(bool),
     /// A integer example.
     Int(i64),
     /// A double example.
@@ -358,6 +360,8 @@ pub enum Examples {
     Ints(Vec<i64>),
     /// A array of doubles example.
     Doubles(Vec<f64>),
+    /// A array of bools example.
+    Bools(Vec<bool>),
     /// A array of strings example.
     Strings(Vec<String>),
 }

@@ -40,11 +40,19 @@ pub fn index_schema_attribute<'a>(
 ) {
     for attr in attributes {
         if let Attribute::Id {
-            id, brief, note, tags, ..
+            id,
+            brief,
+            note,
+            tags,
+            ..
         } = attr
         {
-            let tags: String = tags.as_ref()
-                .map_or("".to_string(), |tags| tags.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", "));
+            let tags: String = tags.as_ref().map_or("".to_string(), |tags| {
+                tags.iter()
+                    .map(|(k, v)| format!("{}: {}", k, v))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            });
 
             index_writer
                 .add_document(doc!(

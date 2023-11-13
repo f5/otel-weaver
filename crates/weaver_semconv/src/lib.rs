@@ -7,13 +7,13 @@
 //! can be found [here](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md).
 
 #![deny(
-    missing_docs,
-    clippy::print_stdout,
-    unstable_features,
-    unused_import_braces,
-    unused_qualifications,
-    unused_results,
-    unused_extern_crates
+missing_docs,
+clippy::print_stdout,
+unstable_features,
+unused_import_braces,
+unused_qualifications,
+unused_results,
+unused_extern_crates
 )]
 
 use std::collections::{HashMap, HashSet};
@@ -37,7 +37,7 @@ pub mod stability;
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     /// The semantic convention asset was not found.
-    #[error("Semantic convention catalog {path_or_url:?} not found\n{error:?}")]
+    #[error("Semantic convention catalog {path_or_url:?} not found\n{error}")]
     CatalogNotFound {
         /// The path or URL of the semantic convention asset.
         path_or_url: String,
@@ -46,7 +46,7 @@ pub enum Error {
     },
 
     /// The semantic convention asset is invalid.
-    #[error("Invalid semantic convention catalog {path_or_url:?}\n{error:?}")]
+    #[error("Invalid semantic convention catalog {path_or_url:?}\n{error}")]
     InvalidCatalog {
         /// The path or URL of the semantic convention asset.
         path_or_url: String,
@@ -70,7 +70,7 @@ pub enum Error {
     },
 
     /// The semantic convention asset contains a duplicate group id.
-    #[error("Duplicate group id `{id}` detected while loading {path_or_url:?} and already defined in {origin:?}")]
+    #[error("Duplicate group id `{id}` detected while loading {path_or_url:?} and already defined in {origin}")]
     DuplicateGroupId {
         /// The path or URL of the semantic convention asset.
         path_or_url: String,
@@ -90,7 +90,7 @@ pub enum Error {
     },
 
     /// The semantic convention asset contains an invalid attribute definition.
-    #[error("Invalid attribute definition detected while resolving {path_or_url:?}, group_id=`{group_id}`.\n{error:?}")]
+    #[error("Invalid attribute definition detected while resolving {path_or_url:?}, group_id=`{group_id}`.\n{error}")]
     InvalidAttribute {
         /// The path or URL of the semantic convention asset.
         path_or_url: String,
@@ -108,7 +108,7 @@ pub enum Error {
     },
 
     /// The semantic convention asset contains an invalid metric definition.
-    #[error("Invalid metric definition detected while resolving {path_or_url:?}, group_id=`{group_id}`.\n{error:?}")]
+    #[error("Invalid metric definition in {path_or_url:?}.\ngroup_id=`{group_id}`.\n{error}")]
     InvalidMetric {
         /// The path or URL of the semantic convention asset.
         path_or_url: String,
@@ -355,19 +355,18 @@ impl SemConvCatalog {
                         };
 
                         if let Some(group_attributes) = group_attributes {
-                            if !attributes_in_group.is_empty() {
-                                Self::detect_duplicated_group(
-                                    path_or_url.to_string(),
-                                    group.id.clone(),
-                                    group_attributes.insert(
-                                        group.id.clone(),
-                                        GroupIds {
-                                            origin: path_or_url.to_string(),
-                                            ids: attributes_in_group,
-                                        },
-                                    ),
-                                )?;
-                            }
+                            let prev_group_ids = group_attributes.insert(
+                                group.id.clone(),
+                                GroupIds {
+                                    origin: path_or_url.to_string(),
+                                    ids: attributes_in_group.clone(),
+                                },
+                            );
+                            Self::detect_duplicated_group(
+                                path_or_url.to_string(),
+                                group.id.clone(),
+                                prev_group_ids,
+                            )?;
                         }
                     }
                     _ => {
@@ -491,10 +490,14 @@ impl SemConvCatalog {
                     });
                 }
             } else {
-                return Err(Error::InvalidMetric {
-                    path_or_url: metric_to_resolve.path_or_url,
-                    group_id: metric_to_resolve.group_id,
-                    error: format!("The reference `{}` specified in the `extends` field of the '{}' metric could not be resolved", metric_to_resolve.r#ref, metric_name),
+                println!("Ref: {}", metric_to_resolve.r#ref);
+                println!("Groups: {:#?}", self.attr_grp_group_attributes.keys());
+                warnings.push(ResolverWarning {
+                    error: Error::InvalidMetric {
+                        path_or_url: metric_to_resolve.path_or_url,
+                        group_id: metric_to_resolve.group_id,
+                        error: format!("The reference `{}` specified in the `extends` field of the '{}' metric could not be resolved", metric_to_resolve.r#ref, metric_name),
+                    }
                 });
             }
         }
@@ -562,12 +565,12 @@ impl SemConvCatalog {
     }
 
     /// Returns an iterator over all the attributes defined in the catalog.
-    pub fn attributes_iter(&self) -> impl Iterator<Item = &Attribute> {
+    pub fn attributes_iter(&self) -> impl Iterator<Item=&Attribute> {
         self.all_attributes.values().map(|attr| &attr.attribute)
     }
 
     /// Returns an iterator over all the metrics defined in the catalog.
-    pub fn metrics_iter(&self) -> impl Iterator<Item = &Metric> {
+    pub fn metrics_iter(&self) -> impl Iterator<Item=&Metric> {
         self.all_metrics.values().map(|metric| &metric.metric)
     }
 
@@ -711,8 +714,10 @@ mod tests {
 
     use super::*;
 
+    /// Load multiple semantic convention files in the catalog.
+    /// No error should be emitted.
     #[test]
-    fn load_semconv_catalog() {
+    fn test_load_catalog() {
         let yaml_files = vec![
             "data/client.yaml",
             "data/cloud.yaml",
@@ -738,6 +743,27 @@ mod tests {
             "data/url.yaml",
             "data/user-agent.yaml",
             "data/vm-metrics-experimental.yaml",
+            "data/tls.yaml",
+        ];
+
+        let mut catalog = SemConvCatalog::default();
+        for yaml in yaml_files {
+            let result = catalog.load_from_file(yaml);
+            assert!(result.is_ok(), "{:#?}", result.err().unwrap());
+        }
+    }
+
+    /// Test the resolver with a semantic convention catalog that contains
+    /// multiple references to resolve.
+    /// No error or warning should be emitted.
+    #[test]
+    fn test_resolve_catalog() {
+        let yaml_files = vec![
+            "data/http-common.yaml",
+            "data/http-metrics.yaml",
+            "data/network.yaml",
+            "data/server.yaml",
+            "data/url.yaml",
         ];
 
         let mut catalog = SemConvCatalog::default();
@@ -749,8 +775,6 @@ mod tests {
         let result = catalog.resolve(ResolverConfig {
             error_when_attribute_ref_not_found: false,
         });
-
-        dbg!(catalog);
 
         match result {
             Ok(warnings) => {

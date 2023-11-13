@@ -167,7 +167,7 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
     let index_schema = schema_builder.build();
     let index = Index::create_in_ram(index_schema.clone());
     let mut index_writer: IndexWriter = index
-        .writer(10_000_000)
+        .writer(15_000_000)
         .expect("Failed to create index writer");
 
     attribute::index_semconv_attributes(
@@ -197,7 +197,12 @@ pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
         .try_into()
         .expect("Failed to create reader");
     let searcher = reader.searcher();
-    let DocFields { path, brief, note, tag } = fields;
+    let DocFields {
+        path,
+        brief,
+        note,
+        tag,
+    } = fields;
     let query_parser = QueryParser::for_index(&index, vec![path, brief, note, tag]);
 
     let theme = ThemeConfig {

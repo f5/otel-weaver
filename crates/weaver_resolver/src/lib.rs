@@ -179,11 +179,15 @@ impl SchemaResolver {
         let semantic_conventions = schema.merged_semantic_conventions();
         let mut sem_conv_catalog =
             Self::create_semantic_convention_catalog(&semantic_conventions, cache, log.clone())?;
-        let _ = sem_conv_catalog
+        let warnings = sem_conv_catalog
             .resolve(ResolverConfig::default())
             .map_err(|e| Error::SemConvError {
                 message: e.to_string(),
             })?;
+        for warning in warnings {
+            log.warn("Semantic convention warning")
+                .log(&warning.error.to_string());
+        }
         log.success(&format!(
             "Loaded {} semantic convention files containing the definition of {} attributes and {} metrics ({:.2}s)",
             sem_conv_catalog.asset_count(),
@@ -362,11 +366,18 @@ impl SchemaResolver {
                                         Ok((path, spec)) => {
                                             // Replace the local path with the git URL combined with the relative path
                                             // of the semantic convention file.
-                                            let prefix = git_repo.to_str().map(|s| s.to_string()).unwrap_or_default();
-                                            let path = format!("{}/{}", git_url, &path[prefix.len()+1..]);
+                                            let prefix = git_repo
+                                                .to_str()
+                                                .map(|s| s.to_string())
+                                                .unwrap_or_default();
+                                            let path = format!(
+                                                "{}/{}",
+                                                git_url,
+                                                &path[prefix.len() + 1..]
+                                            );
                                             Ok((path, spec))
                                         }
-                                        Err(e) => Err(e)
+                                        Err(e) => Err(e),
                                     });
                                 }
                             }
