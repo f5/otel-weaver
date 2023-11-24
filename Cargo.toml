@@ -28,7 +28,7 @@ publish = false
 serde = { version = "1.0.190", features = ["derive"] }
 serde_yaml = "0.9.25"
 thiserror = "1.0.47"
-ureq = "2.7.1"
+ureq = "2.9.1"
 regex = "1.9.6"
 rayon = "1.8.0"
 
