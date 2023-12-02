@@ -25,11 +25,11 @@ license = "Apache-2.0"
 publish = false
 
 [workspace.dependencies]
-serde = { version = "1.0.190", features = ["derive"] }
-serde_yaml = "0.9.25"
-thiserror = "1.0.47"
-ureq = "2.7.1"
-regex = "1.9.6"
+serde = { version = "1.0.192", features = ["derive"] }
+serde_yaml = "0.9.27"
+thiserror = "1.0.50"
+ureq = "2.8.0"
+regex = "1.10.2"
 rayon = "1.8.0"
 
 # Crate definitions ===========================================================
@@ -47,10 +47,10 @@ weaver_semconv = { path = "crates/weaver_semconv" }
 weaver_schema = { path = "crates/weaver_schema" }
 weaver_cache = { path = "crates/weaver_cache" }
 
-clap = { version = "4.4.7", features = ["derive"] }
+clap = { version = "4.4.10", features = ["derive"] }
 crossterm = "0.27.0"
 ratatui = "0.24.0"
-tui-textarea = "0.3.1"
+tui-textarea = "0.4.0"
 tantivy = "0.21.1"
 
 # workspace dependencies

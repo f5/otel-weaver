@@ -18,5 +18,5 @@ regex.workspace = true
 thiserror.workspace = true
 rayon.workspace = true
 
-url = "2.4.1"
+url = "2.5.0"
 walkdir = "2.4.0"
