@@ -1,16 +1,13 @@
 # OTel Weaver
 _A Schema-Driven Client SDK Generator for OpenTelemetry_
 
-> This project is a reference implementation of this
-> [OTEP](https://github.com/lquerel/oteps/blob/main/text/0240-telemetry-schema-ext.md).
+> At this stage, the project is being used as a Proof of Concept to explore and
+> refine the 'Application Telemetry Schema: Vision and Roadmap' OTEP ([PR](https://github.com/open-telemetry/oteps/pull/243)),
+> which has not yet been approved.
 >
-> This project is a work in progress and is not ready for production use.
+> This project is a **work in progress and is not ready for production use**.
 
 ## Overview
-
-This project is based on the OpenTelemetry Schema format v1.2.0 defined in this
-[OTEP](https://github.com/lquerel/oteps/blob/main/text/0240-telemetry-schema-ext.md) 
-(which is yet to be submitted).
 
 The following diagram illustrates the relationships between the semantic
 conventions, the schema, and the various components of a telemetry pipeline.
@@ -26,7 +23,7 @@ The OTel Weaver tool is architecturally designed as a platform. By default, this
 tool incorporates a template engine that facilitates Client SDK/API generation
 across various programming languages. In the future, we plan to integrate a
 WASM plugin system, allowing the community to enhance the platform. This would
-pave the way for features like enterprise data catalog integration,
+pave the way for features like enterprise data catalog integration, privacy policy enforcement,
 documentation generation, dashboard creation, and more.
 
 Below is a diagram detailing the primary components of the OTel Weaver tool.
