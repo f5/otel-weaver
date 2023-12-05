@@ -40,8 +40,12 @@ pub fn index_schema_metrics(
     index_writer: &mut IndexWriter,
 ) {
     for metric in schema.metrics() {
-        let tags: String = metric.tags()
-            .map_or("".to_string(), |tags| tags.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", "));
+        let tags: String = metric.tags().map_or("".to_string(), |tags| {
+            tags.iter()
+                .map(|(k, v)| format!("{}: {}", k, v))
+                .collect::<Vec<_>>()
+                .join(", ")
+        });
 
         index_writer
             .add_document(doc!(

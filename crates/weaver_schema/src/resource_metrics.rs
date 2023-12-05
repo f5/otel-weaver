@@ -33,6 +33,16 @@ pub struct ResourceMetrics {
 }
 
 impl ResourceMetrics {
+    /// Returns the number of metrics.
+    pub fn metrics_count(&self) -> usize {
+        self.metrics.len()
+    }
+
+    /// Returns the number of metric groups.
+    pub fn metric_groups_count(&self) -> usize {
+        self.metric_groups.len()
+    }
+
     /// Returns a metric by name or None if not found.
     /// Note: this is a linear search.
     pub fn metric(&self, name: &str) -> Option<&UnivariateMetric> {

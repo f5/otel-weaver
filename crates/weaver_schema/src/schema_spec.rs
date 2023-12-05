@@ -41,6 +41,34 @@ pub struct SchemaSpec {
 }
 
 impl SchemaSpec {
+    /// Returns the number of metrics.
+    pub fn metrics_count(&self) -> usize {
+        self.resource_metrics
+            .as_ref()
+            .map_or(0, |resource_metrics| resource_metrics.metrics_count())
+    }
+
+    /// Returns the number of metric groups.
+    pub fn metric_groups_count(&self) -> usize {
+        self.resource_metrics
+            .as_ref()
+            .map_or(0, |resource_metrics| resource_metrics.metric_groups_count())
+    }
+
+    /// Returns the number of events.
+    pub fn events_count(&self) -> usize {
+        self.resource_events
+            .as_ref()
+            .map_or(0, |resource_events| resource_events.events_count())
+    }
+
+    /// Returns the number of spans.
+    pub fn spans_count(&self) -> usize {
+        self.resource_spans
+            .as_ref()
+            .map_or(0, |resource_spans| resource_spans.spans_count())
+    }
+
     /// Returns a metric by name or None if not found.
     pub fn metric(&self, name: &str) -> Option<&UnivariateMetric> {
         self.resource_metrics

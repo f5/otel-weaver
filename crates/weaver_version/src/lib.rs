@@ -268,6 +268,16 @@ impl Versions {
             }
         }
     }
+
+    /// Returns true if the `Versions` is empty.
+    pub fn is_empty(&self) -> bool {
+        self.versions.is_empty()
+    }
+
+    /// Returns the number of versions.
+    pub fn len(&self) -> usize {
+        self.versions.len()
+    }
 }
 
 impl VersionSpec {
