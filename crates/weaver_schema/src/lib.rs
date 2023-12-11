@@ -101,7 +101,7 @@ pub struct TelemetrySchema {
     /// version number ordering rules.
     /// This section is described in more details in the OTEP 0152 and in a dedicated
     /// section below.
-    /// https://github.com/open-telemetry/oteps/blob/main/text/0152-telemetry-schemas.md
+    /// <https://github.com/open-telemetry/oteps/blob/main/text/0152-telemetry-schemas.md>
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versions: Option<Versions>,
 
