@@ -404,13 +404,13 @@ mod test {
     #[test]
     fn resolve_schema() {
         let log = ConsoleLogger::new(0);
-        let mut cache = Cache::try_new().unwrap_or_else(|e| {
+        let cache = Cache::try_new().unwrap_or_else(|e| {
             log.error(&e.to_string());
             std::process::exit(1);
         });
         let schema = SchemaResolver::resolve_schema_file(
             "../../data/app-telemetry-schema.yaml",
-            &mut cache,
+            &cache,
             log,
         );
         assert!(schema.is_ok(), "{:#?}", schema.err().unwrap());

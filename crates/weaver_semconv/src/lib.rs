@@ -777,7 +777,7 @@ mod tests {
         match result {
             Ok(warnings) => {
                 if !warnings.is_empty() {
-                    println!("warnings: {:#?}", warnings);
+                    dbg!(&warnings);
                 }
                 assert!(warnings.is_empty());
             }

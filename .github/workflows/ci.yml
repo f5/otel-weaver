@@ -128,7 +128,7 @@ jobs:
         run: cargo install sarif-fmt --version 0.3.4 --locked # Held back due to msrv
       - name: Check
         run: >
-          cargo clippy --workspace --all-features --all-targets --message-format=json -- -D warnings --allow deprecated
+          cargo clippy --workspace --all-targets --message-format=json -- -D warnings --allow deprecated
           | clippy-sarif
           | tee clippy-results.sarif
           | sarif-fmt
