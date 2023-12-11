@@ -1,5 +1,6 @@
 # OTel Weaver
-_A Schema-Driven Client SDK Generator for OpenTelemetry_
+
+## Overview
 
 > At this stage, the project is being used as a Proof of Concept to explore and
 > refine the 'Application Telemetry Schema: Vision and Roadmap' OTEP ([PR](https://github.com/open-telemetry/oteps/pull/243)),
@@ -7,28 +8,11 @@ _A Schema-Driven Client SDK Generator for OpenTelemetry_
 >
 > This project is a **work in progress and is not ready for production use**.
 
-## Overview
+OTel Weaver is a CLI tool that enables users to:
 
-The following diagram illustrates the relationships between the semantic
-conventions, the schema, and the various components of a telemetry pipeline.
-
-![OTel Schema v1.2.0](docs/images/otel-schema-v1.2.0.png)
-
-This project was presented at the Semantic Convention SIG meeting on October 23, 2023.
-The presentation slides can be accessed [here](https://docs.google.com/presentation/d/1nxt5VFlC1mUjZ8eecUYK4e4SxThpIVj1IRnIcodMsNI/edit?usp=sharing).
-
-### Architecture
-
-The OTel Weaver tool is architecturally designed as a platform. By default, this
-tool incorporates a template engine that facilitates Client SDK/API generation
-across various programming languages. In the future, we plan to integrate a
-WASM plugin system, allowing the community to enhance the platform. This would
-pave the way for features like enterprise data catalog integration, privacy policy enforcement,
-documentation generation, dashboard creation, and more.
-
-Below is a diagram detailing the primary components of the OTel Weaver tool.
-
-![OTel Weaver Platform](docs/images/otel-weaver-platform.png)
+- Search for and retrieve information from a semantic convention registry or a telemetry schema.
+- Resolve a semantic convention registry or a telemetry schema.
+- Generate a client SDK/API from a telemetry schema.
 
 ## Install
 
@@ -55,11 +39,11 @@ for debug mode or the `target/release` directory for release mode.
 Usage: weaver [OPTIONS] [COMMAND]
 
 Commands:
-  resolve         Resolve a schema file and print the result
-  gen-client-sdk  Generate a client SDK (application)
-  languages       List of supported languages
-  search          Search in a schema file
-  help            Print this message or the help of the given subcommand(s)
+  resolve     Resolve a semantic convention registry or a telemetry schema
+  gen-client  Generate a client SDK or client API
+  languages   List all supported languages
+  search      Search in a semantic convention registry or a telemetry schema
+  help        Print this message or the help of the given subcommand(s)
 
 Options:
   -d, --debug...  Turn debugging information on
@@ -67,30 +51,53 @@ Options:
   -V, --version   Print version
 ```
 
-### Command `resolve`
+### Command `search`
 
-This command resolves a schema and displays the result on the standard output.
-Alternatively, the result can be written to a file if specified using the
-`--output` option. This command is primarily used for validating and debugging
-telemetry schemas.
+This command provides an interactive terminal UI, allowing users to search for
+attributes and metrics specified within a given semantic convention registry or
+a telemetry schema (including dependencies).
+
+To search into the OpenTelemetry Semantic Convention Registry, run the following
+command:
 
 ```bash
-weaver resolve --schema telemetry-schema.yaml --output telemetry-schema-resolved.yaml
+weaver search registry https://github.com/open-telemetry/semantic-conventions.git model 
+```
+
+To search into a telemetry schema, run the following command:
+
+```bash
+weaver search schema demo/app-telemetry-schema.yaml
+```
+
+This search engine leverages [Tantivy](https://github.com/quickwit-oss/tantivy)
+and supports a simple [search syntax](https://docs.rs/tantivy/latest/tantivy/query/struct.QueryParser.html)
+in the search bar.
+
+### Command `resolve`
+
+This command resolves a schema or a semantic convention registry (not yet
+implemented) and displays the result on the standard output.
+Alternatively, the result can be written to a file if specified using the
+`--output` option. This command is primarily used for validating and debugging
+telemetry schemas and semantic convention registries.
+
+```bash
+weaver resolve schema telemetry-schema.yaml --output telemetry-schema-resolved.yaml
 ```
 
 A "resolved schema" is one where:
 - All references have been resolved and expanded.
 - All overrides have been applied.
-
 - This resolved schema is what the code generator and upcoming plugins utilize.
 
-### Command `gen-client-sdk`
+### Command `gen-client`
 
 This command generates a client SDK from a telemetry schema for a given language
 specified with the `--language` option.
 
 ```bash
-weaver gen-client-sdk --schema telemetry-schema.yaml --language go
+weaver gen-client --schema telemetry-schema.yaml --language go
 ```
 
 In the future, users will be able to specify the protocol to use for the generated
@@ -105,22 +112,22 @@ be generated.
 weaver languages
 ```
 
-### Command `search`
+### Architecture
 
-This command provides an interactive terminal UI, allowing users to search for
-attributes and metrics specified within a given schema (including dependencies).
+The OTel Weaver tool is architecturally designed as a platform. By default, this
+tool incorporates a template engine that facilitates Client SDK/API generation
+across various programming languages. In the future, we plan to integrate a
+WASM plugin system, allowing the community to enhance the platform. This would
+pave the way for features like enterprise data catalog integration, privacy policy enforcement,
+documentation generation, dashboard creation, and more.
 
-```bash
-weaver search --schema <path>
-```
+Below is a diagram detailing the primary components of the OTel Weaver tool.
 
-This search engine leverages [Tantivy](https://github.com/quickwit-oss/tantivy) 
-and supports a simple [search syntax](https://docs.rs/tantivy/latest/tantivy/query/struct.QueryParser.html)
-in the search bar.
+![OTel Weaver Platform](docs/images/otel-weaver-platform.png)
 
 ## ToDo
 **Telemetry Schema Improvements**
-- [ ] Support local/enterprise semantic convention.
+- [X] Support local/enterprise semantic convention.
 - [X] Add support for close enum types (i.e. allow custom values=false).
 - [ ] Add support for open enum types (i.e. allow custom values=true).
 - [ ] Add support for template types.
@@ -174,10 +181,6 @@ in the search bar.
   - [X] Search engine for semantic convention catalog.
     - [X] Indexation of span events and links 
     - [ ] Indexation of tags
-
-## Questions
-- Should we make the search command an independent tool?
-- Should we support the equivalent of trace.SpanFromContext(context.TODO()) to get the current span? 
 
 ## Links
 
