@@ -5,7 +5,7 @@
 use std::io;
 use std::path::PathBuf;
 
-use clap::Parser;
+use clap::{Args, Subcommand};
 use crossterm::event::DisableMouseCapture;
 use crossterm::event::EnableMouseCapture;
 use crossterm::{
@@ -43,11 +43,34 @@ type Err = Box<dyn std::error::Error>;
 type Result<T> = std::result::Result<T, Err>;
 
 /// Parameters for the `search` command
-#[derive(Parser)]
+#[derive(Args)]
 pub struct SearchCommand {
-    /// Schema file to resolve
-    #[arg(short, long, value_name = "FILE")]
-    schema: PathBuf,
+    /// Define the sub-commands for the `search` command
+    #[clap(subcommand)]
+    pub command: SearchSubCommand,
+}
+
+/// Sub-commands for the `search` command
+#[derive(Subcommand)]
+pub enum SearchSubCommand {
+    /// Search in a semantic convention registry
+    Registry(SearchRegistry),
+    /// Search in a telemetry schema
+    Schema(SearchSchema),
+}
+
+/// Parameters for the `search registry` sub-command
+#[derive(Args)]
+pub struct SearchRegistry {
+    /// Registry to search
+    pub registry: String,
+}
+
+/// Parameters for the `search schema` sub-command
+#[derive(Args)]
+pub struct SearchSchema {
+    /// Schema file to search
+    pub schema: PathBuf,
 }
 
 pub struct SearchApp<'a> {
@@ -144,12 +167,26 @@ impl StatefulResults {
 }
 
 /// Search for attributes and metrics in a schema file
-pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchCommand) {
+pub fn command_search(log: impl Logger + Sync + Clone, command: &SearchCommand) {
     let cache = Cache::try_new().unwrap_or_else(|e| {
         log.error(&e.to_string());
         std::process::exit(1);
     });
-    let schema = SchemaResolver::resolve_schema_file(params.schema.clone(), &cache, log.clone())
+    match command.command {
+        SearchSubCommand::Registry(_) => {}
+        SearchSubCommand::Schema(ref command) => {
+            search_schema_command(log, &cache, command);
+        }
+    }
+}
+
+/// Search schema command.
+fn search_schema_command(
+    log: impl Logger + Sync + Clone + Sized,
+    cache: &Cache,
+    command: &SearchSchema,
+) {
+    let schema = SchemaResolver::resolve_schema_file(command.schema.clone(), cache, log.clone())
         .unwrap_or_else(|e| {
             log.error(&format!("{}", e));
             std::process::exit(1);

@@ -27,6 +27,7 @@ pub enum ResolveSubCommand {
     Schema(ResolveSchema),
 }
 
+/// Parameters for the `resolve registry` sub-command
 #[derive(Args)]
 pub struct ResolveRegistry {
     /// Registry to resolve
@@ -38,6 +39,7 @@ pub struct ResolveRegistry {
     pub output: Option<PathBuf>,
 }
 
+/// Parameters for the `resolve schema` sub-command
 #[derive(Args)]
 pub struct ResolveSchema {
     /// Schema file to resolve
