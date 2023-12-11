@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
+#![allow(rustdoc::invalid_html_tags)]
+
 //! Attribute specification.
 
 use serde::{Deserialize, Serialize};
