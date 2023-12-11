@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
+#![allow(rustdoc::invalid_html_tags)]
+
 //! Definition of an attribute in the context of a telemetry schema.
 
 use serde::{Deserialize, Serialize};
