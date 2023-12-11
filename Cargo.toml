@@ -25,10 +25,10 @@ license = "Apache-2.0"
 publish = false
 
 [workspace.dependencies]
-serde = { version = "1.0.192", features = ["derive"] }
+serde = { version = "1.0.193", features = ["derive"] }
 serde_yaml = "0.9.27"
 thiserror = "1.0.50"
-ureq = "2.8.0"
+ureq = "2.9.1"
 regex = "1.10.2"
 rayon = "1.8.0"
 
