@@ -119,13 +119,13 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: "nightly"  # MSRV
+          toolchain: "nightly"
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - name: Install SARIF tools
-        run: cargo install clippy-sarif --locked  # Held back due to msrv
+        run: cargo install clippy-sarif --locked
       - name: Install SARIF tools
-        run: cargo install sarif-fmt --locked # Held back due to msrv
+        run: cargo install sarif-fmt --locked
       - name: Check
         run: >
           cargo clippy --workspace --all-features --all-targets --message-format=json -- -D warnings --allow deprecated

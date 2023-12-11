@@ -44,7 +44,7 @@ type Result<T> = std::result::Result<T, Err>;
 
 /// Parameters for the `search` command
 #[derive(Parser)]
-pub struct SearchParams {
+pub struct SearchCommand {
     /// Schema file to resolve
     #[arg(short, long, value_name = "FILE")]
     schema: PathBuf,
@@ -144,7 +144,7 @@ impl StatefulResults {
 }
 
 /// Search for attributes and metrics in a schema file
-pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchParams) {
+pub fn command_search(log: impl Logger + Sync + Clone, params: &SearchCommand) {
     let cache = Cache::try_new().unwrap_or_else(|e| {
         log.error(&e.to_string());
         std::process::exit(1);

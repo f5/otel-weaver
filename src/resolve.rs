@@ -2,7 +2,7 @@
 
 //! Command to resolve a schema file, then output and display the results on the console.
 
-use clap::Parser;
+use clap::{Args, Subcommand};
 use std::path::PathBuf;
 use std::process::exit;
 use weaver_cache::Cache;
@@ -10,64 +10,95 @@ use weaver_cache::Cache;
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
 
-/// Parameters for the `resolve` command
-#[derive(Parser)]
-pub struct ResolveParams {
-    /// Schema file to resolve
-    #[arg(short, long, value_name = "FILE")]
-    schema: PathBuf,
+/// Specify the `resolve` command
+#[derive(Args)]
+pub struct ResolveCommand {
+    /// Define the sub-commands for the `resolve` command
+    #[clap(subcommand)]
+    pub command: ResolveSubCommand,
+}
+
+/// Sub-commands for the `resolve` command
+#[derive(Subcommand)]
+pub enum ResolveSubCommand {
+    /// Resolve a semantic convention registry
+    Registry(ResolveRegistry),
+    /// Resolve a telemetry schema
+    Schema(ResolveSchema),
+}
+
+#[derive(Args)]
+pub struct ResolveRegistry {
+    /// Registry to resolve
+    pub registry: String,
 
     /// Output file to write the resolved schema to
     /// If not specified, the resolved schema is printed to stdout
     #[arg(short, long)]
-    output: Option<PathBuf>,
+    pub output: Option<PathBuf>,
+}
+
+#[derive(Args)]
+pub struct ResolveSchema {
+    /// Schema file to resolve
+    pub schema: PathBuf,
+
+    /// Output file to write the resolved schema to
+    /// If not specified, the resolved schema is printed to stdout
+    #[arg(short, long)]
+    pub output: Option<PathBuf>,
 }
 
 /// Resolve a schema file and print the result
-pub fn command_resolve(log: impl Logger + Sync + Clone, params: &ResolveParams) {
+pub fn command_resolve(log: impl Logger + Sync + Clone, command: &ResolveCommand) {
     let cache = Cache::try_new().unwrap_or_else(|e| {
         log.error(&e.to_string());
         std::process::exit(1);
     });
-    let schema = params.schema.clone();
-    let schema = SchemaResolver::resolve_schema_file(schema, &cache, log.clone());
+    match command.command {
+        ResolveSubCommand::Registry(_) => {}
+        ResolveSubCommand::Schema(ref command) => {
+            let schema = command.schema.clone();
+            let schema = SchemaResolver::resolve_schema_file(schema, &cache, log.clone());
 
-    match schema {
-        Ok(schema) => match serde_yaml::to_string(&schema) {
-            Ok(yaml) => {
-                if let Some(output) = &params.output {
-                    log.loading(&format!(
-                        "Saving resolved schema to {}",
-                        output
-                            .to_str()
-                            .unwrap_or("<unrepresentable-filename-not-utf8>")
-                    ));
-                    if let Err(e) = std::fs::write(output, &yaml) {
-                        log.error(&format!(
-                            "Failed to write to {}: {}",
-                            output.to_str().unwrap(),
-                            e
-                        ));
+            match schema {
+                Ok(schema) => match serde_yaml::to_string(&schema) {
+                    Ok(yaml) => {
+                        if let Some(output) = &command.output {
+                            log.loading(&format!(
+                                "Saving resolved schema to {}",
+                                output
+                                    .to_str()
+                                    .unwrap_or("<unrepresentable-filename-not-utf8>")
+                            ));
+                            if let Err(e) = std::fs::write(output, &yaml) {
+                                log.error(&format!(
+                                    "Failed to write to {}: {}",
+                                    output.to_str().unwrap(),
+                                    e
+                                ));
+                                exit(1)
+                            }
+                            log.success(&format!(
+                                "Saved resolved schema to '{}'",
+                                output
+                                    .to_str()
+                                    .unwrap_or("<unrepresentable-filename-not-utf8>")
+                            ));
+                        } else {
+                            log.log(&yaml);
+                        }
+                    }
+                    Err(e) => {
+                        log.error(&format!("{}", e));
                         exit(1)
                     }
-                    log.success(&format!(
-                        "Saved resolved schema to '{}'",
-                        output
-                            .to_str()
-                            .unwrap_or("<unrepresentable-filename-not-utf8>")
-                    ));
-                } else {
-                    log.log(&yaml);
+                },
+                Err(e) => {
+                    log.error(&format!("{}", e));
+                    exit(1)
                 }
             }
-            Err(e) => {
-                log.error(&format!("{}", e));
-                exit(1)
-            }
-        },
-        Err(e) => {
-            log.error(&format!("{}", e));
-            exit(1)
         }
     }
 }

@@ -12,7 +12,7 @@ use weaver_template::GeneratorConfig;
 
 /// Parameters for the `gen-client-sdk` command
 #[derive(Parser)]
-pub struct GenClientSdkParams {
+pub struct GenClientCommand {
     /// Schema file to resolve
     #[arg(short, long, value_name = "FILE")]
     schema: PathBuf,
@@ -27,7 +27,7 @@ pub struct GenClientSdkParams {
 }
 
 /// Generate a client SDK (application)
-pub fn command_gen_client_sdk(log: impl Logger + Sync + Clone, params: &GenClientSdkParams) {
+pub fn command_gen_client(log: impl Logger + Sync + Clone, params: &GenClientCommand) {
     log.loading(&format!(
         "Generating client SDK for language {}",
         params.language

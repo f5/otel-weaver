@@ -3,13 +3,11 @@ use clap::Parser;
 use weaver_logger::ConsoleLogger;
 
 use crate::cli::{Cli, Commands};
-use crate::gen_client_api::command_gen_client_api;
-use crate::gen_client_sdk::command_gen_client_sdk;
+use crate::gen_client::command_gen_client;
 use crate::resolve::command_resolve;
 
 mod cli;
-mod gen_client_api;
-mod gen_client_sdk;
+mod gen_client;
 mod languages;
 mod resolve;
 mod search;
@@ -22,11 +20,8 @@ fn main() {
         Some(Commands::Resolve(params)) => {
             command_resolve(log, params);
         }
-        Some(Commands::GenClientSdk(params)) => {
-            command_gen_client_sdk(log, params);
-        }
-        Some(Commands::GenClientApi { schema }) => {
-            command_gen_client_api(log, schema);
+        Some(Commands::GenClient(params)) => {
+            command_gen_client(log, params);
         }
         Some(Commands::Languages(params)) => {
             languages::command_languages(log, params);
