@@ -140,7 +140,7 @@ pub struct MetricWithProvenance {
 /// A semantic convention catalog is a collection of semantic convention
 /// specifications indexed by group id.
 #[derive(Default, Debug)]
-pub struct SemConvCatalog {
+pub struct SemConvRegistry {
     /// The number of semantic convention assets added in the catalog.
     /// A asset can be a semantic convention loaded from a file or an URL.
     asset_count: usize,
@@ -246,7 +246,7 @@ struct MetricToResolve {
     r#ref: String,
 }
 
-impl SemConvCatalog {
+impl SemConvRegistry {
     /// Load and add a semantic convention file to the catalog.
     pub fn load_from_file<P: AsRef<Path> + Clone>(&mut self, path: P) -> Result<(), Error> {
         let spec = SemConvSpec::load_from_file(path.clone())?;
@@ -744,7 +744,7 @@ mod tests {
             "data/tls.yaml",
         ];
 
-        let mut catalog = SemConvCatalog::default();
+        let mut catalog = SemConvRegistry::default();
         for yaml in yaml_files {
             let result = catalog.load_from_file(yaml);
             assert!(result.is_ok(), "{:#?}", result.err().unwrap());
@@ -764,7 +764,7 @@ mod tests {
             "data/url.yaml",
         ];
 
-        let mut catalog = SemConvCatalog::default();
+        let mut catalog = SemConvRegistry::default();
         for yaml in yaml_files {
             let result = catalog.load_from_file(yaml);
             assert!(result.is_ok(), "{:#?}", result.err().unwrap());

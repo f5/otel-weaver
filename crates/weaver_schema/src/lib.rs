@@ -15,7 +15,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use weaver_semconv::SemConvCatalog;
+use weaver_semconv::SemConvRegistry;
 use weaver_version::Versions;
 
 use crate::event::Event;
@@ -107,12 +107,12 @@ pub struct TelemetrySchema {
 
     /// The parent schema.
     #[serde(skip)]
-    parent_schema: Option<Box<TelemetrySchema>>,
+    pub parent_schema: Option<Box<TelemetrySchema>>,
 
-    /// The semantic convention catalog used to resolve the schema
+    /// The semantic convention registry used to resolve the schema
     /// (if resolved).
     #[serde(skip)]
-    semantic_convention_catalog: SemConvCatalog,
+    pub semantic_convention_registry: SemConvRegistry,
 }
 
 /// A semantic convention import.
@@ -191,8 +191,8 @@ impl TelemetrySchema {
     }
 
     /// Sets the semantic convention catalog used to resolve the schema.
-    pub fn set_semantic_convention_catalog(&mut self, catalog: SemConvCatalog) {
-        self.semantic_convention_catalog = catalog;
+    pub fn set_semantic_convention_catalog(&mut self, catalog: SemConvRegistry) {
+        self.semantic_convention_registry = catalog;
     }
 
     /// Sets the parent schema.
@@ -227,8 +227,8 @@ impl TelemetrySchema {
     }
 
     /// Returns the semantic convention catalog used to resolve the schema (if resolved).
-    pub fn semantic_convention_catalog(&self) -> &SemConvCatalog {
-        &self.semantic_convention_catalog
+    pub fn semantic_convention_catalog(&self) -> &SemConvRegistry {
+        &self.semantic_convention_registry
     }
 
     /// Returns the number of metrics.

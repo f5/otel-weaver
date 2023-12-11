@@ -23,7 +23,7 @@ use weaver_version::VersionAttributeChanges;
 /// attributes.
 pub fn resolve_attributes(
     attributes: &[Attribute],
-    sem_conv_catalog: &weaver_semconv::SemConvCatalog,
+    sem_conv_catalog: &weaver_semconv::SemConvRegistry,
     version_changes: impl VersionAttributeChanges,
 ) -> Result<Vec<Attribute>, Error> {
     let mut resolved_attrs = BTreeMap::new();

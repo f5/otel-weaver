@@ -43,7 +43,7 @@ type Err = Box<dyn std::error::Error>;
 type Result<T> = std::result::Result<T, Err>;
 
 /// Parameters for the `search` command
-#[derive(Args)]
+#[derive(Debug, Args)]
 pub struct SearchCommand {
     /// Define the sub-commands for the `search` command
     #[clap(subcommand)]
@@ -51,7 +51,7 @@ pub struct SearchCommand {
 }
 
 /// Sub-commands for the `search` command
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum SearchSubCommand {
     /// Search in a semantic convention registry
     Registry(SearchRegistry),
@@ -60,14 +60,17 @@ pub enum SearchSubCommand {
 }
 
 /// Parameters for the `search registry` sub-command
-#[derive(Args)]
+#[derive(Debug, Args)]
 pub struct SearchRegistry {
-    /// Registry to search
+    /// Git URL of the semantic convention registry
     pub registry: String,
+
+    /// Path to the model
+    pub path: Option<String>,
 }
 
 /// Parameters for the `search schema` sub-command
-#[derive(Args)]
+#[derive(Debug, Args)]
 pub struct SearchSchema {
     /// Schema file to search
     pub schema: PathBuf,
@@ -172,26 +175,62 @@ pub fn command_search(log: impl Logger + Sync + Clone, command: &SearchCommand) 
         log.error(&e.to_string());
         std::process::exit(1);
     });
-    match command.command {
-        SearchSubCommand::Registry(_) => {}
-        SearchSubCommand::Schema(ref command) => {
-            search_schema_command(log, &cache, command);
-        }
+
+    match &command.command {
+        SearchSubCommand::Registry(args) => search_registry_command(log, &cache, args),
+        SearchSubCommand::Schema(args) => search_schema_command(log, &cache, args),
     }
+}
+
+/// Search semantic convention registry command.
+fn search_registry_command(
+    log: impl Logger + Sync + Clone + Sized,
+    cache: &Cache,
+    registry_args: &SearchRegistry,
+) {
+    let semconv_registry = SchemaResolver::resolve_semconv_registry(
+        registry_args.registry.clone(),
+        registry_args.path.clone(),
+        cache,
+        log.clone(),
+    )
+    .unwrap_or_else(|e| {
+        log.error(&format!("{}", e));
+        std::process::exit(1);
+    });
+
+    let schema = TelemetrySchema {
+        file_format: "".to_string(),
+        parent_schema_url: None,
+        schema_url: "".to_string(),
+        semantic_conventions: vec![],
+        schema: None,
+        versions: None,
+        parent_schema: None,
+        semantic_convention_registry: semconv_registry,
+    };
+
+    search_schema_tui(log, schema);
 }
 
 /// Search schema command.
 fn search_schema_command(
     log: impl Logger + Sync + Clone + Sized,
     cache: &Cache,
-    command: &SearchSchema,
+    schema_args: &SearchSchema,
 ) {
-    let schema = SchemaResolver::resolve_schema_file(command.schema.clone(), cache, log.clone())
-        .unwrap_or_else(|e| {
-            log.error(&format!("{}", e));
-            std::process::exit(1);
-        });
-    let sem_conv_catalog = schema.semantic_convention_catalog();
+    let schema =
+        SchemaResolver::resolve_schema_file(schema_args.schema.clone(), cache, log.clone())
+            .unwrap_or_else(|e| {
+                log.error(&format!("{}", e));
+                std::process::exit(1);
+            });
+
+    search_schema_tui(log, schema);
+}
+
+fn search_schema_tui(log: impl Logger + Sync + Clone + Sized + Sized, schema: TelemetrySchema) {
+    let semconv_registry = schema.semantic_convention_catalog();
 
     let mut schema_builder = Schema::builder();
     let fields = DocFields {
@@ -208,13 +247,13 @@ fn search_schema_command(
         .expect("Failed to create index writer");
 
     attribute::index_semconv_attributes(
-        sem_conv_catalog.attributes_iter(),
+        semconv_registry.attributes_iter(),
         "semconv",
         &fields,
         &mut index_writer,
     );
     metric::index_semconv_metrics(
-        sem_conv_catalog.metrics_iter(),
+        semconv_registry.metrics_iter(),
         "semconv",
         &fields,
         &mut index_writer,

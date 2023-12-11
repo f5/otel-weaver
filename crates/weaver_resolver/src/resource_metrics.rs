@@ -9,13 +9,13 @@ use weaver_schema::attribute::to_schema_attributes;
 use weaver_schema::metric_group::Metric;
 use weaver_schema::schema_spec::SchemaSpec;
 use weaver_schema::univariate_metric::UnivariateMetric;
-use weaver_semconv::SemConvCatalog;
+use weaver_semconv::SemConvRegistry;
 use weaver_version::VersionChanges;
 
 /// Resolves metrics and their attributes.
 pub fn resolve_metrics(
     schema: &mut SchemaSpec,
-    sem_conv_catalog: &SemConvCatalog,
+    sem_conv_catalog: &SemConvRegistry,
     version_changes: &VersionChanges,
 ) -> Result<(), Error> {
     if let Some(metrics) = schema.resource_metrics.as_mut() {

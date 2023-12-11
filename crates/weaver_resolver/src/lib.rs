@@ -20,7 +20,7 @@ use walkdir::DirEntry;
 use weaver_cache::Cache;
 use weaver_logger::Logger;
 use weaver_schema::{SemConvImport, TelemetrySchema};
-use weaver_semconv::{ResolverConfig, SemConvCatalog, SemConvSpec};
+use weaver_semconv::{ResolverConfig, SemConvRegistry, SemConvSpec};
 use weaver_version::VersionChanges;
 
 use crate::resource::resolve_resource;
@@ -101,7 +101,7 @@ impl SchemaResolver {
         log: impl Logger + Clone + Sync,
     ) -> Result<TelemetrySchema, Error> {
         let mut schema = Self::load_schema_from_path(schema_path.clone(), log.clone())?;
-        let sem_conv_catalog = Self::semantic_catalog_from_schema(&schema, cache, log.clone())?;
+        let sem_conv_catalog = Self::semconv_registry_from_schema(&schema, cache, log.clone())?;
         let start = Instant::now();
 
         // Merges the versions of the parent schema into the current schema.
@@ -140,6 +140,23 @@ impl SchemaResolver {
         Ok(schema)
     }
 
+    /// Loads and resolves a semantic convention registry from the given Git URL.
+    pub fn resolve_semconv_registry(
+        registry_git_url: String,
+        path: Option<String>,
+        cache: &Cache,
+        log: impl Logger + Clone + Sync,
+    ) -> Result<SemConvRegistry, Error> {
+        Self::semconv_registry_from_imports(
+            &[SemConvImport::GitUrl {
+                git_url: registry_git_url,
+                path,
+            }],
+            cache,
+            log.clone(),
+        )
+    }
+
     /// Loads a telemetry schema from the given path.
     pub fn load_schema_from_path<P: AsRef<Path> + Clone>(
         schema_path: P,
@@ -169,16 +186,28 @@ impl SchemaResolver {
         Ok(schema)
     }
 
-    /// Loads a semantic convention catalog from the given schema path.
-    pub fn semantic_catalog_from_schema(
+    /// Loads a semantic convention registry from the given schema.
+    pub fn semconv_registry_from_schema(
         schema: &TelemetrySchema,
         cache: &Cache,
         log: impl Logger + Clone + Sync,
-    ) -> Result<SemConvCatalog, Error> {
+    ) -> Result<SemConvRegistry, Error> {
+        Self::semconv_registry_from_imports(
+            &schema.merged_semantic_conventions(),
+            cache,
+            log.clone(),
+        )
+    }
+
+    /// Loads a semantic convention registry from the given semantic convention imports.
+    pub fn semconv_registry_from_imports(
+        imports: &[SemConvImport],
+        cache: &Cache,
+        log: impl Logger + Clone + Sync,
+    ) -> Result<SemConvRegistry, Error> {
         let start = Instant::now();
-        let semantic_conventions = schema.merged_semantic_conventions();
         let mut sem_conv_catalog =
-            Self::create_semantic_convention_catalog(&semantic_conventions, cache, log.clone())?;
+            Self::create_semantic_convention_registry(imports, cache, log.clone())?;
         let warnings = sem_conv_catalog
             .resolve(ResolverConfig::default())
             .map_err(|e| Error::SemConvError {
@@ -251,14 +280,14 @@ impl SchemaResolver {
         Ok(parent_schema)
     }
 
-    /// Creates a semantic convention catalog from the given telemetry schema.
-    fn create_semantic_convention_catalog(
+    /// Creates a semantic convention registry from the given telemetry schema.
+    fn create_semantic_convention_registry(
         sem_convs: &[SemConvImport],
         cache: &Cache,
         log: impl Logger + Sync,
-    ) -> Result<SemConvCatalog, Error> {
+    ) -> Result<SemConvRegistry, Error> {
         // Load all the semantic convention catalogs.
-        let mut sem_conv_catalog = SemConvCatalog::default();
+        let mut sem_conv_catalog = SemConvRegistry::default();
         let total_file_count = sem_convs.len();
         let loaded_files_count = AtomicUsize::new(0);
         let error_count = AtomicUsize::new(0);
@@ -316,7 +345,7 @@ impl SchemaResolver {
     ) -> Vec<Result<(String, SemConvSpec), Error>> {
         match import_decl {
             SemConvImport::Url { url } => {
-                let spec = SemConvCatalog::load_sem_conv_spec_from_url(url).map_err(|e| {
+                let spec = SemConvRegistry::load_sem_conv_spec_from_url(url).map_err(|e| {
                     Error::SemConvError {
                         message: e.to_string(),
                     }
@@ -358,7 +387,7 @@ impl SchemaResolver {
                             Ok(entry) => {
                                 if is_semantic_convention_file(&entry) {
                                     let spec =
-                                        SemConvCatalog::load_sem_conv_spec_from_file(entry.path())
+                                        SemConvRegistry::load_sem_conv_spec_from_file(entry.path())
                                             .map_err(|e| Error::SemConvError {
                                                 message: e.to_string(),
                                             });

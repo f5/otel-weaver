@@ -5,13 +5,13 @@
 use crate::attribute::resolve_attributes;
 use crate::Error;
 use weaver_schema::schema_spec::SchemaSpec;
-use weaver_semconv::SemConvCatalog;
+use weaver_semconv::SemConvRegistry;
 use weaver_version::VersionChanges;
 
 /// Resolves resource events and their attributes.
 pub fn resolve_events(
     schema: &mut SchemaSpec,
-    sem_conv_catalog: &SemConvCatalog,
+    sem_conv_catalog: &SemConvRegistry,
     version_changes: &VersionChanges,
 ) -> Result<(), Error> {
     if let Some(events) = schema.resource_events.as_mut() {
