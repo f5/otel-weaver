@@ -1,8 +1,8 @@
-# OTel Weaver
+# OTel Weaver (status: Proof of Concept)
 
 ## Overview
 
-> At this stage, the project is being used as a Proof of Concept to explore and
+> At this stage, the project is being used as a **Proof of Concept** to explore and
 > refine the 'Application Telemetry Schema: Vision and Roadmap' OTEP ([PR](https://github.com/open-telemetry/oteps/pull/243)),
 > which has not yet been approved.
 >
