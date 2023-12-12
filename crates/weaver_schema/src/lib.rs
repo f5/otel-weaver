@@ -136,6 +136,19 @@ pub enum SemConvImport {
 }
 
 impl TelemetrySchema {
+    /// Loads a telemetry schema from an URL or a local path.
+    pub fn load(schema: &str) -> Result<TelemetrySchema, Error> {
+        if schema.starts_with("http://") || schema.starts_with("https://") {
+            let schema_url = Url::parse(schema).map_err(|e| Error::SchemaNotFound {
+                path_or_url: schema.to_string(),
+                error: e.to_string(),
+            })?;
+            Self::load_from_url(&schema_url)
+        } else {
+            Self::load_from_file(schema)
+        }
+    }
+
     /// Loads a telemetry schema file and returns the schema.
     pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<TelemetrySchema, Error> {
         let path_buf = path.as_ref().to_path_buf();

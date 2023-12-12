@@ -67,6 +67,10 @@ pub struct SearchRegistry {
 
     /// Path to the model
     pub path: Option<String>,
+
+    /// The telemetry schema containing the versions (url or file)
+    #[arg(short, long)]
+    schema: Option<String>,
 }
 
 /// Parameters for the `search schema` sub-command
@@ -199,15 +203,25 @@ fn search_registry_command(
         std::process::exit(1);
     });
 
-    let schema = TelemetrySchema {
-        file_format: "".to_string(),
-        parent_schema_url: None,
-        schema_url: "".to_string(),
-        semantic_conventions: vec![],
-        schema: None,
-        versions: None,
-        parent_schema: None,
-        semantic_convention_registry: semconv_registry,
+    let schema = if let Some(schema) = &registry_args.schema {
+        let mut schema =
+            SchemaResolver::resolve_schema(schema, cache, log.clone()).unwrap_or_else(|e| {
+                log.error(&format!("{}", e));
+                std::process::exit(1);
+            });
+        schema.semantic_convention_registry = semconv_registry;
+        schema
+    } else {
+        TelemetrySchema {
+            file_format: "".to_string(),
+            parent_schema_url: None,
+            schema_url: "".to_string(),
+            semantic_conventions: vec![],
+            schema: None,
+            versions: None,
+            parent_schema: None,
+            semantic_convention_registry: semconv_registry,
+        }
     };
 
     search_schema_tui(log, schema);

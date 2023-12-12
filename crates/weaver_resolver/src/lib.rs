@@ -94,6 +94,19 @@ pub enum Error {
 }
 
 impl SchemaResolver {
+    /// Loads a telemetry schema from an URL or a file and returns the resolved
+    /// schema.
+    pub fn resolve_schema(
+        schema_url_or_path: &str,
+        cache: &Cache,
+        log: impl Logger + Clone + Sync,
+    ) -> Result<TelemetrySchema, Error> {
+        let mut schema = Self::load_schema(schema_url_or_path, log.clone())?;
+        Self::resolve(&mut schema, schema_url_or_path, cache, log)?;
+
+        Ok(schema)
+    }
+
     /// Loads a telemetry schema file and returns the resolved schema.
     pub fn resolve_schema_file<P: AsRef<Path> + Clone>(
         schema_path: P,
@@ -101,7 +114,24 @@ impl SchemaResolver {
         log: impl Logger + Clone + Sync,
     ) -> Result<TelemetrySchema, Error> {
         let mut schema = Self::load_schema_from_path(schema_path.clone(), log.clone())?;
-        let sem_conv_catalog = Self::semconv_registry_from_schema(&schema, cache, log.clone())?;
+        Self::resolve(
+            &mut schema,
+            schema_path.as_ref().to_str().unwrap(),
+            cache,
+            log,
+        )?;
+
+        Ok(schema)
+    }
+
+    /// Resolve the given telemetry schema.
+    fn resolve(
+        schema: &mut TelemetrySchema,
+        schema_path: &str,
+        cache: &Cache,
+        log: impl Logger + Clone + Sync,
+    ) -> Result<(), Error> {
+        let sem_conv_catalog = Self::semconv_registry_from_schema(schema, cache, log.clone())?;
         let start = Instant::now();
 
         // Merges the versions of the parent schema into the current schema.
@@ -130,14 +160,14 @@ impl SchemaResolver {
         }
         log.success(&format!(
             "Resolved schema '{}' ({:.2}s)",
-            schema_path.as_ref().display(),
+            schema_path,
             start.elapsed().as_secs_f32()
         ));
 
         schema.semantic_conventions.clear();
         schema.set_semantic_convention_catalog(sem_conv_catalog);
 
-        Ok(schema)
+        Ok(())
     }
 
     /// Loads and resolves a semantic convention registry from the given Git URL.
@@ -155,6 +185,29 @@ impl SchemaResolver {
             cache,
             log.clone(),
         )
+    }
+
+    /// Loads a telemetry schema from the given URL or path.
+    pub fn load_schema(
+        schema_url_or_path: &str,
+        log: impl Logger + Clone + Sync,
+    ) -> Result<TelemetrySchema, Error> {
+        let start = Instant::now();
+        log.loading(&format!("Loading schema '{}'", schema_url_or_path));
+
+        let mut schema = TelemetrySchema::load(schema_url_or_path).map_err(|e| {
+            log.error(&format!("Failed to load schema '{}'", schema_url_or_path));
+            Error::TelemetrySchemaError(e)
+        })?;
+        log.success(&format!(
+            "Loaded schema '{}' ({:.2}s)",
+            schema_url_or_path,
+            start.elapsed().as_secs_f32()
+        ));
+
+        let parent_schema = Self::load_parent_schema(&schema, log.clone())?;
+        schema.set_parent_schema(parent_schema);
+        Ok(schema)
     }
 
     /// Loads a telemetry schema from the given path.
