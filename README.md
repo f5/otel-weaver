@@ -126,7 +126,7 @@ Below is a diagram detailing the primary components of the OTel Weaver tool.
 ![OTel Weaver Platform](docs/images/otel-weaver-platform.png)
 
 ## ToDo
-**Telemetry Schema Improvements**
+**Semantic Convention Registry and Application Telemetry Schema**
 - [ ] Add support for open enum types (i.e. allow custom values=true).
 - [ ] Add support for template types.
 - [ ] Add support for `all` in telemetry schema versions section.
@@ -140,14 +140,7 @@ Below is a diagram detailing the primary components of the OTel Weaver tool.
 
 **Client SDK/API Code Generation**
 - Generate Go Client SDK/API on top of the generic Go Client SDK/API.
-  - Generate type-safe API for metrics.
-    - [X] Synchronous and Asynchronous counters.
-    - [X] Synchronous and Asynchronous up down counters.
-    - [X] Asynchronous gauges.
-    - [X] Synchronous histogram.
   - [ ] Generate type-safe API for metric groups.
-  - [X] Generate type-safe API for events (not yet connected to the underlying OTel API).
-  - [X] Generate type-safe API for spans (including nested spans).
   - [ ] Support obfuscation and masking.
 - Generate Go Client SDK/API with support for OTel Arrow Protocol.
 - Generate Rust Client SDK/API on top of the generic Rust Client SDK/API.
