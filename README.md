@@ -127,8 +127,6 @@ Below is a diagram detailing the primary components of the OTel Weaver tool.
 
 ## ToDo
 **Telemetry Schema Improvements**
-- [X] Support local/enterprise semantic convention.
-- [X] Add support for close enum types (i.e. allow custom values=false).
 - [ ] Add support for open enum types (i.e. allow custom values=true).
 - [ ] Add support for template types.
 - [ ] Add support for `all` in telemetry schema versions section.
@@ -139,11 +137,6 @@ Below is a diagram detailing the primary components of the OTel Weaver tool.
 - [ ] Add support for group constraints `any_of`, ...
 - [ ] Support more than 2 levels of telemetry schema inheritance.
 - [ ] Minimize number of declaration duplications in the resolved schema (especially for attributes).
-- [X] Add support for semantic convention catalog initialized from a git repo.
-- [X] Add provenance (i.e. URL or file) for each definition.
-- [X] Add support for group extends.
-- [X] Add support for group of attributes (in general and for metrics).
-- [X] Support attribute value everywhere (not only in resource).
 
 **Client SDK/API Code Generation**
 - Generate Go Client SDK/API on top of the generic Go Client SDK/API.
@@ -157,30 +150,12 @@ Below is a diagram detailing the primary components of the OTel Weaver tool.
   - [X] Generate type-safe API for spans (including nested spans).
   - [ ] Support obfuscation and masking.
 - Generate Go Client SDK/API with support for OTel Arrow Protocol.
-  - [ ] Generate type-safe API for metrics.
-  - [ ] Generate type-safe API for metric groups.
-  - [ ] Generate type-safe API for events (not yet connected to the underlying OTel API).
-  - [ ] Generate type-safe API for spans.
-  - [ ] Support obfuscation and masking.
 - Generate Rust Client SDK/API on top of the generic Rust Client SDK/API.
-  - [ ] Generate type-safe API for metrics.
-  - [ ] Generate type-safe API for metric groups.
-  - [ ] Generate type-safe API for events (not yet connected to the underlying OTel API).
-  - [ ] Generate type-safe API for spans.
-  - [ ] Support obfuscation and masking.
 - Generate Rust Client SDK/API with support for OTel Arrow Protocol.
-  - [ ] Generate type-safe API for metrics.
-  - [ ] Generate type-safe API for metric groups.
-  - [ ] Generate type-safe API for events (not yet connected to the underlying OTel API).
-  - [ ] Generate type-safe API for spans.
-  - [ ] Support obfuscation and masking.
 
 **Tooling and Plugins**
   - [ ] Add support for WASM plugins.
   - [ ] Add Tera filter to apply obfuscation, masking, ... based on tags and language configuration.
-  - [X] Search engine for semantic convention catalog.
-    - [X] Indexation of span events and links 
-    - [ ] Indexation of tags
 
 ## Links
 
@@ -189,9 +164,10 @@ Internal links:
 - [Change log](CHANGELOG.md)
 
 External links:
+- Application Telemetry Schema: Vision and Roadmap - [PR](https://github.com/open-telemetry/oteps/pull/243)
+- OpenTelemetry Telemetry Schema v1.2.0 [Draft](https://github.com/lquerel/oteps/blob/app-telemetry-schema-format/text/0241-telemetry-schema-ext.md) (not yet ready).
 - [OpenTelemetry Semantic Convention File Format](https://github.com/open-telemetry/build-tools/blob/main/semantic-conventions/syntax.md)
 - [OpenTelemetry Schema File Format v1.1.0](https://opentelemetry.io/docs/specs/otel/schemas/file_format_v1.1.0/)
-- OpenTelemetry Telemetry Schema v1.2.0 [OTEP](https://github.com/lquerel/oteps/blob/main/text/0240-telemetry-schema-ext.md).
 - Presentation slides from the Semantic Convention SIG meeting on October 23, 2023 [here](https://docs.google.com/presentation/d/1nxt5VFlC1mUjZ8eecUYK4e4SxThpIVj1IRnIcodMsNI/edit?usp=sharing).
 - Meta/Facebook's [positional paper](https://research.facebook.com/publications/positional-paper-schema-first-application-telemetry/) 
   presenting a similar approach but based on Thrift+Annotations+Automations.
