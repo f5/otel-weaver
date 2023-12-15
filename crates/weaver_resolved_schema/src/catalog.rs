@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
+#![allow(rustdoc::invalid_html_tags)]
+
 //! Defines the catalog of attributes, metrics, and other telemetry items
 //! that are shared across multiple signals in the Resolved Telemetry Schema.
 

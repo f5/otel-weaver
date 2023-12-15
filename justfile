@@ -11,6 +11,7 @@ pre-push-check:
     cargo fmt --all
     cargo clippy --all
     cargo test --all
+    cargo doc --workspace --all-features --no-deps --document-private-items
 
 pre-push: pre-push-check
     cargo depgraph --workspace-only | dot -Tsvg > docs/images/dependencies.svg
