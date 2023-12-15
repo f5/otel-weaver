@@ -2,7 +2,7 @@
 
 //! Define an instrumentation library.
 
-use crate::signal::Signal;
+use crate::signal::{Event, MultivariateMetric, Span, UnivariateMetric};
 use crate::tags::Tags;
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +20,16 @@ pub struct InstrumentationLibrary {
     /// A set of tags for the instrumentation library.
     #[serde(skip_serializing_if = "Option::is_none")]
     tags: Option<Tags>,
-    /// A set of signals produced by the instrumentation library.
-    signals: Vec<Signal>,
+    /// A set of univariate metrics produced by the instrumentation library.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    univariate_metrics: Vec<UnivariateMetric>,
+    /// A set of multivariate metrics produced by the instrumentation library.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    multivariate_metrics: Vec<MultivariateMetric>,
+    /// A set of events produced by the instrumentation library.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    events: Vec<Event>,
+    /// A set of spans produced by the instrumentation library.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    spans: Vec<Span>,
 }
