@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: Apache-2.0
+
+//! Define the concept of Resolved Telemetry Schema.
+//! A Resolved Telemetry Schema is self-contained and doesn't contain any
+//! external references to other schemas or semantic conventions.
+
+#![deny(missing_docs)]
+#![deny(clippy::print_stdout)]
+#![deny(clippy::print_stderr)]
+
+use crate::catalog::Catalog;
+use crate::instrumentation_library::InstrumentationLibrary;
+use crate::resource::Resource;
+use serde::{Deserialize, Serialize};
+use weaver_version::Versions;
+
+mod catalog;
+mod instrumentation_library;
+mod resource;
+mod signal;
+mod tags;
+
+/// A Resolved Telemetry Schema.
+/// A Resolved Telemetry Schema is self-contained and doesn't contain any
+/// external references to other schemas or semantic conventions.
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct ResolvedTelemetrySchema {
+    /// Defines the file format.
+    pub file_format: String,
+    /// The Schema URL that this file is published at.
+    pub schema_url: String,
+    /// The catalog of items that are shared across multiple signals.
+    pub catalog: Catalog,
+    /// The resource definition (only for application).
+    pub resource: Option<Resource>,
+    /// Definition of the instrumentation library for the instrumented application or library
+    pub instrumentation_library: InstrumentationLibrary,
+    /// The list of dependencies of the current instrumentation application or library.
+    pub dependencies: Vec<InstrumentationLibrary>,
+    /// Definitions for each schema version in this family.
+    /// Note: the ordering of versions is defined according to semver
+    /// version number ordering rules.
+    /// This section is described in more details in the OTEP 0152 and in a dedicated
+    /// section below.
+    /// <https://github.com/open-telemetry/oteps/blob/main/text/0152-telemetry-schemas.md>
+    pub versions: Option<Versions>,
+}
