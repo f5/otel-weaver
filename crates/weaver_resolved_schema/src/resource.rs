@@ -10,5 +10,5 @@ use serde::{Deserialize, Serialize};
 #[serde(deny_unknown_fields)]
 pub struct Resource {
     /// The attributes.
-    attributes: Vec<AttributeRef>,
+    pub attributes: Vec<AttributeRef>,
 }

@@ -14,11 +14,11 @@ use crate::resource::Resource;
 use serde::{Deserialize, Serialize};
 use weaver_version::Versions;
 
-mod catalog;
-mod instrumentation_library;
-mod resource;
-mod signal;
-mod tags;
+pub mod catalog;
+pub mod instrumentation_library;
+pub mod resource;
+pub mod signal;
+pub mod tags;
 
 /// A Resolved Telemetry Schema.
 /// A Resolved Telemetry Schema is self-contained and doesn't contain any
@@ -34,8 +34,9 @@ pub struct ResolvedTelemetrySchema {
     pub catalog: Catalog,
     /// The resource definition (only for application).
     pub resource: Option<Resource>,
-    /// Definition of the instrumentation library for the instrumented application or library
-    pub instrumentation_library: InstrumentationLibrary,
+    /// Definition of the instrumentation library for the instrumented application or library.
+    /// Or none if the resolved telemetry schema represents a semantic convention registry.
+    pub instrumentation_library: Option<InstrumentationLibrary>,
     /// The list of dependencies of the current instrumentation application or library.
     pub dependencies: Vec<InstrumentationLibrary>,
     /// Definitions for each schema version in this family.

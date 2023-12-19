@@ -20,5 +20,5 @@ use std::collections::HashMap;
 #[serde(deny_unknown_fields)]
 pub struct Tags {
     /// The tags.
-    tags: HashMap<String, String>,
+    pub tags: HashMap<String, String>,
 }

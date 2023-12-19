@@ -35,58 +35,58 @@ pub struct Catalog {
 #[serde(deny_unknown_fields)]
 pub struct Attribute {
     /// Attribute name.
-    name: String,
+    pub name: String,
     /// Either a string literal denoting the type as a primitive or an
     /// array type, a template type or an enum definition.
-    r#type: AttributeType,
+    pub r#type: AttributeType,
     /// A brief description of the attribute.
-    brief: String,
+    pub brief: String,
     /// Sequence of example values for the attribute or single example
     /// value. They are required only for string and string array
     /// attributes. Example values must be of the same type of the
     /// attribute. If only a single example is provided, it can directly
     /// be reported without encapsulating it into a sequence/dictionary.
     #[serde(skip_serializing_if = "Option::is_none")]
-    examples: Option<Examples>,
+    pub examples: Option<Examples>,
     /// Associates a tag ("sub-group") to the attribute. It carries no
     /// particular semantic meaning but can be used e.g. for filtering
     /// in the markdown generator.
     #[serde(skip_serializing_if = "Option::is_none")]
-    tag: Option<String>,
+    pub tag: Option<String>,
     /// Specifies if the attribute is mandatory. Can be "required",
     /// "conditionally_required", "recommended" or "opt_in". When omitted,
     /// the attribute is "recommended". When set to
     /// "conditionally_required", the string provided as <condition> MUST
     /// specify the conditions under which the attribute is required.
-    requirement_level: RequirementLevel,
+    pub requirement_level: RequirementLevel,
     /// Specifies if the attribute is (especially) relevant for sampling
     /// and thus should be set at span start. It defaults to false.
     /// Note: this field is experimental.
     #[serde(skip_serializing_if = "Option::is_none")]
-    sampling_relevant: Option<bool>,
+    pub sampling_relevant: Option<bool>,
     /// A more elaborate description of the attribute.
     /// It defaults to an empty string.
-    note: String,
+    pub note: String,
     /// Specifies the stability of the attribute.
     /// Note that, if stability is missing but deprecated is present, it will
     /// automatically set the stability to deprecated. If deprecated is
     /// present and stability differs from deprecated, this will result in an
     /// error.
     #[serde(skip_serializing_if = "Option::is_none")]
-    stability: Option<Stability>,
+    pub stability: Option<Stability>,
     /// Specifies if the attribute is deprecated. The string
     /// provided as <description> MUST specify why it's deprecated and/or what
     /// to use instead. See also stability.
     #[serde(skip_serializing_if = "Option::is_none")]
-    deprecated: Option<String>,
+    pub deprecated: Option<String>,
     /// A set of tags for the attribute.
     #[serde(skip_serializing_if = "Option::is_none")]
-    tags: Option<Tags>,
+    pub tags: Option<Tags>,
 
     /// The value of the attribute.
     /// Note: This is only used in a telemetry schema specification.
     #[serde(skip_serializing_if = "Option::is_none")]
-    value: Option<Value>,
+    pub value: Option<Value>,
 }
 
 /// A metric definition.
@@ -94,18 +94,18 @@ pub struct Attribute {
 #[serde(deny_unknown_fields)]
 pub struct Metric {
     /// Metric name.
-    name: String,
+    pub name: String,
     /// Brief description of the metric.
-    brief: String,
+    pub brief: String,
     /// Note on the metric.
-    note: String,
+    pub note: String,
     /// Type of the metric (e.g. gauge, histogram, ...).
-    instrument: Instrument,
+    pub instrument: Instrument,
     /// Unit of the metric.
-    unit: Option<String>,
+    pub unit: Option<String>,
     /// A set of tags for the metric.
     #[serde(skip_serializing_if = "Option::is_none")]
-    tags: Option<Tags>,
+    pub tags: Option<Tags>,
 }
 
 /// The different types of attributes.

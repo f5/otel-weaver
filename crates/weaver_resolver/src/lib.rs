@@ -17,22 +17,26 @@ use regex::Regex;
 use url::Url;
 use walkdir::DirEntry;
 
+use crate::attribute::semconv_to_resolved_attr;
 use weaver_cache::Cache;
 use weaver_logger::Logger;
+use weaver_resolved_schema::catalog::{Attribute, Catalog};
+use weaver_resolved_schema::ResolvedTelemetrySchema;
 use weaver_schema::{SemConvImport, TelemetrySchema};
 use weaver_semconv::{ResolverConfig, SemConvRegistry, SemConvSpec};
 use weaver_version::VersionChanges;
 
+use crate::events::resolve_events;
+use crate::metrics::{resolve_metrics, semconv_to_resolved_metric};
 use crate::resource::resolve_resource;
-use crate::resource_events::resolve_events;
-use crate::resource_metrics::resolve_metrics;
-use crate::resource_spans::resolve_spans;
+use crate::spans::resolve_spans;
 
 mod attribute;
+mod events;
+mod metrics;
 mod resource;
-mod resource_events;
-mod resource_metrics;
-mod resource_spans;
+mod spans;
+mod tags;
 
 /// A resolver that can be used to resolve telemetry schemas.
 /// All references to semantic conventions will be resolved.
@@ -90,6 +94,13 @@ pub enum Error {
         metric_ref: String,
         /// The error that occurred.
         error: String,
+    },
+
+    /// A generic conversion error.
+    #[error("Conversion error: {message}")]
+    ConversionError {
+        /// The error that occurred.
+        message: String,
     },
 }
 
@@ -259,26 +270,76 @@ impl SchemaResolver {
         log: impl Logger + Clone + Sync,
     ) -> Result<SemConvRegistry, Error> {
         let start = Instant::now();
-        let mut sem_conv_catalog =
-            Self::create_semantic_convention_registry(imports, cache, log.clone())?;
-        let warnings = sem_conv_catalog
-            .resolve(ResolverConfig::default())
-            .map_err(|e| Error::SemConvError {
-                message: e.to_string(),
-            })?;
+        let mut registry = Self::create_semantic_convention_registry(imports, cache, log.clone())?;
+        let warnings =
+            registry
+                .resolve(ResolverConfig::default())
+                .map_err(|e| Error::SemConvError {
+                    message: e.to_string(),
+                })?;
         for warning in warnings {
             log.warn("Semantic convention warning")
                 .log(&warning.error.to_string());
         }
         log.success(&format!(
             "Loaded {} semantic convention files containing the definition of {} attributes and {} metrics ({:.2}s)",
-            sem_conv_catalog.asset_count(),
-            sem_conv_catalog.attribute_count(),
-            sem_conv_catalog.metric_count(),
+            registry.asset_count(),
+            registry.attribute_count(),
+            registry.metric_count(),
             start.elapsed().as_secs_f32()
         ));
 
-        Ok(sem_conv_catalog)
+        Ok(registry)
+    }
+
+    /// Resolves the given semantic convention registry and returns the
+    /// corresponding resolved telemetry schema.
+    pub fn resolve_semantic_convention_registry(
+        registry: &mut SemConvRegistry,
+        log: impl Logger + Clone + Sync,
+    ) -> Result<ResolvedTelemetrySchema, Error> {
+        let start = Instant::now();
+        let warnings =
+            registry
+                .resolve(ResolverConfig::default())
+                .map_err(|e| Error::SemConvError {
+                    message: e.to_string(),
+                })?;
+        for warning in warnings {
+            log.warn("Semantic convention warning")
+                .log(&warning.error.to_string());
+        }
+
+        let attributes: Result<Vec<Attribute>, Error> = registry
+            .attributes_iter()
+            .map(semconv_to_resolved_attr)
+            .collect();
+        let metrics = registry
+            .metrics_iter()
+            .map(semconv_to_resolved_metric)
+            .collect();
+        let resolved_schema = ResolvedTelemetrySchema {
+            file_format: "1.0.0".to_string(),
+            schema_url: "".to_string(),
+            catalog: Catalog {
+                attributes: attributes?,
+                metrics,
+            },
+            resource: None,
+            instrumentation_library: None,
+            dependencies: vec![],
+            versions: None, // ToDo LQ: Implement this!
+        };
+
+        log.success(&format!(
+            "Loaded and resolved {} semantic convention files containing the definition of {} attributes and {} metrics ({:.2}s)",
+            registry.asset_count(),
+            registry.attribute_count(),
+            registry.metric_count(),
+            start.elapsed().as_secs_f32()
+        ));
+
+        Ok(resolved_schema)
     }
 
     /// Loads the parent telemetry schema if it exists.

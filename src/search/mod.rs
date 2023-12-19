@@ -428,7 +428,7 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
         .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
         .split(outer_layout[0]);
 
-    let content = Table::new(rows)
+    let content = Table::new(rows, [Constraint::Max(50), Constraint::Max(120)])
         .header(header)
         .block(
             Block::default()
@@ -439,8 +439,7 @@ fn ui(app: &mut SearchApp, frame: &mut Frame<'_>) {
                 .title_style(Style::default().fg(app.theme.value)),
         )
         .highlight_style(selected_style)
-        .highlight_symbol(">> ")
-        .widths(&[Constraint::Max(50), Constraint::Max(120)]);
+        .highlight_symbol(">> ");
 
     frame.render_stateful_widget(content, inner_layout[1], &mut app.results.state);
 
