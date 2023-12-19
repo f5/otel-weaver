@@ -332,7 +332,7 @@ impl SchemaResolver {
         };
 
         log.success(&format!(
-            "Loaded and resolved {} semantic convention files containing the definition of {} attributes and {} metrics ({:.2}s)",
+            "Resolved {} semantic convention files containing the definition of {} attributes and {} metrics ({:.2}s)",
             registry.asset_count(),
             registry.attribute_count(),
             registry.metric_count(),

@@ -266,13 +266,13 @@ fn semconv_to_resolved_attr_type(
                     id: member.id.clone(),
                     value: match &member.value {
                         weaver_semconv::attribute::Value::String(s) => {
-                            weaver_resolved_schema::catalog::Value::String(s.clone())
+                            weaver_resolved_schema::catalog::Value::String { value: s.clone() }
                         }
                         weaver_semconv::attribute::Value::Int(i) => {
-                            weaver_resolved_schema::catalog::Value::Int(*i)
+                            weaver_resolved_schema::catalog::Value::Int { value: *i }
                         }
                         weaver_semconv::attribute::Value::Double(d) => {
-                            weaver_resolved_schema::catalog::Value::Double(*d)
+                            weaver_resolved_schema::catalog::Value::Double { value: *d }
                         }
                     },
                     brief: member.brief.clone(),
@@ -287,14 +287,22 @@ fn semconv_to_resolved_examples(
     examples: &Option<Examples>,
 ) -> Option<weaver_resolved_schema::catalog::Examples> {
     examples.as_ref().map(|examples| match examples {
-        Examples::Bool(v) => weaver_resolved_schema::catalog::Examples::Bool(*v),
-        Examples::Int(v) => weaver_resolved_schema::catalog::Examples::Int(*v),
-        Examples::Double(v) => weaver_resolved_schema::catalog::Examples::Double(*v),
-        Examples::String(v) => weaver_resolved_schema::catalog::Examples::String(v.clone()),
-        Examples::Ints(v) => weaver_resolved_schema::catalog::Examples::Ints(v.clone()),
-        Examples::Doubles(v) => weaver_resolved_schema::catalog::Examples::Doubles(v.clone()),
-        Examples::Bools(v) => weaver_resolved_schema::catalog::Examples::Bools(v.clone()),
-        Examples::Strings(v) => weaver_resolved_schema::catalog::Examples::Strings(v.clone()),
+        Examples::Bool(v) => weaver_resolved_schema::catalog::Examples::Bool { value: *v },
+        Examples::Int(v) => weaver_resolved_schema::catalog::Examples::Int { value: *v },
+        Examples::Double(v) => weaver_resolved_schema::catalog::Examples::Double { value: *v },
+        Examples::String(v) => {
+            weaver_resolved_schema::catalog::Examples::String { value: v.clone() }
+        }
+        Examples::Ints(v) => weaver_resolved_schema::catalog::Examples::Ints { values: v.clone() },
+        Examples::Doubles(v) => {
+            weaver_resolved_schema::catalog::Examples::Doubles { values: v.clone() }
+        }
+        Examples::Bools(v) => {
+            weaver_resolved_schema::catalog::Examples::Bools { values: v.clone() }
+        }
+        Examples::Strings(v) => {
+            weaver_resolved_schema::catalog::Examples::Strings { values: v.clone() }
+        }
     })
 }
 
@@ -341,8 +349,8 @@ fn semconv_to_resolved_value(
     value: &Option<Value>,
 ) -> Option<weaver_resolved_schema::catalog::Value> {
     value.as_ref().map(|value| match value {
-        Value::String(s) => weaver_resolved_schema::catalog::Value::String(s.clone()),
-        Value::Int(i) => weaver_resolved_schema::catalog::Value::Int(*i),
-        Value::Double(d) => weaver_resolved_schema::catalog::Value::Double(*d),
+        Value::String(s) => weaver_resolved_schema::catalog::Value::String { value: s.clone() },
+        Value::Int(i) => weaver_resolved_schema::catalog::Value::Int { value: *i },
+        Value::Double(d) => weaver_resolved_schema::catalog::Value::Double { value: *d },
     })
 }

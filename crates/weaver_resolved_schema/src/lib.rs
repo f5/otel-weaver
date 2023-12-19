@@ -33,11 +33,14 @@ pub struct ResolvedTelemetrySchema {
     /// The catalog of items that are shared across multiple signals.
     pub catalog: Catalog,
     /// The resource definition (only for application).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub resource: Option<Resource>,
     /// Definition of the instrumentation library for the instrumented application or library.
     /// Or none if the resolved telemetry schema represents a semantic convention registry.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub instrumentation_library: Option<InstrumentationLibrary>,
     /// The list of dependencies of the current instrumentation application or library.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub dependencies: Vec<InstrumentationLibrary>,
     /// Definitions for each schema version in this family.
     /// Note: the ordering of versions is defined according to semver
@@ -45,5 +48,6 @@ pub struct ResolvedTelemetrySchema {
     /// This section is described in more details in the OTEP 0152 and in a dedicated
     /// section below.
     /// <https://github.com/open-telemetry/oteps/blob/main/text/0152-telemetry-schemas.md>
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub versions: Option<Versions>,
 }

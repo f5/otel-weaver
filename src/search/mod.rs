@@ -65,7 +65,8 @@ pub struct SearchRegistry {
     /// Git URL of the semantic convention registry
     pub registry: String,
 
-    /// Path to the model
+    /// Optional path in the git repository where the semantic convention
+    /// registry is located
     pub path: Option<String>,
 
     /// The telemetry schema containing the versions (url or file)

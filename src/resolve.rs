@@ -9,6 +9,7 @@ use weaver_cache::Cache;
 
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
+use weaver_schema::SemConvImport;
 
 /// Specify the `resolve` command
 #[derive(Args)]
@@ -32,6 +33,10 @@ pub enum ResolveSubCommand {
 pub struct ResolveRegistry {
     /// Registry to resolve
     pub registry: String,
+
+    /// Optional path in the git repository where the semantic convention
+    /// registry is located
+    pub path: Option<String>,
 
     /// Output file to write the resolved schema to
     /// If not specified, the resolved schema is printed to stdout
@@ -58,7 +63,59 @@ pub fn command_resolve(log: impl Logger + Sync + Clone, command: &ResolveCommand
         std::process::exit(1);
     });
     match command.command {
-        ResolveSubCommand::Registry(_) => {}
+        ResolveSubCommand::Registry(ref command) => {
+            let mut registry = SchemaResolver::semconv_registry_from_imports(
+                &[SemConvImport::GitUrl {
+                    git_url: command.registry.clone(),
+                    path: command.path.clone(),
+                }],
+                &cache,
+                log.clone(),
+            )
+            .unwrap_or_else(|e| {
+                log.error(&e.to_string());
+                exit(1);
+            });
+
+            let resolved_schema =
+                SchemaResolver::resolve_semantic_convention_registry(&mut registry, log.clone())
+                    .unwrap_or_else(|e| {
+                        log.error(&e.to_string());
+                        exit(1);
+                    });
+            match serde_yaml::to_string(&resolved_schema) {
+                Ok(yaml) => {
+                    if let Some(output) = &command.output {
+                        log.loading(&format!(
+                            "Saving resolved registry to {}",
+                            output
+                                .to_str()
+                                .unwrap_or("<unrepresentable-filename-not-utf8>")
+                        ));
+                        if let Err(e) = std::fs::write(output, &yaml) {
+                            log.error(&format!(
+                                "Failed to write to {}: {}",
+                                output.to_str().unwrap(),
+                                e
+                            ));
+                            exit(1)
+                        }
+                        log.success(&format!(
+                            "Saved resolved registry to '{}'",
+                            output
+                                .to_str()
+                                .unwrap_or("<unrepresentable-filename-not-utf8>")
+                        ));
+                    } else {
+                        log.log(&yaml);
+                    }
+                }
+                Err(e) => {
+                    log.error(&format!("{}", e));
+                    exit(1)
+                }
+            }
+        }
         ResolveSubCommand::Schema(ref command) => {
             let schema = command.schema.clone();
             let schema = SchemaResolver::resolve_schema_file(schema, &cache, log.clone());

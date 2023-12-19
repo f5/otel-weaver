@@ -5,6 +5,8 @@
 //! Defines the catalog of attributes, metrics, and other telemetry items
 //! that are shared across multiple signals in the Resolved Telemetry Schema.
 
+use std::fmt::Debug;
+
 use serde::{Deserialize, Serialize};
 
 use crate::tags::Tags;
@@ -40,6 +42,7 @@ pub struct Attribute {
     /// array type, a template type or an enum definition.
     pub r#type: AttributeType,
     /// A brief description of the attribute.
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub brief: String,
     /// Sequence of example values for the attribute or single example
     /// value. They are required only for string and string array
@@ -66,6 +69,7 @@ pub struct Attribute {
     pub sampling_relevant: Option<bool>,
     /// A more elaborate description of the attribute.
     /// It defaults to an empty string.
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub note: String,
     /// Specifies the stability of the attribute.
     /// Note that, if stability is missing but deprecated is present, it will
@@ -110,6 +114,7 @@ pub struct Metric {
 
 /// The different types of attributes.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(tag = "type")]
 pub enum AttributeType {
     /// A boolean attribute.
     Boolean,
@@ -172,41 +177,70 @@ pub struct EnumEntries {
     pub value: Value,
     /// Brief description of the enum entry value.
     /// It defaults to the value of id.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub brief: Option<String>,
     /// Longer description.
     /// It defaults to an empty string.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub note: Option<String>,
 }
 
 /// The different types of examples.
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "type")]
 pub enum Examples {
     /// A boolean example.
-    Bool(bool),
+    Bool {
+        /// The value of the example.
+        value: bool,
+    },
     /// A integer example.
-    Int(i64),
+    Int {
+        /// The value of the example.
+        value: i64,
+    },
     /// A double example.
-    Double(f64),
+    Double {
+        /// The value of the example.
+        value: f64,
+    },
     /// A string example.
-    String(String),
+    String {
+        /// The value of the example.
+        value: String,
+    },
     /// A array of integers example.
-    Ints(Vec<i64>),
+    Ints {
+        /// The value of the example.
+        values: Vec<i64>,
+    },
     /// A array of doubles example.
-    Doubles(Vec<f64>),
+    Doubles {
+        /// The value of the example.
+        values: Vec<f64>,
+    },
     /// A array of bools example.
-    Bools(Vec<bool>),
+    Bools {
+        /// The value of the example.
+        values: Vec<bool>,
+    },
     /// A array of strings example.
-    Strings(Vec<String>),
+    Strings {
+        /// The value of the example.
+        values: Vec<String>,
+    },
 }
 
 /// The different requirement levels.
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "type")]
 pub enum RequirementLevel {
     /// A required requirement level.
     Required,
     /// An optional requirement level.
     Recommended {
         /// The description of the recommendation.
+        #[serde(skip_serializing_if = "Option::is_none")]
         text: Option<String>,
     },
     /// An opt-in requirement level.
@@ -214,6 +248,7 @@ pub enum RequirementLevel {
     /// A conditional requirement level.
     ConditionallyRequired {
         /// The description of the condition.
+        #[serde(skip_serializing_if = "String::is_empty")]
         text: String,
     },
 }
@@ -231,13 +266,23 @@ pub enum Stability {
 
 /// The different types of values.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(tag = "type")]
 pub enum Value {
     /// A integer value.
-    Int(i64),
+    Int {
+        /// The value
+        value: i64,
+    },
     /// A double value.
-    Double(f64),
+    Double {
+        /// The value
+        value: f64,
+    },
     /// A string value.
-    String(String),
+    String {
+        /// The value
+        value: String,
+    },
 }
 
 /// The type of the metric.
