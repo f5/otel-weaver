@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
+#![allow(rustdoc::invalid_html_tags)]
+
 //! A semantic convention registry.
 
 use serde::{Deserialize, Serialize};
