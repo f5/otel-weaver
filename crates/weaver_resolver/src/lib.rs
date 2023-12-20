@@ -28,14 +28,18 @@ use weaver_version::VersionChanges;
 
 use crate::events::resolve_events;
 use crate::metrics::{resolve_metrics, semconv_to_resolved_metric};
+use crate::registry::resolve_semconv_registry;
 use crate::resource::resolve_resource;
 use crate::spans::resolve_spans;
 
 mod attribute;
+mod constraint;
 mod events;
 mod metrics;
+mod registry;
 mod resource;
 mod spans;
+mod stability;
 mod tags;
 
 /// A resolver that can be used to resolve telemetry schemas.
@@ -321,6 +325,7 @@ impl SchemaResolver {
         let resolved_schema = ResolvedTelemetrySchema {
             file_format: "1.0.0".to_string(),
             schema_url: "".to_string(),
+            registries: vec![resolve_semconv_registry("", registry, log.clone())?],
             catalog: Catalog {
                 attributes: attributes?,
                 metrics,

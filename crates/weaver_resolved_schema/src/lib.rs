@@ -10,12 +10,14 @@
 
 use crate::catalog::Catalog;
 use crate::instrumentation_library::InstrumentationLibrary;
+use crate::registry::Registry;
 use crate::resource::Resource;
 use serde::{Deserialize, Serialize};
 use weaver_version::Versions;
 
 pub mod catalog;
 pub mod instrumentation_library;
+pub mod registry;
 pub mod resource;
 pub mod signal;
 pub mod tags;
@@ -30,7 +32,12 @@ pub struct ResolvedTelemetrySchema {
     pub file_format: String,
     /// The Schema URL that this file is published at.
     pub schema_url: String,
-    /// The catalog of items that are shared across multiple signals.
+    /// A list of semantic convention registries that can be used in this schema
+    /// and its descendants.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub registries: Vec<Registry>,
+    /// The catalog of unique items that are shared across multiple registries
+    /// and signals.
     pub catalog: Catalog,
     /// The resource definition (only for application).
     #[serde(skip_serializing_if = "Option::is_none")]

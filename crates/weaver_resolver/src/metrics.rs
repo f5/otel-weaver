@@ -169,15 +169,14 @@ pub fn semconv_to_resolved_metric(
         name: metric.name.clone(),
         brief: metric.brief.clone(),
         note: metric.note.clone(),
-        instrument: semconv_to_resolved_instrument(&metric.instrument),
+        instrument: resolve_instrument(&metric.instrument),
         unit: metric.unit.clone(),
         tags: None, // ToDo we need a mechanism to transmit tags here from the input schema.
     }
 }
 
-fn semconv_to_resolved_instrument(
-    instrument: &Instrument,
-) -> weaver_resolved_schema::catalog::Instrument {
+/// Resolve a metric instrument.
+pub fn resolve_instrument(instrument: &Instrument) -> weaver_resolved_schema::catalog::Instrument {
     match instrument {
         Instrument::Counter => weaver_resolved_schema::catalog::Instrument::Counter,
         Instrument::UpDownCounter => weaver_resolved_schema::catalog::Instrument::UpDownCounter,

@@ -11,10 +11,9 @@ use weaver_semconv::attribute::{
     TemplateType, Value,
 };
 use weaver_semconv::group::ConvType;
-use weaver_semconv::stability::Stability;
 use weaver_version::VersionAttributeChanges;
 
-use crate::Error;
+use crate::{stability, Error};
 
 /// Resolves a collection of attributes (i.e. `Attribute::Ref`, `Attribute::AttributeGroupRef`,
 /// and `Attribute::SpanRef`) from the given semantic convention catalog and local attributes
@@ -207,7 +206,7 @@ pub fn semconv_to_resolved_attr(
             requirement_level: semconv_to_resolved_req_level(requirement_level),
             sampling_relevant: *sampling_relevant,
             note: note.clone(),
-            stability: semconv_to_resolved_stability(stability),
+            stability: stability::resolve_stability(stability),
             deprecated: deprecated.clone(),
             tags: None,
             value: None,
@@ -332,16 +331,6 @@ fn semconv_to_resolved_req_level(
             }
         }
     }
-}
-
-fn semconv_to_resolved_stability(
-    stability: &Option<Stability>,
-) -> Option<weaver_resolved_schema::catalog::Stability> {
-    stability.as_ref().map(|stability| match stability {
-        Stability::Deprecated => weaver_resolved_schema::catalog::Stability::Deprecated,
-        Stability::Experimental => weaver_resolved_schema::catalog::Stability::Experimental,
-        Stability::Stable => weaver_resolved_schema::catalog::Stability::Stable,
-    })
 }
 
 #[allow(dead_code)] // ToDo Remove this once we have values in the resolved schema

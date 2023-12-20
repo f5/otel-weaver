@@ -5,6 +5,7 @@
 use crate::attribute::resolve_attributes;
 use crate::Error;
 use weaver_schema::schema_spec::SchemaSpec;
+use weaver_semconv::group::SpanKind;
 use weaver_semconv::SemConvRegistry;
 use weaver_version::VersionChanges;
 
@@ -43,4 +44,15 @@ pub fn resolve_spans(
         }
     }
     Ok(())
+}
+
+/// Resolve a span kind.
+pub fn resolve_span_kind(span_kind: &SpanKind) -> weaver_resolved_schema::signal::SpanKind {
+    match span_kind {
+        SpanKind::Client => weaver_resolved_schema::signal::SpanKind::Client,
+        SpanKind::Consumer => weaver_resolved_schema::signal::SpanKind::Consumer,
+        SpanKind::Internal => weaver_resolved_schema::signal::SpanKind::Internal,
+        SpanKind::Producer => weaver_resolved_schema::signal::SpanKind::Producer,
+        SpanKind::Server => weaver_resolved_schema::signal::SpanKind::Server,
+    }
 }

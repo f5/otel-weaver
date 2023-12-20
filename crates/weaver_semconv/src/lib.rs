@@ -33,11 +33,11 @@ pub mod group;
 pub mod metric;
 pub mod stability;
 
-/// An error that can occur while loading a semantic convention catalog.
+/// An error that can occur while loading a semantic convention registry.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     /// The semantic convention asset was not found.
-    #[error("Semantic convention catalog {path_or_url:?} not found\n{error}")]
+    #[error("Semantic convention registry {path_or_url:?} not found\n{error}")]
     CatalogNotFound {
         /// The path or URL of the semantic convention asset.
         path_or_url: String,
@@ -46,7 +46,7 @@ pub enum Error {
     },
 
     /// The semantic convention asset is invalid.
-    #[error("Invalid semantic convention catalog {path_or_url:?}\n{error}")]
+    #[error("Invalid semantic convention registry {path_or_url:?}\n{error}")]
     InvalidCatalog {
         /// The path or URL of the semantic convention asset.
         path_or_url: String,
@@ -137,26 +137,26 @@ pub struct MetricWithProvenance {
     pub provenance: String,
 }
 
-/// A semantic convention catalog is a collection of semantic convention
+/// A semantic convention registry is a collection of semantic convention
 /// specifications indexed by group id.
 #[derive(Default, Debug)]
 pub struct SemConvRegistry {
-    /// The number of semantic convention assets added in the catalog.
+    /// The number of semantic convention assets added in the semantic convention registry.
     /// A asset can be a semantic convention loaded from a file or an URL.
     asset_count: usize,
 
-    /// A collection of semantic convention specifications loaded in the catalog.
+    /// A collection of semantic convention specifications loaded in the semantic convention registry.
     specs: Vec<(String, SemConvSpec)>,
 
     /// Attributes indexed by their respective id independently of their
     /// semantic convention group.
     ///
-    /// This collection contains all the attributes defined in the catalog.
+    /// This collection contains all the attributes defined in the semantic convention registry.
     all_attributes: HashMap<String, AttributeWithProvenance>,
 
     /// Metrics indexed by their respective id.
     ///
-    /// This collection contains all the metrics defined in the catalog.
+    /// This collection contains all the metrics defined in the semantic convention registry.
     all_metrics: HashMap<String, MetricWithProvenance>,
 
     /// Collection of attribute ids index by group id and defined in a
@@ -247,7 +247,7 @@ struct MetricToResolve {
 }
 
 impl SemConvRegistry {
-    /// Load and add a semantic convention file to the catalog.
+    /// Load and add a semantic convention file to the semantic convention registry.
     pub fn load_from_file<P: AsRef<Path> + Clone>(&mut self, path: P) -> Result<(), Error> {
         let spec = SemConvSpec::load_from_file(path.clone())?;
         if let Err(e) = spec.validate() {
@@ -292,23 +292,23 @@ impl SemConvRegistry {
         Ok((sem_conv_url.to_string(), spec))
     }
 
-    /// Returns the number of semantic convention assets added in the catalog.
+    /// Returns the number of semantic convention assets added in the semantic convention registry.
     pub fn asset_count(&self) -> usize {
         self.asset_count
     }
 
-    /// Append a list of semantic convention specs to the catalog.
+    /// Append a list of semantic convention specs to the semantic convention registry.
     pub fn append_sem_conv_specs(&mut self, specs: Vec<(String, SemConvSpec)>) {
         self.specs.extend(specs);
     }
 
-    /// Append a semantic convention spec to the catalog.
+    /// Append a semantic convention spec to the semantic convention registry.
     pub fn append_sem_conv_spec(&mut self, spec: (String, SemConvSpec)) {
         self.specs.push(spec);
         self.asset_count += 1;
     }
 
-    /// Resolves all the references present in the semantic convention catalog.
+    /// Resolves all the references present in the semantic convention registry.
     ///
     /// The `config` parameter allows to customize the resolver behavior
     /// when a reference is not found. By default, the resolver will emit an
@@ -321,7 +321,7 @@ impl SemConvRegistry {
         let mut attributes_to_resolve = Vec::new();
         let mut metrics_to_resolve = HashMap::new();
 
-        // Add all the attributes with an id to the catalog.
+        // Add all the attributes with an id to the semantic convention registry.
         for (path_or_url, spec) in self.specs.clone().into_iter() {
             for group in spec.groups.iter() {
                 // Process attributes
@@ -505,12 +505,12 @@ impl SemConvRegistry {
         Ok(warnings)
     }
 
-    /// Returns the number of unique attributes defined in the catalog.
+    /// Returns the number of unique attributes defined in the semantic convention registry.
     pub fn attribute_count(&self) -> usize {
         self.all_attributes.len()
     }
 
-    /// Returns the number of unique metrics defined in the catalog.
+    /// Returns the number of unique metrics defined in the semantic convention registry.
     pub fn metric_count(&self) -> usize {
         self.all_metrics.len()
     }
@@ -562,12 +562,17 @@ impl SemConvRegistry {
         Ok(attributes)
     }
 
-    /// Returns an iterator over all the attributes defined in the catalog.
+    /// Returns an iterator over all the groups defined in the semantic convention registry.
+    pub fn groups(&self) -> impl Iterator<Item = &Group> {
+        self.specs.iter().flat_map(|(_, spec)| &spec.groups)
+    }
+
+    /// Returns an iterator over all the attributes defined in the semantic convention registry.
     pub fn attributes_iter(&self) -> impl Iterator<Item = &Attribute> {
         self.all_attributes.values().map(|attr| &attr.attribute)
     }
 
-    /// Returns an iterator over all the metrics defined in the catalog.
+    /// Returns an iterator over all the metrics defined in the semantic convention registry.
     pub fn metrics_iter(&self) -> impl Iterator<Item = &Metric> {
         self.all_metrics.values().map(|metric| &metric.metric)
     }
@@ -602,7 +607,7 @@ impl SemConvRegistry {
     }
 
     /// Processes a collection of attributes passed as a parameter (`attrs`),
-    /// adds attributes fully defined to the catalog, adds attributes with
+    /// adds attributes fully defined to the semantic convention registry, adds attributes with
     /// a reference to the list of attributes to resolve and returns a
     /// collection of attribute ids defined in the current group.
     fn process_attributes(
@@ -617,7 +622,7 @@ impl SemConvRegistry {
         for mut attr in attrs.into_iter() {
             match &attr {
                 Attribute::Id { id, .. } => {
-                    // The attribute has an id, so add it to the catalog
+                    // The attribute has an id, so add it to the semantic convention registry
                     // if it does not exist yet, otherwise return an error.
                     // The fully qualified attribute id is the concatenation
                     // of the prefix and the attribute id (separated by a dot).
@@ -662,11 +667,11 @@ impl SemConvRegistry {
 }
 
 impl SemConvSpec {
-    /// Load a semantic convention catalog from a file.
+    /// Load a semantic convention semantic convention registry from a file.
     pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<SemConvSpec, Error> {
         let path_buf = path.as_ref().to_path_buf();
 
-        // Load and deserialize the semantic convention catalog
+        // Load and deserialize the semantic convention semantic convention registry
         let catalog_file = File::open(path).map_err(|e| Error::CatalogNotFound {
             path_or_url: path_buf.as_path().display().to_string(),
             error: e.to_string(),
@@ -683,7 +688,7 @@ impl SemConvSpec {
         Ok(catalog)
     }
 
-    /// Load a semantic convention catalog from a URL.
+    /// Load a semantic convention semantic convention registry from a URL.
     pub fn load_from_url(semconv_url: &str) -> Result<SemConvSpec, Error> {
         // Create a content reader from the semantic convention URL
         let reader = ureq::get(semconv_url)
@@ -712,7 +717,7 @@ mod tests {
 
     use super::*;
 
-    /// Load multiple semantic convention files in the catalog.
+    /// Load multiple semantic convention files in the semantic convention registry.
     /// No error should be emitted.
     #[test]
     fn test_load_catalog() {
@@ -751,7 +756,7 @@ mod tests {
         }
     }
 
-    /// Test the resolver with a semantic convention catalog that contains
+    /// Test the resolver with a semantic convention semantic convention registry that contains
     /// multiple references to resolve.
     /// No error or warning should be emitted.
     #[test]
