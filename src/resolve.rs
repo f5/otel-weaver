@@ -10,6 +10,7 @@ use weaver_cache::Cache;
 use weaver_logger::Logger;
 use weaver_resolver::SchemaResolver;
 use weaver_schema::SemConvImport;
+use weaver_semconv::ResolverConfig;
 
 /// Specify the `resolve` command
 #[derive(Args)]
@@ -69,6 +70,7 @@ pub fn command_resolve(log: impl Logger + Sync + Clone, command: &ResolveCommand
                     git_url: command.registry.clone(),
                     path: command.path.clone(),
                 }],
+                ResolverConfig::with_keep_specs(),
                 &cache,
                 log.clone(),
             )

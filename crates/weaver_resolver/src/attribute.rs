@@ -4,6 +4,8 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
+use weaver_resolved_schema::attribute;
+use weaver_resolved_schema::attribute::AttributeRef;
 use weaver_schema::attribute::Attribute;
 use weaver_schema::tags::Tags;
 use weaver_semconv::attribute::{
@@ -11,9 +13,36 @@ use weaver_semconv::attribute::{
     TemplateType, Value,
 };
 use weaver_semconv::group::ConvType;
+use weaver_semconv::SemConvRegistry;
 use weaver_version::VersionAttributeChanges;
 
 use crate::{stability, Error};
+
+/// A catalog of deduplicated resolved attributes with their corresponding reference.
+#[derive(Debug, Default)]
+pub struct AttributeCatalog {
+    attributes: HashMap<attribute::Attribute, attribute::AttributeRef>,
+}
+
+impl AttributeCatalog {
+    /// Returns the reference of the given attribute or creates a new reference if the attribute
+    /// does not exist in the catalog.
+    pub fn attribute_ref(&mut self, attr: attribute::Attribute) -> attribute::AttributeRef {
+        let next_id = self.attributes.len() as u32;
+        *self
+            .attributes
+            .entry(attr)
+            .or_insert_with(|| attribute::AttributeRef(next_id))
+    }
+
+    /// Returns a list of deduplicated attributes ordered by their references.
+    pub fn drain_attributes(self) -> Vec<attribute::Attribute> {
+        let mut attributes: Vec<(attribute::Attribute, AttributeRef)> =
+            self.attributes.into_iter().collect();
+        attributes.sort_by_key(|(_, attr_ref)| attr_ref.0);
+        attributes.into_iter().map(|(attr, _)| attr).collect()
+    }
+}
 
 /// Resolves a collection of attributes (i.e. `Attribute::Ref`, `Attribute::AttributeGroupRef`,
 /// and `Attribute::SpanRef`) from the given semantic convention catalog and local attributes
@@ -179,13 +208,20 @@ pub fn merge_attributes(main_attrs: &[Attribute], inherited_attrs: &[Attribute])
 }
 
 /// Converts a semantic convention attribute to a resolved attribute.
-pub fn semconv_to_resolved_attr(
+pub fn resolve_attribute(
+    registry: &SemConvRegistry,
     attr: &weaver_semconv::attribute::Attribute,
-) -> Result<weaver_resolved_schema::catalog::Attribute, Error> {
+) -> Result<weaver_resolved_schema::attribute::Attribute, Error> {
     match attr {
-        weaver_semconv::attribute::Attribute::Ref { .. } => Err(Error::ConversionError {
-            message: "Cannot convert an attribute reference to a resolved attribute".to_string(),
-        }),
+        weaver_semconv::attribute::Attribute::Ref { r#ref, .. } => {
+            let sem_conv_attr = registry
+                .attribute(r#ref)
+                .ok_or(Error::FailToResolveAttribute {
+                    id: r#ref.clone(),
+                    error: "Attribute ref not found in the resolved registry".to_string(),
+                })?;
+            resolve_attribute(registry, sem_conv_attr)
+        }
         weaver_semconv::attribute::Attribute::Id {
             id,
             r#type,
@@ -197,7 +233,7 @@ pub fn semconv_to_resolved_attr(
             note,
             stability,
             deprecated,
-        } => Ok(weaver_resolved_schema::catalog::Attribute {
+        } => Ok(weaver_resolved_schema::attribute::Attribute {
             name: id.clone(),
             r#type: semconv_to_resolved_attr_type(r#type),
             brief: brief.clone(),
@@ -216,63 +252,67 @@ pub fn semconv_to_resolved_attr(
 
 fn semconv_to_resolved_attr_type(
     attr_type: &AttributeType,
-) -> weaver_resolved_schema::catalog::AttributeType {
+) -> weaver_resolved_schema::attribute::AttributeType {
     match attr_type {
         AttributeType::PrimitiveOrArray(poa) => match poa {
             PrimitiveOrArrayType::Boolean => {
-                weaver_resolved_schema::catalog::AttributeType::Boolean
+                weaver_resolved_schema::attribute::AttributeType::Boolean
             }
-            PrimitiveOrArrayType::Int => weaver_resolved_schema::catalog::AttributeType::Int,
-            PrimitiveOrArrayType::Double => weaver_resolved_schema::catalog::AttributeType::Double,
-            PrimitiveOrArrayType::String => weaver_resolved_schema::catalog::AttributeType::String,
+            PrimitiveOrArrayType::Int => weaver_resolved_schema::attribute::AttributeType::Int,
+            PrimitiveOrArrayType::Double => {
+                weaver_resolved_schema::attribute::AttributeType::Double
+            }
+            PrimitiveOrArrayType::String => {
+                weaver_resolved_schema::attribute::AttributeType::String
+            }
             PrimitiveOrArrayType::Strings => {
-                weaver_resolved_schema::catalog::AttributeType::Strings
+                weaver_resolved_schema::attribute::AttributeType::Strings
             }
-            PrimitiveOrArrayType::Ints => weaver_resolved_schema::catalog::AttributeType::Ints,
+            PrimitiveOrArrayType::Ints => weaver_resolved_schema::attribute::AttributeType::Ints,
             PrimitiveOrArrayType::Doubles => {
-                weaver_resolved_schema::catalog::AttributeType::Doubles
+                weaver_resolved_schema::attribute::AttributeType::Doubles
             }
             PrimitiveOrArrayType::Booleans => {
-                weaver_resolved_schema::catalog::AttributeType::Booleans
+                weaver_resolved_schema::attribute::AttributeType::Booleans
             }
         },
         AttributeType::Template(template) => match template {
             TemplateType::Boolean => {
-                weaver_resolved_schema::catalog::AttributeType::TemplateBoolean
+                weaver_resolved_schema::attribute::AttributeType::TemplateBoolean
             }
-            TemplateType::Int => weaver_resolved_schema::catalog::AttributeType::TemplateInt,
-            TemplateType::Double => weaver_resolved_schema::catalog::AttributeType::TemplateDouble,
-            TemplateType::String => weaver_resolved_schema::catalog::AttributeType::TemplateString,
+            TemplateType::Int => weaver_resolved_schema::attribute::AttributeType::TemplateInt,
+            TemplateType::Double => {
+                weaver_resolved_schema::attribute::AttributeType::TemplateDouble
+            }
+            TemplateType::String => {
+                weaver_resolved_schema::attribute::AttributeType::TemplateString
+            }
             TemplateType::Strings => {
-                weaver_resolved_schema::catalog::AttributeType::TemplateStrings
+                weaver_resolved_schema::attribute::AttributeType::TemplateStrings
             }
-            TemplateType::Ints => weaver_resolved_schema::catalog::AttributeType::TemplateInts,
+            TemplateType::Ints => weaver_resolved_schema::attribute::AttributeType::TemplateInts,
             TemplateType::Doubles => {
-                weaver_resolved_schema::catalog::AttributeType::TemplateDoubles
+                weaver_resolved_schema::attribute::AttributeType::TemplateDoubles
             }
             TemplateType::Booleans => {
-                weaver_resolved_schema::catalog::AttributeType::TemplateBooleans
+                weaver_resolved_schema::attribute::AttributeType::TemplateBooleans
             }
         },
         AttributeType::Enum {
             allow_custom_values,
             members,
-        } => weaver_resolved_schema::catalog::AttributeType::Enum {
+        } => weaver_resolved_schema::attribute::AttributeType::Enum {
             allow_custom_values: *allow_custom_values,
             members: members
                 .iter()
-                .map(|member| weaver_resolved_schema::catalog::EnumEntries {
+                .map(|member| weaver_resolved_schema::attribute::EnumEntries {
                     id: member.id.clone(),
                     value: match &member.value {
-                        weaver_semconv::attribute::Value::String(s) => {
-                            weaver_resolved_schema::catalog::Value::String { value: s.clone() }
+                        Value::String(s) => {
+                            weaver_resolved_schema::value::Value::String { value: s.clone() }
                         }
-                        weaver_semconv::attribute::Value::Int(i) => {
-                            weaver_resolved_schema::catalog::Value::Int { value: *i }
-                        }
-                        weaver_semconv::attribute::Value::Double(d) => {
-                            weaver_resolved_schema::catalog::Value::Double { value: *d }
-                        }
+                        Value::Int(i) => weaver_resolved_schema::value::Value::Int { value: *i },
+                        Value::Double(d) => weaver_resolved_schema::value::Value::from_f64(*d),
                     },
                     brief: member.brief.clone(),
                     note: member.note.clone(),
@@ -282,51 +322,41 @@ fn semconv_to_resolved_attr_type(
     }
 }
 
-fn semconv_to_resolved_examples(
-    examples: &Option<Examples>,
-) -> Option<weaver_resolved_schema::catalog::Examples> {
+fn semconv_to_resolved_examples(examples: &Option<Examples>) -> Option<attribute::Example> {
     examples.as_ref().map(|examples| match examples {
-        Examples::Bool(v) => weaver_resolved_schema::catalog::Examples::Bool { value: *v },
-        Examples::Int(v) => weaver_resolved_schema::catalog::Examples::Int { value: *v },
-        Examples::Double(v) => weaver_resolved_schema::catalog::Examples::Double { value: *v },
-        Examples::String(v) => {
-            weaver_resolved_schema::catalog::Examples::String { value: v.clone() }
-        }
-        Examples::Ints(v) => weaver_resolved_schema::catalog::Examples::Ints { values: v.clone() },
-        Examples::Doubles(v) => {
-            weaver_resolved_schema::catalog::Examples::Doubles { values: v.clone() }
-        }
-        Examples::Bools(v) => {
-            weaver_resolved_schema::catalog::Examples::Bools { values: v.clone() }
-        }
-        Examples::Strings(v) => {
-            weaver_resolved_schema::catalog::Examples::Strings { values: v.clone() }
-        }
+        Examples::Bool(v) => attribute::Example::Bool { value: *v },
+        Examples::Int(v) => attribute::Example::Int { value: *v },
+        Examples::Double(v) => attribute::Example::from_f64(*v),
+        Examples::String(v) => attribute::Example::String { value: v.clone() },
+        Examples::Ints(v) => weaver_resolved_schema::attribute::Example::Ints { values: v.clone() },
+        Examples::Doubles(v) => attribute::Example::from_f64s(v.clone()),
+        Examples::Bools(v) => attribute::Example::Bools { values: v.clone() },
+        Examples::Strings(v) => attribute::Example::Strings { values: v.clone() },
     })
 }
 
 fn semconv_to_resolved_req_level(
     req_level: &RequirementLevel,
-) -> weaver_resolved_schema::catalog::RequirementLevel {
+) -> weaver_resolved_schema::attribute::RequirementLevel {
     match req_level {
         RequirementLevel::Basic(level) => match level {
             BasicRequirementLevel::Required => {
-                weaver_resolved_schema::catalog::RequirementLevel::Required
+                weaver_resolved_schema::attribute::RequirementLevel::Required
             }
             BasicRequirementLevel::Recommended => {
-                weaver_resolved_schema::catalog::RequirementLevel::Recommended { text: None }
+                weaver_resolved_schema::attribute::RequirementLevel::Recommended { text: None }
             }
             BasicRequirementLevel::OptIn => {
-                weaver_resolved_schema::catalog::RequirementLevel::OptIn
+                weaver_resolved_schema::attribute::RequirementLevel::OptIn
             }
         },
         RequirementLevel::Recommended { text } => {
-            weaver_resolved_schema::catalog::RequirementLevel::Recommended {
+            weaver_resolved_schema::attribute::RequirementLevel::Recommended {
                 text: Some(text.clone()),
             }
         }
         RequirementLevel::ConditionallyRequired { text } => {
-            weaver_resolved_schema::catalog::RequirementLevel::ConditionallyRequired {
+            weaver_resolved_schema::attribute::RequirementLevel::ConditionallyRequired {
                 text: text.clone(),
             }
         }
@@ -336,10 +366,10 @@ fn semconv_to_resolved_req_level(
 #[allow(dead_code)] // ToDo Remove this once we have values in the resolved schema
 fn semconv_to_resolved_value(
     value: &Option<Value>,
-) -> Option<weaver_resolved_schema::catalog::Value> {
+) -> Option<weaver_resolved_schema::value::Value> {
     value.as_ref().map(|value| match value {
-        Value::String(s) => weaver_resolved_schema::catalog::Value::String { value: s.clone() },
-        Value::Int(i) => weaver_resolved_schema::catalog::Value::Int { value: *i },
-        Value::Double(d) => weaver_resolved_schema::catalog::Value::Double { value: *d },
+        Value::String(s) => weaver_resolved_schema::value::Value::String { value: s.clone() },
+        Value::Int(i) => weaver_resolved_schema::value::Value::Int { value: *i },
+        Value::Double(d) => weaver_resolved_schema::value::Value::from_f64(*d),
     })
 }

@@ -222,6 +222,18 @@ pub struct SemConvSpec {
 #[derive(Debug, Default)]
 pub struct ResolverConfig {
     error_when_attribute_ref_not_found: bool,
+    keep_specs: bool,
+}
+
+impl ResolverConfig {
+    /// Returns a config instructing the resolver to keep
+    /// the semantic convention group specs after the resolution.
+    pub fn with_keep_specs() -> Self {
+        Self {
+            keep_specs: true,
+            ..Default::default()
+        }
+    }
 }
 
 /// A wrapper for a resolver error that is considered as a warning
@@ -500,7 +512,9 @@ impl SemConvRegistry {
             }
         }
 
-        self.specs.clear();
+        if !config.keep_specs {
+            self.specs.clear();
+        }
 
         Ok(warnings)
     }
@@ -777,6 +791,7 @@ mod tests {
 
         let result = catalog.resolve(ResolverConfig {
             error_when_attribute_ref_not_found: false,
+            ..Default::default()
         });
 
         match result {

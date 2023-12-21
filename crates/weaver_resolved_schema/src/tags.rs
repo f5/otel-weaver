@@ -3,7 +3,7 @@
 //! Define the concept of tag.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 /// A set of tags.
 ///
@@ -15,10 +15,10 @@ use std::collections::HashMap;
 /// - semantic_type: first_name
 /// - owner:
 /// - provenance: browser_sensor
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
 #[serde(transparent)]
 #[serde(deny_unknown_fields)]
 pub struct Tags {
     /// The tags.
-    pub tags: HashMap<String, String>,
+    pub tags: BTreeMap<String, String>,
 }

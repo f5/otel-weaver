@@ -3,7 +3,7 @@
 //! Tags for telemetry schemas.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 /// A set of tags.
 ///
@@ -20,7 +20,7 @@ use std::collections::HashMap;
 #[serde(deny_unknown_fields)]
 pub struct Tags {
     /// The tags.
-    pub tags: HashMap<String, String>,
+    pub tags: BTreeMap<String, String>,
 }
 
 impl Tags {

@@ -11,3 +11,5 @@ edition.workspace = true
 weaver_version = { path = "../weaver_version" }
 
 serde.workspace = true
+
+ordered-float = { version = "4.2.0", features = ["serde"] }

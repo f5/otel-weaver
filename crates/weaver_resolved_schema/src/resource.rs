@@ -2,7 +2,7 @@
 
 //! Define an OpenTelemetry resource.
 
-use crate::catalog::AttributeRef;
+use crate::attribute::AttributeRef;
 use serde::{Deserialize, Serialize};
 
 /// Definition of a resource.

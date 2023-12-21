@@ -15,12 +15,15 @@ use crate::resource::Resource;
 use serde::{Deserialize, Serialize};
 use weaver_version::Versions;
 
+pub mod attribute;
 pub mod catalog;
 pub mod instrumentation_library;
+pub mod metric;
 pub mod registry;
 pub mod resource;
 pub mod signal;
 pub mod tags;
+pub mod value;
 
 /// A Resolved Telemetry Schema.
 /// A Resolved Telemetry Schema is self-contained and doesn't contain any

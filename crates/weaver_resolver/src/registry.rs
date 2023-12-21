@@ -3,10 +3,12 @@
 //! Functions to resolve a semantic convention registry.
 
 use weaver_logger::Logger;
+use weaver_resolved_schema::attribute::AttributeRef;
 use weaver_resolved_schema::registry::Registry;
 use weaver_semconv::group::{ConvType, Group};
 use weaver_semconv::SemConvRegistry;
 
+use crate::attribute::{resolve_attribute, AttributeCatalog};
 use crate::constraint::resolve_constraints;
 use crate::metrics::resolve_instrument;
 use crate::spans::resolve_span_kind;
@@ -15,23 +17,35 @@ use crate::Error;
 
 /// Resolve a semantic convention registry.
 pub fn resolve_semconv_registry(
+    attr_catalog: &mut AttributeCatalog,
     url: &str,
     registry: &SemConvRegistry,
     _log: impl Logger + Sync + Clone,
 ) -> Result<Registry, Error> {
-    let groups = registry.groups().map(semconv_to_resolved_group).collect();
+    let groups: Result<Vec<weaver_resolved_schema::registry::Group>, Error> = registry
+        .groups()
+        .map(|group| semconv_to_resolved_group(registry, attr_catalog, group))
+        .collect();
 
     Ok(Registry {
         registry_url: url.to_string(),
-        groups,
+        groups: groups?,
     })
 }
 
 /// Resolve a semantic convention group.
-fn semconv_to_resolved_group(group: &Group) -> weaver_resolved_schema::registry::Group {
-    // ToDo resolve the attributes by identifying them in the catalog and create a list of AttributeRef.
+fn semconv_to_resolved_group(
+    registry: &SemConvRegistry,
+    attr_catalog: &mut AttributeCatalog,
+    group: &Group,
+) -> Result<weaver_resolved_schema::registry::Group, Error> {
+    let attr_refs: Result<Vec<AttributeRef>, Error> = group
+        .attributes
+        .iter()
+        .map(|attr| Ok(attr_catalog.attribute_ref(resolve_attribute(registry, attr)?)))
+        .collect();
 
-    weaver_resolved_schema::registry::Group {
+    Ok(weaver_resolved_schema::registry::Group {
         id: group.id.clone(),
         typed_group: match group.r#type {
             ConvType::AttributeGroup => {
@@ -60,6 +74,6 @@ fn semconv_to_resolved_group(group: &Group) -> weaver_resolved_schema::registry:
         stability: resolve_stability(&group.stability),
         deprecated: group.deprecated.clone(),
         constraints: resolve_constraints(&group.constraints),
-        attributes: vec![],
-    }
+        attributes: attr_refs?,
+    })
 }

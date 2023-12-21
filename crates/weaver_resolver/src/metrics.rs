@@ -164,8 +164,8 @@ pub fn resolve_metrics(
 /// library section.
 pub fn semconv_to_resolved_metric(
     metric: &weaver_semconv::metric::Metric,
-) -> weaver_resolved_schema::catalog::Metric {
-    weaver_resolved_schema::catalog::Metric {
+) -> weaver_resolved_schema::metric::Metric {
+    weaver_resolved_schema::metric::Metric {
         name: metric.name.clone(),
         brief: metric.brief.clone(),
         note: metric.note.clone(),
@@ -176,11 +176,11 @@ pub fn semconv_to_resolved_metric(
 }
 
 /// Resolve a metric instrument.
-pub fn resolve_instrument(instrument: &Instrument) -> weaver_resolved_schema::catalog::Instrument {
+pub fn resolve_instrument(instrument: &Instrument) -> weaver_resolved_schema::metric::Instrument {
     match instrument {
-        Instrument::Counter => weaver_resolved_schema::catalog::Instrument::Counter,
-        Instrument::UpDownCounter => weaver_resolved_schema::catalog::Instrument::UpDownCounter,
-        Instrument::Gauge => weaver_resolved_schema::catalog::Instrument::Gauge,
-        Instrument::Histogram => weaver_resolved_schema::catalog::Instrument::Histogram,
+        Instrument::Counter => weaver_resolved_schema::metric::Instrument::Counter,
+        Instrument::UpDownCounter => weaver_resolved_schema::metric::Instrument::UpDownCounter,
+        Instrument::Gauge => weaver_resolved_schema::metric::Instrument::Gauge,
+        Instrument::Histogram => weaver_resolved_schema::metric::Instrument::Histogram,
     }
 }

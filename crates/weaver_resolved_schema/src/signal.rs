@@ -4,7 +4,8 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::catalog::{AttributeRef, MetricRef};
+use crate::attribute::AttributeRef;
+use crate::metric::MetricRef;
 use crate::tags::Tags;
 
 /// A univariate metric signal.

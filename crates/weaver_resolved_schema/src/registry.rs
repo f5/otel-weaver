@@ -4,9 +4,11 @@
 
 //! A semantic convention registry.
 
+use crate::attribute::AttributeRef;
 use serde::{Deserialize, Serialize};
 
-use crate::catalog::{AttributeRef, Instrument, Stability};
+use crate::catalog::Stability;
+use crate::metric::Instrument;
 use crate::signal::SpanKind;
 
 /// A semantic convention registry.
@@ -14,6 +16,7 @@ use crate::signal::SpanKind;
 #[serde(deny_unknown_fields)]
 pub struct Registry {
     /// The semantic convention registry url.
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub registry_url: String,
     /// A list of semantic convention groups.
     pub groups: Vec<Group>,
@@ -27,18 +30,22 @@ pub struct Group {
     /// The type of the group including the specific fields for each type.
     pub typed_group: TypedGroup,
     /// A brief description of the semantic convention.
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub brief: String,
     /// A more elaborate description of the semantic convention.
     /// It defaults to an empty string.
     #[serde(default)]
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub note: String,
     /// Prefix for the attributes for this semantic convention.
     /// It defaults to an empty string.
     #[serde(default)]
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub prefix: String,
     /// Reference another semantic convention id. It inherits the prefix,
     /// constraints, and all attributes defined in the specified semantic
     /// convention.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extends: Option<String>,
     /// Specifies the stability of the semantic convention.
     /// Note that, if stability is missing but deprecated is present, it will
@@ -56,6 +63,7 @@ pub struct Group {
     /// Allow to define additional requirements on the semantic convention.
     /// It defaults to an empty list.
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub constraints: Vec<Constraint>,
     /// List of attributes that belong to the semantic convention.
     #[serde(default)]

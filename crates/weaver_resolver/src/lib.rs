@@ -17,10 +17,10 @@ use regex::Regex;
 use url::Url;
 use walkdir::DirEntry;
 
-use crate::attribute::semconv_to_resolved_attr;
+use crate::attribute::AttributeCatalog;
 use weaver_cache::Cache;
 use weaver_logger::Logger;
-use weaver_resolved_schema::catalog::{Attribute, Catalog};
+use weaver_resolved_schema::catalog::Catalog;
 use weaver_resolved_schema::ResolvedTelemetrySchema;
 use weaver_schema::{SemConvImport, TelemetrySchema};
 use weaver_semconv::{ResolverConfig, SemConvRegistry, SemConvSpec};
@@ -74,7 +74,7 @@ pub enum Error {
     },
 
     /// Failed to resolve an attribute.
-    #[error("Failed to resolve the attribute '{id}'")]
+    #[error("Failed to resolve the attribute '{id}': {error}")]
     FailToResolveAttribute {
         /// The id of the attribute.
         id: String,
@@ -197,6 +197,7 @@ impl SchemaResolver {
                 git_url: registry_git_url,
                 path,
             }],
+            ResolverConfig::default(),
             cache,
             log.clone(),
         )
@@ -262,6 +263,7 @@ impl SchemaResolver {
     ) -> Result<SemConvRegistry, Error> {
         Self::semconv_registry_from_imports(
             &schema.merged_semantic_conventions(),
+            ResolverConfig::default(),
             cache,
             log.clone(),
         )
@@ -270,17 +272,17 @@ impl SchemaResolver {
     /// Loads a semantic convention registry from the given semantic convention imports.
     pub fn semconv_registry_from_imports(
         imports: &[SemConvImport],
+        resolver_config: ResolverConfig,
         cache: &Cache,
         log: impl Logger + Clone + Sync,
     ) -> Result<SemConvRegistry, Error> {
         let start = Instant::now();
         let mut registry = Self::create_semantic_convention_registry(imports, cache, log.clone())?;
-        let warnings =
-            registry
-                .resolve(ResolverConfig::default())
-                .map_err(|e| Error::SemConvError {
-                    message: e.to_string(),
-                })?;
+        let warnings = registry
+            .resolve(resolver_config)
+            .map_err(|e| Error::SemConvError {
+                message: e.to_string(),
+            })?;
         for warning in warnings {
             log.warn("Semantic convention warning")
                 .log(&warning.error.to_string());
@@ -303,31 +305,25 @@ impl SchemaResolver {
         log: impl Logger + Clone + Sync,
     ) -> Result<ResolvedTelemetrySchema, Error> {
         let start = Instant::now();
-        let warnings =
-            registry
-                .resolve(ResolverConfig::default())
-                .map_err(|e| Error::SemConvError {
-                    message: e.to_string(),
-                })?;
-        for warning in warnings {
-            log.warn("Semantic convention warning")
-                .log(&warning.error.to_string());
-        }
 
-        let attributes: Result<Vec<Attribute>, Error> = registry
-            .attributes_iter()
-            .map(semconv_to_resolved_attr)
-            .collect();
         let metrics = registry
             .metrics_iter()
             .map(semconv_to_resolved_metric)
             .collect();
+
+        let mut attr_catalog = AttributeCatalog::default();
+
         let resolved_schema = ResolvedTelemetrySchema {
             file_format: "1.0.0".to_string(),
             schema_url: "".to_string(),
-            registries: vec![resolve_semconv_registry("", registry, log.clone())?],
+            registries: vec![resolve_semconv_registry(
+                &mut attr_catalog,
+                "",
+                registry,
+                log.clone(),
+            )?],
             catalog: Catalog {
-                attributes: attributes?,
+                attributes: attr_catalog.drain_attributes(),
                 metrics,
             },
             resource: None,
