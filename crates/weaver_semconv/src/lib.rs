@@ -806,4 +806,40 @@ mod tests {
             }
         }
     }
+
+    /// Test the resolver with a semantic convention semantic convention registry that contains
+    /// multiple references to resolve.
+    /// No error or warning should be emitted.
+    #[test]
+    fn resolve_semconv_ref() {
+        let yaml_files = vec![
+            "data/metrics/messaging.yaml",
+            "data/registry/messaging.yaml",
+        ];
+
+        let mut catalog = SemConvRegistry::default();
+        for yaml in yaml_files {
+            let result = catalog.load_from_file(yaml);
+            assert!(result.is_ok(), "{:#?}", result.err().unwrap());
+        }
+
+        let result = catalog.resolve(ResolverConfig {
+            error_when_attribute_ref_not_found: false,
+            ..Default::default()
+        });
+
+        match result {
+            Ok(warnings) => {
+                if !warnings.is_empty() {
+                    dbg!(&warnings);
+                }
+                assert!(warnings.is_empty());
+            }
+            Err(e) => {
+                panic!("{:#?}", e);
+            }
+        }
+
+        dbg!(&catalog);
+    }
 }
