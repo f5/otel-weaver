@@ -5,13 +5,13 @@
 use crate::attribute::resolve_attributes;
 use crate::Error;
 use weaver_schema::schema_spec::SchemaSpec;
-use weaver_semconv::SemConvRegistry;
+use weaver_semconv::SemConvSpecs;
 use weaver_version::VersionChanges;
 
 /// Resolves resource attributes.
 pub fn resolve_resource(
     schema: &mut SchemaSpec,
-    sem_conv_catalog: &SemConvRegistry,
+    sem_conv_catalog: &SemConvSpecs,
     version_changes: &VersionChanges,
 ) -> Result<(), Error> {
     // Resolve resource attributes

@@ -9,6 +9,7 @@ use crate::tags::Tags;
 use crate::value::Value;
 use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
+use weaver_semconv::attribute::AttributeSpec;
 
 /// An attribute definition.
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
@@ -48,6 +49,7 @@ pub struct Attribute {
     /// A more elaborate description of the attribute.
     /// It defaults to an empty string.
     #[serde(skip_serializing_if = "String::is_empty")]
+    #[serde(default)]
     pub note: String,
     /// Specifies the stability of the attribute.
     /// Note that, if stability is missing but deprecated is present, it will
@@ -69,6 +71,13 @@ pub struct Attribute {
     /// Note: This is only used in a telemetry schema specification.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<Value>,
+}
+
+/// An unresolved attribute definition.
+#[derive(Debug, Clone)]
+pub struct UnresolvedAttribute {
+    /// The attribute specification.
+    pub spec: AttributeSpec,
 }
 
 /// The different types of attributes.
@@ -229,5 +238,5 @@ pub enum RequirementLevel {
 }
 
 /// An internal reference to an attribute in the catalog.
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
 pub struct AttributeRef(pub u32);

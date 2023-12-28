@@ -15,7 +15,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use weaver_semconv::SemConvRegistry;
+use weaver_semconv::SemConvSpecs;
 use weaver_version::Versions;
 
 use crate::event::Event;
@@ -112,7 +112,7 @@ pub struct TelemetrySchema {
     /// The semantic convention registry used to resolve the schema
     /// (if resolved).
     #[serde(skip)]
-    pub semantic_convention_registry: SemConvRegistry,
+    pub semantic_convention_registry: SemConvSpecs,
 }
 
 /// A semantic convention import.
@@ -204,7 +204,7 @@ impl TelemetrySchema {
     }
 
     /// Sets the semantic convention catalog used to resolve the schema.
-    pub fn set_semantic_convention_catalog(&mut self, catalog: SemConvRegistry) {
+    pub fn set_semantic_convention_catalog(&mut self, catalog: SemConvSpecs) {
         self.semantic_convention_registry = catalog;
     }
 
@@ -240,7 +240,7 @@ impl TelemetrySchema {
     }
 
     /// Returns the semantic convention catalog used to resolve the schema (if resolved).
-    pub fn semantic_convention_catalog(&self) -> &SemConvRegistry {
+    pub fn semantic_convention_catalog(&self) -> &SemConvSpecs {
         &self.semantic_convention_registry
     }
 

@@ -1,0 +1,27 @@
+{
+  "registry_url": "https://semconv-registry.com",
+  "groups": [
+    {
+      "id": "metric.messaging.attributes",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "Common messaging metrics attributes.",
+      "extends": "messaging.attributes.common",
+      "attributes": [
+        1
+      ]
+    },
+    {
+      "id": "registry.messaging",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "Attributes describing telemetry around messaging systems and messaging activities.",
+      "prefix": "messaging",
+      "attributes": [
+        0
+      ]
+    }
+  ]
+}

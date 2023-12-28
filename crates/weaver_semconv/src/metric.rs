@@ -2,7 +2,7 @@
 
 //! Metric specification.
 
-use crate::attribute::Attribute;
+use crate::attribute::AttributeSpec;
 use crate::group::Instrument;
 use serde::{Deserialize, Serialize};
 
@@ -18,7 +18,7 @@ pub struct Metric {
     pub note: String,
     /// Set of attribute ids attached to the metric.
     #[serde(default)]
-    pub attributes: Vec<Attribute>,
+    pub attributes: Vec<AttributeSpec>,
     /// Type of the metric (e.g. gauge, histogram, ...).
     pub instrument: Instrument,
     /// Unit of the metric.

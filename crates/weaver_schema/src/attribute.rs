@@ -6,7 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use weaver_semconv::attribute::{AttributeType, Examples, RequirementLevel, Value};
+use weaver_semconv::attribute::{AttributeTypeSpec, Examples, RequirementLevelSpec, Value};
 use weaver_semconv::stability::Stability;
 
 use crate::tags::Tags;
@@ -50,7 +50,7 @@ pub enum Attribute {
         /// "conditionally_required", the string provided as <condition> MUST
         /// specify the conditions under which the attribute is required.
         #[serde(skip_serializing_if = "Option::is_none")]
-        requirement_level: Option<RequirementLevel>,
+        requirement_level: Option<RequirementLevelSpec>,
         /// Specifies if the attribute is (especially) relevant for sampling
         /// and thus should be set at span start. It defaults to false.
         /// Note: this field is experimental.
@@ -131,7 +131,7 @@ pub enum Attribute {
         id: String,
         /// Either a string literal denoting the type as a primitive or an
         /// array type, a template type or an enum definition.
-        r#type: AttributeType,
+        r#type: AttributeTypeSpec,
         /// A brief description of the attribute.
         brief: String,
         /// Sequence of example values for the attribute or single example
@@ -152,7 +152,7 @@ pub enum Attribute {
         /// "conditionally_required", the string provided as <condition> MUST
         /// specify the conditions under which the attribute is required.
         #[serde(default)]
-        requirement_level: RequirementLevel,
+        requirement_level: RequirementLevelSpec,
         /// Specifies if the attribute is (especially) relevant for sampling
         /// and thus should be set at span start. It defaults to false.
         /// Note: this field is experimental.
@@ -185,11 +185,11 @@ pub enum Attribute {
     },
 }
 
-impl From<&weaver_semconv::attribute::Attribute> for Attribute {
+impl From<&weaver_semconv::attribute::AttributeSpec> for Attribute {
     /// Convert a semantic convention attribute to a schema attribute.
-    fn from(attr: &weaver_semconv::attribute::Attribute) -> Self {
+    fn from(attr: &weaver_semconv::attribute::AttributeSpec) -> Self {
         match attr.clone() {
-            weaver_semconv::attribute::Attribute::Ref {
+            weaver_semconv::attribute::AttributeSpec::Ref {
                 r#ref,
                 brief,
                 examples,
@@ -212,7 +212,7 @@ impl From<&weaver_semconv::attribute::Attribute> for Attribute {
                 tags: None,
                 value: None,
             },
-            weaver_semconv::attribute::Attribute::Id {
+            weaver_semconv::attribute::AttributeSpec::Id {
                 id,
                 r#type,
                 brief,
@@ -242,7 +242,7 @@ impl From<&weaver_semconv::attribute::Attribute> for Attribute {
 }
 
 /// Convert a slice of semantic convention attributes to a vector of schema attributes.
-pub fn to_schema_attributes(attrs: &[weaver_semconv::attribute::Attribute]) -> Vec<Attribute> {
+pub fn to_schema_attributes(attrs: &[weaver_semconv::attribute::AttributeSpec]) -> Vec<Attribute> {
     attrs.iter().map(|attr| attr.into()).collect()
 }
 
@@ -296,7 +296,7 @@ impl Attribute {
     /// reference. The semantic attribute must be an `Attribute::Id` otherwise an error is returned.
     pub fn resolve_from(
         &self,
-        sem_conv_attr: Option<&weaver_semconv::attribute::Attribute>,
+        sem_conv_attr: Option<&weaver_semconv::attribute::AttributeSpec>,
     ) -> Result<Attribute, Error> {
         match self {
             Attribute::Ref {
@@ -312,7 +312,7 @@ impl Attribute {
                 tags: tags_from_ref,
                 value: value_from_ref,
             } => {
-                if let Some(weaver_semconv::attribute::Attribute::Id {
+                if let Some(weaver_semconv::attribute::AttributeSpec::Id {
                     id,
                     r#type,
                     brief,

@@ -6,7 +6,7 @@ use crate::search::theme::ThemeConfig;
 use ratatui::style::Style;
 use ratatui::text::{Line, Span};
 use weaver_schema::attribute::Attribute;
-use weaver_semconv::attribute::{BasicRequirementLevel, RequirementLevel};
+use weaver_semconv::attribute::{BasicRequirementLevel, RequirementLevelSpec};
 
 /// Append attributes to the text.
 pub fn append_lines(attributes: &[Attribute], text: &mut Vec<Line>, theme: &ThemeConfig) {
@@ -26,7 +26,8 @@ pub fn append_lines(attributes: &[Attribute], text: &mut Vec<Line>, theme: &Them
             } = attr
             {
                 let mut properties = vec![format!("type={}", r#type)];
-                if let RequirementLevel::Basic(BasicRequirementLevel::Required) = requirement_level
+                if let RequirementLevelSpec::Basic(BasicRequirementLevel::Required) =
+                    requirement_level
                 {
                     properties.push("required".to_string());
                 }

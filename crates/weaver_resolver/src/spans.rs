@@ -6,13 +6,13 @@ use crate::attribute::resolve_attributes;
 use crate::Error;
 use weaver_schema::schema_spec::SchemaSpec;
 use weaver_semconv::group::SpanKind;
-use weaver_semconv::SemConvRegistry;
+use weaver_semconv::SemConvSpecs;
 use weaver_version::VersionChanges;
 
 /// Resolves resource spans in the given schema.
 pub fn resolve_spans(
     schema: &mut SchemaSpec,
-    sem_conv_catalog: &SemConvRegistry,
+    sem_conv_catalog: &SemConvSpecs,
     version_changes: VersionChanges,
 ) -> Result<(), Error> {
     if let Some(spans) = schema.resource_spans.as_mut() {

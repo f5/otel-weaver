@@ -29,7 +29,7 @@ pub struct Metric {
 }
 
 /// The type of the metric.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum Instrument {
     /// An up-down counter metric.
     UpDownCounter,

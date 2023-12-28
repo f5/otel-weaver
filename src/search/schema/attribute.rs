@@ -14,7 +14,7 @@ use weaver_schema::attribute::Attribute;
 
 /// Build index for semantic convention attributes.
 pub fn index_semconv_attributes<'a>(
-    attributes: impl Iterator<Item = &'a weaver_semconv::attribute::Attribute>,
+    attributes: impl Iterator<Item = &'a weaver_semconv::attribute::AttributeSpec>,
     path: &str,
     fields: &DocFields,
     index_writer: &mut IndexWriter,

@@ -4,6 +4,7 @@
 
 //! Attribute specification.
 
+use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
@@ -14,7 +15,7 @@ use crate::stability::Stability;
 #[serde(deny_unknown_fields)]
 #[serde(untagged)]
 #[serde(rename_all = "snake_case")]
-pub enum Attribute {
+pub enum AttributeSpec {
     /// Reference to another attribute.
     ///
     /// ref MUST have an id of an existing attribute.
@@ -42,7 +43,7 @@ pub enum Attribute {
         /// "conditionally_required", the string provided as <condition> MUST
         /// specify the conditions under which the attribute is required.
         #[serde(skip_serializing_if = "Option::is_none")]
-        requirement_level: Option<RequirementLevel>,
+        requirement_level: Option<RequirementLevelSpec>,
         /// Specifies if the attribute is (especially) relevant for sampling
         /// and thus should be set at span start. It defaults to false.
         /// Note: this field is experimental.
@@ -72,7 +73,7 @@ pub enum Attribute {
         id: String,
         /// Either a string literal denoting the type as a primitive or an
         /// array type, a template type or an enum definition.
-        r#type: AttributeType,
+        r#type: AttributeTypeSpec,
         /// A brief description of the attribute.
         brief: String,
         /// Sequence of example values for the attribute or single example
@@ -93,7 +94,7 @@ pub enum Attribute {
         /// "conditionally_required", the string provided as <condition> MUST
         /// specify the conditions under which the attribute is required.
         #[serde(default)]
-        requirement_level: RequirementLevel,
+        requirement_level: RequirementLevelSpec,
         /// Specifies if the attribute is (especially) relevant for sampling
         /// and thus should be set at span start. It defaults to false.
         /// Note: this field is experimental.
@@ -118,16 +119,18 @@ pub enum Attribute {
     },
 }
 
-impl Attribute {
+impl AttributeSpec {
     /// Returns true if the attribute is required.
     pub fn is_required(&self) -> bool {
         matches!(
             self,
-            Attribute::Ref {
-                requirement_level: Some(RequirementLevel::Basic(BasicRequirementLevel::Required)),
+            AttributeSpec::Ref {
+                requirement_level: Some(RequirementLevelSpec::Basic(
+                    BasicRequirementLevel::Required
+                )),
                 ..
-            } | Attribute::Id {
-                requirement_level: RequirementLevel::Basic(BasicRequirementLevel::Required),
+            } | AttributeSpec::Id {
+                requirement_level: RequirementLevelSpec::Basic(BasicRequirementLevel::Required),
                 ..
             }
         )
@@ -136,41 +139,41 @@ impl Attribute {
     /// Returns the id of the attribute.
     pub fn id(&self) -> String {
         match self {
-            Attribute::Ref { r#ref, .. } => r#ref.clone(),
-            Attribute::Id { id, .. } => id.clone(),
+            AttributeSpec::Ref { r#ref, .. } => r#ref.clone(),
+            AttributeSpec::Id { id, .. } => id.clone(),
         }
     }
 
     /// Returns the brief of the attribute.
     pub fn brief(&self) -> String {
         match self {
-            Attribute::Ref { brief, .. } => brief.clone().unwrap_or_default(),
-            Attribute::Id { brief, .. } => brief.clone(),
+            AttributeSpec::Ref { brief, .. } => brief.clone().unwrap_or_default(),
+            AttributeSpec::Id { brief, .. } => brief.clone(),
         }
     }
 
     /// Returns the note of the attribute.
     pub fn note(&self) -> String {
         match self {
-            Attribute::Ref { note, .. } => note.clone().unwrap_or_default(),
-            Attribute::Id { note, .. } => note.clone(),
+            AttributeSpec::Ref { note, .. } => note.clone().unwrap_or_default(),
+            AttributeSpec::Id { note, .. } => note.clone(),
         }
     }
 
     /// Returns the tag of the attribute (if any).
     pub fn tag(&self) -> Option<String> {
         match self {
-            Attribute::Ref { tag, .. } => tag.clone(),
-            Attribute::Id { tag, .. } => tag.clone(),
+            AttributeSpec::Ref { tag, .. } => tag.clone(),
+            AttributeSpec::Id { tag, .. } => tag.clone(),
         }
     }
 }
 
-/// The different types of attributes.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+/// The different types of attributes (specification).
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
-pub enum AttributeType {
+pub enum AttributeTypeSpec {
     /// Primitive or array type.
     PrimitiveOrArray(PrimitiveOrArrayType),
     /// A template type.
@@ -187,12 +190,12 @@ pub enum AttributeType {
 }
 
 /// Implements a human readable display for AttributeType.
-impl Display for AttributeType {
+impl Display for AttributeTypeSpec {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            AttributeType::PrimitiveOrArray(t) => write!(f, "{}", t),
-            AttributeType::Template(t) => write!(f, "{}", t),
-            AttributeType::Enum { members, .. } => {
+            AttributeTypeSpec::PrimitiveOrArray(t) => write!(f, "{}", t),
+            AttributeTypeSpec::Template(t) => write!(f, "{}", t),
+            AttributeTypeSpec::Enum { members, .. } => {
                 let entries = members
                     .iter()
                     .map(|m| m.id.clone())
@@ -210,7 +213,7 @@ fn default_as_true() -> bool {
 }
 
 /// Primitive or array types.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum PrimitiveOrArrayType {
     /// A boolean attribute.
@@ -252,7 +255,7 @@ impl Display for PrimitiveOrArrayType {
 }
 
 /// Template types.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum TemplateType {
     /// A boolean attribute.
@@ -298,7 +301,7 @@ impl Display for TemplateType {
 }
 
 /// Possible enum entries.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct EnumEntries {
     /// String that uniquely identifies the enum entry.
@@ -321,14 +324,14 @@ impl Display for EnumEntries {
 }
 
 /// The different types of values.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
 pub enum Value {
     /// A integer value.
     Int(i64),
     /// A double value.
-    Double(f64),
+    Double(OrderedFloat<f64>),
     /// A string value.
     String(String),
 }
@@ -355,24 +358,24 @@ pub enum Examples {
     /// A integer example.
     Int(i64),
     /// A double example.
-    Double(f64),
+    Double(OrderedFloat<f64>),
     /// A string example.
     String(String),
     /// A array of integers example.
     Ints(Vec<i64>),
     /// A array of doubles example.
-    Doubles(Vec<f64>),
+    Doubles(Vec<OrderedFloat<f64>>),
     /// A array of bools example.
     Bools(Vec<bool>),
     /// A array of strings example.
     Strings(Vec<String>),
 }
 
-/// The different requirement levels.
+/// The different requirement level specifications.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
-pub enum RequirementLevel {
+pub enum RequirementLevelSpec {
     /// A basic requirement level.
     Basic(BasicRequirementLevel),
     /// A conditional requirement level.
@@ -390,28 +393,28 @@ pub enum RequirementLevel {
 }
 
 /// Implements a human readable display for RequirementLevel.
-impl Display for RequirementLevel {
+impl Display for RequirementLevelSpec {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            RequirementLevel::Basic(brl) => write!(f, "{}", brl),
-            RequirementLevel::ConditionallyRequired { text } => {
+            RequirementLevelSpec::Basic(brl) => write!(f, "{}", brl),
+            RequirementLevelSpec::ConditionallyRequired { text } => {
                 write!(f, "conditionally required (condition: {})", text)
             }
-            RequirementLevel::Recommended { text } => write!(f, "recommended ({})", text),
+            RequirementLevelSpec::Recommended { text } => write!(f, "recommended ({})", text),
         }
     }
 }
 
 // Specifies the default requirement level as defined in the OTel
 // specification.
-impl Default for RequirementLevel {
+impl Default for RequirementLevelSpec {
     fn default() -> Self {
-        RequirementLevel::Basic(BasicRequirementLevel::Recommended)
+        RequirementLevelSpec::Basic(BasicRequirementLevel::Recommended)
     }
 }
 
 /// The different types of basic requirement levels.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum BasicRequirementLevel {
     /// A required requirement level.

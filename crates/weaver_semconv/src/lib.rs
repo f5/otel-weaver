@@ -24,8 +24,8 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-use crate::attribute::Attribute;
-use crate::group::Group;
+use crate::attribute::AttributeSpec;
+use crate::group::GroupSpec;
 use crate::metric::Metric;
 
 pub mod attribute;
@@ -123,7 +123,7 @@ pub enum Error {
 #[derive(Debug, Clone)]
 pub struct AttributeWithProvenance {
     /// The attribute definition.
-    pub attribute: Attribute,
+    pub attribute: AttributeSpec,
     /// The provenance of the attribute (path or URL).
     pub provenance: String,
 }
@@ -137,10 +137,10 @@ pub struct MetricWithProvenance {
     pub provenance: String,
 }
 
-/// A semantic convention registry is a collection of semantic convention
+/// A semantic convention specs is a collection of semantic convention
 /// specifications indexed by group id.
 #[derive(Default, Debug)]
-pub struct SemConvRegistry {
+pub struct SemConvSpecs {
     /// The number of semantic convention assets added in the semantic convention registry.
     /// A asset can be a semantic convention loaded from a file or an URL.
     asset_count: usize,
@@ -215,7 +215,7 @@ struct GroupIds {
 pub struct SemConvSpec {
     /// A collection of semantic convention groups.
     #[validate]
-    pub groups: Vec<Group>,
+    pub groups: Vec<GroupSpec>,
 }
 
 /// The configuration of the resolver.
@@ -246,8 +246,12 @@ pub struct ResolverWarning {
 
 /// Structure to keep track of the source of the attribute to resolve.
 struct AttributeToResolve {
+    /// The provenance of the attribute.
+    /// Path or URL of the semantic convention asset.
     path_or_url: String,
+    /// The group id of the attribute.
     group_id: String,
+    /// The attribute reference.
     r#ref: String,
 }
 
@@ -258,7 +262,7 @@ struct MetricToResolve {
     r#ref: String,
 }
 
-impl SemConvRegistry {
+impl SemConvSpecs {
     /// Load and add a semantic convention file to the semantic convention registry.
     pub fn load_from_file<P: AsRef<Path> + Clone>(&mut self, path: P) -> Result<(), Error> {
         let spec = SemConvSpec::load_from_file(path.clone())?;
@@ -338,12 +342,12 @@ impl SemConvRegistry {
             for group in spec.groups.iter() {
                 // Process attributes
                 match group.r#type {
-                    group::ConvType::AttributeGroup
-                    | group::ConvType::Span
-                    | group::ConvType::Resource
-                    | group::ConvType::Metric
-                    | group::ConvType::Event
-                    | group::ConvType::MetricGroup => {
+                    group::ConvTypeSpec::AttributeGroup
+                    | group::ConvTypeSpec::Span
+                    | group::ConvTypeSpec::Resource
+                    | group::ConvTypeSpec::Metric
+                    | group::ConvTypeSpec::Event
+                    | group::ConvTypeSpec::MetricGroup => {
                         let attributes_in_group = self.process_attributes(
                             path_or_url.to_string(),
                             group.id.clone(),
@@ -353,14 +357,16 @@ impl SemConvRegistry {
                         )?;
 
                         let group_attributes = match group.r#type {
-                            group::ConvType::AttributeGroup => {
+                            group::ConvTypeSpec::AttributeGroup => {
                                 Some(&mut self.attr_grp_group_attributes)
                             }
-                            group::ConvType::Span => Some(&mut self.span_group_attributes),
-                            group::ConvType::Resource => Some(&mut self.resource_group_attributes),
-                            group::ConvType::Metric => Some(&mut self.metric_group_attributes),
-                            group::ConvType::Event => Some(&mut self.event_group_attributes),
-                            group::ConvType::MetricGroup => {
+                            group::ConvTypeSpec::Span => Some(&mut self.span_group_attributes),
+                            group::ConvTypeSpec::Resource => {
+                                Some(&mut self.resource_group_attributes)
+                            }
+                            group::ConvTypeSpec::Metric => Some(&mut self.metric_group_attributes),
+                            group::ConvTypeSpec::Event => Some(&mut self.event_group_attributes),
+                            group::ConvTypeSpec::MetricGroup => {
                                 Some(&mut self.metric_group_group_attributes)
                             }
                             _ => None,
@@ -391,7 +397,7 @@ impl SemConvRegistry {
 
                 // Process metrics
                 match group.r#type {
-                    group::ConvType::Metric => {
+                    group::ConvTypeSpec::Metric => {
                         let metric_name = if let Some(metric_name) = group.metric_name.as_ref() {
                             metric_name.clone()
                         } else {
@@ -449,7 +455,7 @@ impl SemConvRegistry {
                             }
                         }
                     }
-                    group::ConvType::MetricGroup => {
+                    group::ConvTypeSpec::MetricGroup => {
                         eprintln!("Warning: group type `metric_group` not implemented yet");
                     }
                     _ => {
@@ -531,7 +537,7 @@ impl SemConvRegistry {
 
     /// Returns an attribute definition from its reference or `None` if the
     /// reference does not exist.
-    pub fn attribute(&self, attr_ref: &str) -> Option<&Attribute> {
+    pub fn attribute(&self, attr_ref: &str) -> Option<&AttributeSpec> {
         self.all_attributes
             .get(attr_ref)
             .map(|attr| &attr.attribute)
@@ -548,17 +554,17 @@ impl SemConvRegistry {
     pub fn attributes(
         &self,
         r#ref: &str,
-        r#type: group::ConvType,
-    ) -> Result<HashMap<&String, &Attribute>, Error> {
+        r#type: group::ConvTypeSpec,
+    ) -> Result<HashMap<&String, &AttributeSpec>, Error> {
         let mut attributes = HashMap::new();
         let group_ids = match r#type {
-            group::ConvType::AttributeGroup => self.attr_grp_group_attributes.get(r#ref),
-            group::ConvType::Span => self.span_group_attributes.get(r#ref),
-            group::ConvType::Event => self.event_group_attributes.get(r#ref),
-            group::ConvType::Metric => self.metric_group_attributes.get(r#ref),
-            group::ConvType::MetricGroup => self.metric_group_group_attributes.get(r#ref),
-            group::ConvType::Resource => self.resource_group_attributes.get(r#ref),
-            group::ConvType::Scope => panic!("Scope not implemented yet"),
+            group::ConvTypeSpec::AttributeGroup => self.attr_grp_group_attributes.get(r#ref),
+            group::ConvTypeSpec::Span => self.span_group_attributes.get(r#ref),
+            group::ConvTypeSpec::Event => self.event_group_attributes.get(r#ref),
+            group::ConvTypeSpec::Metric => self.metric_group_attributes.get(r#ref),
+            group::ConvTypeSpec::MetricGroup => self.metric_group_group_attributes.get(r#ref),
+            group::ConvTypeSpec::Resource => self.resource_group_attributes.get(r#ref),
+            group::ConvTypeSpec::Scope => panic!("Scope not implemented yet"),
         };
         if let Some(group_ids) = group_ids {
             for attr_id in group_ids.ids.iter() {
@@ -577,12 +583,12 @@ impl SemConvRegistry {
     }
 
     /// Returns an iterator over all the groups defined in the semantic convention registry.
-    pub fn groups(&self) -> impl Iterator<Item = &Group> {
+    pub fn groups(&self) -> impl Iterator<Item = &GroupSpec> {
         self.specs.iter().flat_map(|(_, spec)| &spec.groups)
     }
 
     /// Returns an iterator over all the attributes defined in the semantic convention registry.
-    pub fn attributes_iter(&self) -> impl Iterator<Item = &Attribute> {
+    pub fn attributes_iter(&self) -> impl Iterator<Item = &AttributeSpec> {
         self.all_attributes.values().map(|attr| &attr.attribute)
     }
 
@@ -629,13 +635,13 @@ impl SemConvRegistry {
         path_or_url: String,
         group_id: String,
         prefix: String,
-        attrs: Vec<Attribute>,
+        attrs: Vec<AttributeSpec>,
         attributes_to_resolve: &mut Vec<AttributeToResolve>,
     ) -> Result<HashSet<String>, Error> {
         let mut attributes_in_group = HashSet::new();
         for mut attr in attrs.into_iter() {
             match &attr {
-                Attribute::Id { id, .. } => {
+                AttributeSpec::Id { id, .. } => {
                     // The attribute has an id, so add it to the semantic convention registry
                     // if it does not exist yet, otherwise return an error.
                     // The fully qualified attribute id is the concatenation
@@ -645,7 +651,7 @@ impl SemConvRegistry {
                     } else {
                         format!("{}.{}", prefix, id)
                     };
-                    if let Attribute::Id { id, .. } = &mut attr {
+                    if let AttributeSpec::Id { id, .. } = &mut attr {
                         *id = fq_attr_id.clone();
                     }
                     let prev_val = self.all_attributes.insert(
@@ -664,7 +670,7 @@ impl SemConvRegistry {
                     }
                     let _ = attributes_in_group.insert(fq_attr_id.clone());
                 }
-                Attribute::Ref { r#ref, .. } => {
+                AttributeSpec::Ref { r#ref, .. } => {
                     // The attribute has a reference, so add it to the
                     // list of attributes to resolve.
                     attributes_to_resolve.push(AttributeToResolve {
@@ -763,7 +769,7 @@ mod tests {
             "data/tls.yaml",
         ];
 
-        let mut catalog = SemConvRegistry::default();
+        let mut catalog = SemConvSpecs::default();
         for yaml in yaml_files {
             let result = catalog.load_from_file(yaml);
             assert!(result.is_ok(), "{:#?}", result.err().unwrap());
@@ -783,7 +789,7 @@ mod tests {
             "data/url.yaml",
         ];
 
-        let mut catalog = SemConvRegistry::default();
+        let mut catalog = SemConvSpecs::default();
         for yaml in yaml_files {
             let result = catalog.load_from_file(yaml);
             assert!(result.is_ok(), "{:#?}", result.err().unwrap());
@@ -805,41 +811,5 @@ mod tests {
                 panic!("{:#?}", e);
             }
         }
-    }
-
-    /// Test the resolver with a semantic convention semantic convention registry that contains
-    /// multiple references to resolve.
-    /// No error or warning should be emitted.
-    #[test]
-    fn resolve_semconv_ref() {
-        let yaml_files = vec![
-            "data/metrics/messaging.yaml",
-            "data/registry/messaging.yaml",
-        ];
-
-        let mut catalog = SemConvRegistry::default();
-        for yaml in yaml_files {
-            let result = catalog.load_from_file(yaml);
-            assert!(result.is_ok(), "{:#?}", result.err().unwrap());
-        }
-
-        let result = catalog.resolve(ResolverConfig {
-            error_when_attribute_ref_not_found: false,
-            ..Default::default()
-        });
-
-        match result {
-            Ok(warnings) => {
-                if !warnings.is_empty() {
-                    dbg!(&warnings);
-                }
-                assert!(warnings.is_empty());
-            }
-            Err(e) => {
-                panic!("{:#?}", e);
-            }
-        }
-
-        dbg!(&catalog);
     }
 }

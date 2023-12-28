@@ -4,7 +4,7 @@
 
 //! A semantic convention registry.
 
-use crate::attribute::AttributeRef;
+use crate::attribute::{AttributeRef, UnresolvedAttribute};
 use serde::{Deserialize, Serialize};
 
 use crate::catalog::Stability;
@@ -12,7 +12,7 @@ use crate::metric::Instrument;
 use crate::signal::SpanKind;
 
 /// A semantic convention registry.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Registry {
     /// The semantic convention registry url.
@@ -22,8 +22,17 @@ pub struct Registry {
     pub groups: Vec<Group>,
 }
 
+/// A registry containing unresolved groups.
+#[derive(Debug)]
+pub struct UnresolvedRegistry {
+    /// The semantic convention registry.
+    pub registry: Registry,
+    /// List of unresolved groups that belong to the registry.
+    pub groups: Vec<UnresolvedGroup>,
+}
+
 /// Group specification.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Group {
     /// The id that uniquely identifies the semantic convention.
     pub id: String,
@@ -70,9 +79,19 @@ pub struct Group {
     pub attributes: Vec<AttributeRef>,
 }
 
+/// A group containing unresolved attributes.
+#[derive(Debug)]
+pub struct UnresolvedGroup {
+    /// The group specification.
+    pub group: Group,
+    /// List of unresolved attributes that belong to the semantic convention
+    /// group.
+    pub attributes: Vec<UnresolvedAttribute>,
+}
+
 /// An enum representing the type of the group including the specific fields
 /// for each type.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(tag = "type")]
 pub enum TypedGroup {
     /// A semantic convention group representing an attribute group.
@@ -120,7 +139,7 @@ pub enum TypedGroup {
 }
 
 /// Allow to define additional requirements on the semantic convention.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Constraint {
     /// any_of accepts a list of sequences. Each sequence contains a list of

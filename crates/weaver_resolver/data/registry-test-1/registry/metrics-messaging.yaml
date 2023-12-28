@@ -1,0 +1,9 @@
+groups:
+  - id: metric.messaging.attributes
+    type: attribute_group
+    brief: "Common messaging metrics attributes."
+    extends: messaging.attributes.common
+    attributes:
+      - ref: messaging.destination.name
+        requirement_level:
+          conditionally_required: if and only if `messaging.destination.name` is known to have low cardinality. Otherwise, `messaging.destination.template` MAY be populated.

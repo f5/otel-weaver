@@ -23,7 +23,7 @@ use weaver_logger::Logger;
 use weaver_resolved_schema::catalog::Catalog;
 use weaver_resolved_schema::ResolvedTelemetrySchema;
 use weaver_schema::{SemConvImport, TelemetrySchema};
-use weaver_semconv::{ResolverConfig, SemConvRegistry, SemConvSpec};
+use weaver_semconv::{ResolverConfig, SemConvSpec, SemConvSpecs};
 use weaver_version::VersionChanges;
 
 use crate::events::resolve_events;
@@ -73,11 +73,11 @@ pub enum Error {
         message: String,
     },
 
-    /// Failed to resolve an attribute.
-    #[error("Failed to resolve the attribute '{id}': {error}")]
-    FailToResolveAttribute {
-        /// The id of the attribute.
-        id: String,
+    /// Failed to resolve a set of attributes.
+    #[error("Failed to resolve a set of attributes {ids:?}: {error}")]
+    FailToResolveAttributes {
+        /// The ids of the attributes.
+        ids: Vec<String>,
         /// The error that occurred.
         error: String,
     },
@@ -191,7 +191,7 @@ impl SchemaResolver {
         path: Option<String>,
         cache: &Cache,
         log: impl Logger + Clone + Sync,
-    ) -> Result<SemConvRegistry, Error> {
+    ) -> Result<SemConvSpecs, Error> {
         Self::semconv_registry_from_imports(
             &[SemConvImport::GitUrl {
                 git_url: registry_git_url,
@@ -260,7 +260,7 @@ impl SchemaResolver {
         schema: &TelemetrySchema,
         cache: &Cache,
         log: impl Logger + Clone + Sync,
-    ) -> Result<SemConvRegistry, Error> {
+    ) -> Result<SemConvSpecs, Error> {
         Self::semconv_registry_from_imports(
             &schema.merged_semantic_conventions(),
             ResolverConfig::default(),
@@ -275,7 +275,7 @@ impl SchemaResolver {
         resolver_config: ResolverConfig,
         cache: &Cache,
         log: impl Logger + Clone + Sync,
-    ) -> Result<SemConvRegistry, Error> {
+    ) -> Result<SemConvSpecs, Error> {
         let start = Instant::now();
         let mut registry = Self::create_semantic_convention_registry(imports, cache, log.clone())?;
         let warnings = registry
@@ -301,7 +301,7 @@ impl SchemaResolver {
     /// Resolves the given semantic convention registry and returns the
     /// corresponding resolved telemetry schema.
     pub fn resolve_semantic_convention_registry(
-        registry: &mut SemConvRegistry,
+        registry: &mut SemConvSpecs,
         log: impl Logger + Clone + Sync,
     ) -> Result<ResolvedTelemetrySchema, Error> {
         let start = Instant::now();
@@ -400,9 +400,9 @@ impl SchemaResolver {
         sem_convs: &[SemConvImport],
         cache: &Cache,
         log: impl Logger + Sync,
-    ) -> Result<SemConvRegistry, Error> {
+    ) -> Result<SemConvSpecs, Error> {
         // Load all the semantic convention catalogs.
-        let mut sem_conv_catalog = SemConvRegistry::default();
+        let mut sem_conv_catalog = SemConvSpecs::default();
         let total_file_count = sem_convs.len();
         let loaded_files_count = AtomicUsize::new(0);
         let error_count = AtomicUsize::new(0);
@@ -460,7 +460,7 @@ impl SchemaResolver {
     ) -> Vec<Result<(String, SemConvSpec), Error>> {
         match import_decl {
             SemConvImport::Url { url } => {
-                let spec = SemConvRegistry::load_sem_conv_spec_from_url(url).map_err(|e| {
+                let spec = SemConvSpecs::load_sem_conv_spec_from_url(url).map_err(|e| {
                     Error::SemConvError {
                         message: e.to_string(),
                     }
@@ -502,7 +502,7 @@ impl SchemaResolver {
                             Ok(entry) => {
                                 if is_semantic_convention_file(&entry) {
                                     let spec =
-                                        SemConvRegistry::load_sem_conv_spec_from_file(entry.path())
+                                        SemConvSpecs::load_sem_conv_spec_from_file(entry.path())
                                             .map_err(|e| Error::SemConvError {
                                                 message: e.to_string(),
                                             });

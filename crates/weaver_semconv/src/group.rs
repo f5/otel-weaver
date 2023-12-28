@@ -8,21 +8,21 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use validator::{Validate, ValidationError};
 
-use crate::attribute::{Attribute, AttributeType, PrimitiveOrArrayType};
+use crate::attribute::{AttributeSpec, AttributeTypeSpec, PrimitiveOrArrayType};
 use crate::group::Instrument::{Counter, Gauge, Histogram, UpDownCounter};
 use crate::stability::Stability;
 
-/// Groups contain the list of semantic conventions and it is the root node of
-/// each yaml file.
+/// Group Spec contain the list of semantic conventions and it is the root node
+/// of each yaml file.
 #[derive(Serialize, Deserialize, Debug, Validate, Clone)]
 #[serde(deny_unknown_fields)]
 #[validate(schema(function = "validate_group"))]
-pub struct Group {
+pub struct GroupSpec {
     /// The id that uniquely identifies the semantic convention.
     pub id: String,
     /// The type of the semantic convention (default to span).
     #[serde(default)]
-    pub r#type: ConvType,
+    pub r#type: ConvTypeSpec,
     /// A brief description of the semantic convention.
     pub brief: String,
     /// A more elaborate description of the semantic convention.
@@ -51,7 +51,7 @@ pub struct Group {
     pub deprecated: Option<String>,
     /// List of attributes that belong to the semantic convention.
     #[serde(default)]
-    pub attributes: Vec<Attribute>,
+    pub attributes: Vec<AttributeSpec>,
     /// Additional constraints.
     /// Allow to define additional requirements on the semantic convention.
     /// It defaults to an empty list.
@@ -85,7 +85,7 @@ pub struct Group {
 }
 
 /// Validation logic for the group.
-fn validate_group(group: &Group) -> Result<(), ValidationError> {
+fn validate_group(group: &GroupSpec) -> Result<(), ValidationError> {
     // If deprecated is present and stability differs from deprecated, this
     // will result in an error.
     if group.deprecated.is_some()
@@ -98,7 +98,7 @@ fn validate_group(group: &Group) -> Result<(), ValidationError> {
     }
 
     // Fields span_kind and events are only valid if type is span (the default).
-    if group.r#type != ConvType::Span {
+    if group.r#type != ConvTypeSpec::Span {
         if group.span_kind.is_some() {
             return Err(ValidationError::new(
                 "This group contains a span_kind field but the type is not set to span.",
@@ -112,14 +112,14 @@ fn validate_group(group: &Group) -> Result<(), ValidationError> {
     }
 
     // Field name is required if prefix is empty and if type is event.
-    if group.r#type == ConvType::Event && group.prefix.is_empty() && group.name.is_none() {
+    if group.r#type == ConvTypeSpec::Event && group.prefix.is_empty() && group.name.is_none() {
         return Err(ValidationError::new(
             "This group contains an event type but the prefix is empty and the name is not set.",
         ));
     }
 
     // Fields metric_name, instrument and unit are required if type is metric.
-    if group.r#type == ConvType::Metric {
+    if group.r#type == ConvTypeSpec::Metric {
         if group.metric_name.is_none() {
             return Err(ValidationError::new(
                 "This group contains a metric type but the metric_name is not set.",
@@ -142,12 +142,12 @@ fn validate_group(group: &Group) -> Result<(), ValidationError> {
         // If deprecated is present and stability differs from deprecated, this
         // will result in an error.
         match attribute {
-            Attribute::Id {
+            AttributeSpec::Id {
                 stability,
                 deprecated,
                 ..
             }
-            | Attribute::Ref {
+            | AttributeSpec::Ref {
                 stability,
                 deprecated,
                 ..
@@ -162,7 +162,7 @@ fn validate_group(group: &Group) -> Result<(), ValidationError> {
         }
 
         // Examples are required only for string and string array attributes.
-        if let Attribute::Id {
+        if let AttributeSpec::Id {
             r#type, examples, ..
         } = attribute
         {
@@ -170,12 +170,12 @@ fn validate_group(group: &Group) -> Result<(), ValidationError> {
                 continue;
             }
 
-            if *r#type == AttributeType::PrimitiveOrArray(PrimitiveOrArrayType::String) {
+            if *r#type == AttributeTypeSpec::PrimitiveOrArray(PrimitiveOrArrayType::String) {
                 return Err(ValidationError::new(
                     "This attribute is a string but it does not contain any examples.",
                 ));
             }
-            if *r#type == AttributeType::PrimitiveOrArray(PrimitiveOrArrayType::Strings) {
+            if *r#type == AttributeTypeSpec::PrimitiveOrArray(PrimitiveOrArrayType::Strings) {
                 return Err(ValidationError::new(
                     "This attribute is a string array but it does not contain any examples.",
                 ));
@@ -186,10 +186,10 @@ fn validate_group(group: &Group) -> Result<(), ValidationError> {
     Ok(())
 }
 
-/// The different types of groups.
+/// The different types of groups (specification).
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[serde(rename_all = "snake_case")]
-pub enum ConvType {
+pub enum ConvTypeSpec {
     /// Attribute group (attribute_group type) defines a set of attributes that
     /// can be declared once and referenced by semantic conventions for
     /// different signals, for example spans and logs. Attribute groups don't
@@ -210,7 +210,7 @@ pub enum ConvType {
     Scope,
 }
 
-impl Default for ConvType {
+impl Default for ConvTypeSpec {
     /// Returns the default convention type that is span based on
     /// the OpenTelemetry specification.
     fn default() -> Self {
