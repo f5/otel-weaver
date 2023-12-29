@@ -119,6 +119,15 @@ pub enum Error {
     },
 }
 
+/// A semantic convention spec with its provenance (path or URL).
+#[derive(Debug, Clone)]
+pub struct SemConvSpecWithProvenance {
+    /// The semantic convention spec.
+    pub spec: SemConvSpec,
+    /// The provenance of the semantic convention spec (path or URL).
+    pub provenance: String,
+}
+
 /// An attribute definition with its provenance (path or URL).
 #[derive(Debug, Clone)]
 pub struct AttributeWithProvenance {
@@ -146,7 +155,7 @@ pub struct SemConvSpecs {
     asset_count: usize,
 
     /// A collection of semantic convention specifications loaded in the semantic convention registry.
-    specs: Vec<(String, SemConvSpec)>,
+    specs: Vec<SemConvSpecWithProvenance>,
 
     /// Attributes indexed by their respective id independently of their
     /// semantic convention group.
@@ -274,7 +283,10 @@ impl SemConvSpecs {
                 error: e.to_string(),
             });
         }
-        self.specs.push((path.as_ref().display().to_string(), spec));
+        self.specs.push(SemConvSpecWithProvenance {
+            spec,
+            provenance: path.as_ref().display().to_string(),
+        });
         Ok(())
     }
 
@@ -314,12 +326,12 @@ impl SemConvSpecs {
     }
 
     /// Append a list of semantic convention specs to the semantic convention registry.
-    pub fn append_sem_conv_specs(&mut self, specs: Vec<(String, SemConvSpec)>) {
+    pub fn append_sem_conv_specs(&mut self, specs: Vec<SemConvSpecWithProvenance>) {
         self.specs.extend(specs);
     }
 
     /// Append a semantic convention spec to the semantic convention registry.
-    pub fn append_sem_conv_spec(&mut self, spec: (String, SemConvSpec)) {
+    pub fn append_sem_conv_spec(&mut self, spec: SemConvSpecWithProvenance) {
         self.specs.push(spec);
         self.asset_count += 1;
     }
@@ -338,7 +350,7 @@ impl SemConvSpecs {
         let mut metrics_to_resolve = HashMap::new();
 
         // Add all the attributes with an id to the semantic convention registry.
-        for (path_or_url, spec) in self.specs.clone().into_iter() {
+        for SemConvSpecWithProvenance { spec, provenance } in self.specs.clone().into_iter() {
             for group in spec.groups.iter() {
                 // Process attributes
                 match group.r#type {
@@ -349,7 +361,7 @@ impl SemConvSpecs {
                     | group::ConvTypeSpec::Event
                     | group::ConvTypeSpec::MetricGroup => {
                         let attributes_in_group = self.process_attributes(
-                            path_or_url.to_string(),
+                            provenance.clone(),
                             group.id.clone(),
                             group.prefix.clone(),
                             group.attributes.clone(),
@@ -376,12 +388,12 @@ impl SemConvSpecs {
                             let prev_group_ids = group_attributes.insert(
                                 group.id.clone(),
                                 GroupIds {
-                                    origin: path_or_url.to_string(),
+                                    origin: provenance.clone(),
                                     ids: attributes_in_group.clone(),
                                 },
                             );
                             Self::detect_duplicated_group(
-                                path_or_url.to_string(),
+                                provenance.clone(),
                                 group.id.clone(),
                                 prev_group_ids,
                             )?;
@@ -402,7 +414,7 @@ impl SemConvSpecs {
                             metric_name.clone()
                         } else {
                             return Err(Error::InvalidMetric {
-                                path_or_url: path_or_url.to_string(),
+                                path_or_url: provenance.clone(),
                                 group_id: group.id.clone(),
                                 error: "Metric without name".to_string(),
                             });
@@ -411,7 +423,7 @@ impl SemConvSpecs {
                             instrument.clone()
                         } else {
                             return Err(Error::InvalidMetric {
-                                path_or_url: path_or_url.to_string(),
+                                path_or_url: provenance.clone(),
                                 group_id: group.id.clone(),
                                 error: "Metric without instrument definition".to_string(),
                             });
@@ -428,12 +440,12 @@ impl SemConvSpecs {
                                     instrument,
                                     unit: group.unit.clone(),
                                 },
-                                provenance: path_or_url.to_string(),
+                                provenance: provenance.clone(),
                             },
                         );
                         if prev_val.is_some() {
                             return Err(Error::DuplicateMetricName {
-                                path_or_url: path_or_url.to_string(),
+                                path_or_url: provenance.clone(),
                                 name: metric_name.clone(),
                             });
                         }
@@ -442,14 +454,14 @@ impl SemConvSpecs {
                             let prev_val = metrics_to_resolve.insert(
                                 metric_name.clone(),
                                 MetricToResolve {
-                                    path_or_url: path_or_url.to_string(),
+                                    path_or_url: provenance.clone(),
                                     group_id: group.id.clone(),
                                     r#ref: r#ref.clone(),
                                 },
                             );
                             if prev_val.is_some() {
                                 return Err(Error::DuplicateMetricName {
-                                    path_or_url: path_or_url.to_string(),
+                                    path_or_url: provenance.clone(),
                                     name: r#ref.clone(),
                                 });
                             }
@@ -584,7 +596,9 @@ impl SemConvSpecs {
 
     /// Returns an iterator over all the groups defined in the semantic convention registry.
     pub fn groups(&self) -> impl Iterator<Item = &GroupSpec> {
-        self.specs.iter().flat_map(|(_, spec)| &spec.groups)
+        self.specs
+            .iter()
+            .flat_map(|SemConvSpecWithProvenance { spec, .. }| &spec.groups)
     }
 
     /// Returns an iterator over all the attributes defined in the semantic convention registry.

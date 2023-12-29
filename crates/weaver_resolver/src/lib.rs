@@ -23,7 +23,7 @@ use weaver_logger::Logger;
 use weaver_resolved_schema::catalog::Catalog;
 use weaver_resolved_schema::ResolvedTelemetrySchema;
 use weaver_schema::{SemConvImport, TelemetrySchema};
-use weaver_semconv::{ResolverConfig, SemConvSpec, SemConvSpecs};
+use weaver_semconv::{ResolverConfig, SemConvSpec, SemConvSpecWithProvenance, SemConvSpecs};
 use weaver_version::VersionChanges;
 
 use crate::events::resolve_events;
@@ -463,8 +463,9 @@ impl SchemaResolver {
 
         let mut errors = vec![];
         result.into_iter().for_each(|result| match result {
-            Ok(sem_conv_spec) => {
-                sem_conv_catalog.append_sem_conv_spec(sem_conv_spec);
+            Ok((provenance, spec)) => {
+                sem_conv_catalog
+                    .append_sem_conv_spec(SemConvSpecWithProvenance { provenance, spec });
             }
             Err(e) => {
                 log.error(&e.to_string());

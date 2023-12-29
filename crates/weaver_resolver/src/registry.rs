@@ -319,6 +319,7 @@ mod tests {
     /// - file `expected-registry.json` containing the expected registry in
     ///   JSON format.
     #[test]
+    #[allow(clippy::print_stdout)]
     fn test_registry_resolution() {
         // Iterate over all directories in the data directory and
         // starting with registry-test-*
@@ -391,6 +392,4 @@ mod tests {
 }
 
 // ToDo Remove #[allow(dead_code)] once the corresponding functions are called from the CLI.
-// ToDo Work on the metrics, spans, events, ... resolutions.
 // ToDo Keep track of the provenance for all the resolutions.
-// ToDo implement correctly extends of extends.
