@@ -3,13 +3,13 @@
 //! Metric specification.
 
 use crate::attribute::AttributeSpec;
-use crate::group::Instrument;
+use crate::group::InstrumentSpec;
 use serde::{Deserialize, Serialize};
 
 /// A metric specification.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct Metric {
+pub struct MetricSpec {
     /// Metric name.
     pub name: String,
     /// Brief description of the metric.
@@ -20,12 +20,12 @@ pub struct Metric {
     #[serde(default)]
     pub attributes: Vec<AttributeSpec>,
     /// Type of the metric (e.g. gauge, histogram, ...).
-    pub instrument: Instrument,
+    pub instrument: InstrumentSpec,
     /// Unit of the metric.
     pub unit: Option<String>,
 }
 
-impl Metric {
+impl MetricSpec {
     /// Returns the name of the metric.
     pub fn name(&self) -> &str {
         &self.name

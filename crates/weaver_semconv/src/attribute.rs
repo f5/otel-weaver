@@ -8,7 +8,7 @@ use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
-use crate::stability::Stability;
+use crate::stability::StabilitySpec;
 
 /// An attribute specification.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -31,7 +31,7 @@ pub enum AttributeSpec {
         /// attribute. If only a single example is provided, it can directly
         /// be reported without encapsulating it into a sequence/dictionary.
         #[serde(skip_serializing_if = "Option::is_none")]
-        examples: Option<Examples>,
+        examples: Option<ExamplesSpec>,
         /// Associates a tag ("sub-group") to the attribute. It carries no
         /// particular semantic meaning but can be used e.g. for filtering
         /// in the markdown generator.
@@ -60,7 +60,7 @@ pub enum AttributeSpec {
         /// present and stability differs from deprecated, this will result in an
         /// error.
         #[serde(skip_serializing_if = "Option::is_none")]
-        stability: Option<Stability>,
+        stability: Option<StabilitySpec>,
         /// Specifies if the attribute is deprecated. The string
         /// provided as <description> MUST specify why it's deprecated and/or what
         /// to use instead. See also stability.
@@ -82,7 +82,7 @@ pub enum AttributeSpec {
         /// attribute. If only a single example is provided, it can directly
         /// be reported without encapsulating it into a sequence/dictionary.
         #[serde(skip_serializing_if = "Option::is_none")]
-        examples: Option<Examples>,
+        examples: Option<ExamplesSpec>,
         /// Associates a tag ("sub-group") to the attribute. It carries no
         /// particular semantic meaning but can be used e.g. for filtering
         /// in the markdown generator.
@@ -110,7 +110,7 @@ pub enum AttributeSpec {
         /// present and stability differs from deprecated, this will result in an
         /// error.
         #[serde(skip_serializing_if = "Option::is_none")]
-        stability: Option<Stability>,
+        stability: Option<StabilitySpec>,
         /// Specifies if the attribute is deprecated. The string
         /// provided as <description> MUST specify why it's deprecated and/or what
         /// to use instead. See also stability.
@@ -126,11 +126,11 @@ impl AttributeSpec {
             self,
             AttributeSpec::Ref {
                 requirement_level: Some(RequirementLevelSpec::Basic(
-                    BasicRequirementLevel::Required
+                    BasicRequirementLevelSpec::Required
                 )),
                 ..
             } | AttributeSpec::Id {
-                requirement_level: RequirementLevelSpec::Basic(BasicRequirementLevel::Required),
+                requirement_level: RequirementLevelSpec::Basic(BasicRequirementLevelSpec::Required),
                 ..
             }
         )
@@ -175,9 +175,9 @@ impl AttributeSpec {
 #[serde(untagged)]
 pub enum AttributeTypeSpec {
     /// Primitive or array type.
-    PrimitiveOrArray(PrimitiveOrArrayType),
+    PrimitiveOrArray(PrimitiveOrArrayTypeSpec),
     /// A template type.
-    Template(TemplateType),
+    Template(TemplateTypeSpec),
     /// An enum definition type.
     Enum {
         /// Set to false to not accept values other than the specified members.
@@ -185,7 +185,7 @@ pub enum AttributeTypeSpec {
         #[serde(default = "default_as_true")]
         allow_custom_values: bool,
         /// List of enum entries.
-        members: Vec<EnumEntries>,
+        members: Vec<EnumEntriesSpec>,
     },
 }
 
@@ -215,7 +215,7 @@ fn default_as_true() -> bool {
 /// Primitive or array types.
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
-pub enum PrimitiveOrArrayType {
+pub enum PrimitiveOrArrayTypeSpec {
     /// A boolean attribute.
     Boolean,
     /// A integer attribute (signed 64 bit integer).
@@ -239,17 +239,17 @@ pub enum PrimitiveOrArrayType {
 }
 
 /// Implements a human readable display for PrimitiveOrArrayType.
-impl Display for PrimitiveOrArrayType {
+impl Display for PrimitiveOrArrayTypeSpec {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            PrimitiveOrArrayType::Boolean => write!(f, "boolean"),
-            PrimitiveOrArrayType::Int => write!(f, "int"),
-            PrimitiveOrArrayType::Double => write!(f, "double"),
-            PrimitiveOrArrayType::String => write!(f, "string"),
-            PrimitiveOrArrayType::Strings => write!(f, "string[]"),
-            PrimitiveOrArrayType::Ints => write!(f, "int[]"),
-            PrimitiveOrArrayType::Doubles => write!(f, "double[]"),
-            PrimitiveOrArrayType::Booleans => write!(f, "boolean[]"),
+            PrimitiveOrArrayTypeSpec::Boolean => write!(f, "boolean"),
+            PrimitiveOrArrayTypeSpec::Int => write!(f, "int"),
+            PrimitiveOrArrayTypeSpec::Double => write!(f, "double"),
+            PrimitiveOrArrayTypeSpec::String => write!(f, "string"),
+            PrimitiveOrArrayTypeSpec::Strings => write!(f, "string[]"),
+            PrimitiveOrArrayTypeSpec::Ints => write!(f, "int[]"),
+            PrimitiveOrArrayTypeSpec::Doubles => write!(f, "double[]"),
+            PrimitiveOrArrayTypeSpec::Booleans => write!(f, "boolean[]"),
         }
     }
 }
@@ -257,7 +257,7 @@ impl Display for PrimitiveOrArrayType {
 /// Template types.
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
-pub enum TemplateType {
+pub enum TemplateTypeSpec {
     /// A boolean attribute.
     #[serde(rename = "template[boolean]")]
     Boolean,
@@ -285,17 +285,17 @@ pub enum TemplateType {
 }
 
 /// Implements a human readable display for TemplateType.
-impl Display for TemplateType {
+impl Display for TemplateTypeSpec {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            TemplateType::Boolean => write!(f, "template[boolean]"),
-            TemplateType::Int => write!(f, "template[int]"),
-            TemplateType::Double => write!(f, "template[double]"),
-            TemplateType::String => write!(f, "template[string]"),
-            TemplateType::Strings => write!(f, "template[string[]]"),
-            TemplateType::Ints => write!(f, "template[int[]]"),
-            TemplateType::Doubles => write!(f, "template[double[]]"),
-            TemplateType::Booleans => write!(f, "template[boolean[]]"),
+            TemplateTypeSpec::Boolean => write!(f, "template[boolean]"),
+            TemplateTypeSpec::Int => write!(f, "template[int]"),
+            TemplateTypeSpec::Double => write!(f, "template[double]"),
+            TemplateTypeSpec::String => write!(f, "template[string]"),
+            TemplateTypeSpec::Strings => write!(f, "template[string[]]"),
+            TemplateTypeSpec::Ints => write!(f, "template[int[]]"),
+            TemplateTypeSpec::Doubles => write!(f, "template[double[]]"),
+            TemplateTypeSpec::Booleans => write!(f, "template[boolean[]]"),
         }
     }
 }
@@ -303,11 +303,11 @@ impl Display for TemplateType {
 /// Possible enum entries.
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
-pub struct EnumEntries {
+pub struct EnumEntriesSpec {
     /// String that uniquely identifies the enum entry.
     pub id: String,
     /// String, int, or boolean; value of the enum entry.
-    pub value: Value,
+    pub value: ValueSpec,
     /// Brief description of the enum entry value.
     /// It defaults to the value of id.
     pub brief: Option<String>,
@@ -317,7 +317,7 @@ pub struct EnumEntries {
 }
 
 /// Implements a human readable display for EnumEntries.
-impl Display for EnumEntries {
+impl Display for EnumEntriesSpec {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "id={}, type={}", self.id, self.value)
     }
@@ -327,7 +327,7 @@ impl Display for EnumEntries {
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
-pub enum Value {
+pub enum ValueSpec {
     /// A integer value.
     Int(i64),
     /// A double value.
@@ -337,13 +337,13 @@ pub enum Value {
 }
 
 /// Implements a human readable display for Value.
-impl Display for Value {
+impl Display for ValueSpec {
     /// Formats the value.
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::Int(v) => write!(f, "{}", v),
-            Value::Double(v) => write!(f, "{}", v),
-            Value::String(v) => write!(f, "{}", v),
+            ValueSpec::Int(v) => write!(f, "{}", v),
+            ValueSpec::Double(v) => write!(f, "{}", v),
+            ValueSpec::String(v) => write!(f, "{}", v),
         }
     }
 }
@@ -352,7 +352,7 @@ impl Display for Value {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
-pub enum Examples {
+pub enum ExamplesSpec {
     /// A boolean example.
     Bool(bool),
     /// A integer example.
@@ -377,7 +377,7 @@ pub enum Examples {
 #[serde(untagged)]
 pub enum RequirementLevelSpec {
     /// A basic requirement level.
-    Basic(BasicRequirementLevel),
+    Basic(BasicRequirementLevelSpec),
     /// A conditional requirement level.
     ConditionallyRequired {
         /// The description of the condition.
@@ -409,14 +409,14 @@ impl Display for RequirementLevelSpec {
 // specification.
 impl Default for RequirementLevelSpec {
     fn default() -> Self {
-        RequirementLevelSpec::Basic(BasicRequirementLevel::Recommended)
+        RequirementLevelSpec::Basic(BasicRequirementLevelSpec::Recommended)
     }
 }
 
 /// The different types of basic requirement levels.
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
-pub enum BasicRequirementLevel {
+pub enum BasicRequirementLevelSpec {
     /// A required requirement level.
     Required,
     /// An optional requirement level.
@@ -426,12 +426,12 @@ pub enum BasicRequirementLevel {
 }
 
 /// Implements a human readable display for BasicRequirementLevel.
-impl Display for BasicRequirementLevel {
+impl Display for BasicRequirementLevelSpec {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            BasicRequirementLevel::Required => write!(f, "required"),
-            BasicRequirementLevel::Recommended => write!(f, "recommended"),
-            BasicRequirementLevel::OptIn => write!(f, "opt-in"),
+            BasicRequirementLevelSpec::Required => write!(f, "required"),
+            BasicRequirementLevelSpec::Recommended => write!(f, "recommended"),
+            BasicRequirementLevelSpec::OptIn => write!(f, "opt-in"),
         }
     }
 }

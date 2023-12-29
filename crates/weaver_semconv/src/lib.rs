@@ -26,7 +26,7 @@ use validator::Validate;
 
 use crate::attribute::AttributeSpec;
 use crate::group::GroupSpec;
-use crate::metric::Metric;
+use crate::metric::MetricSpec;
 
 pub mod attribute;
 pub mod group;
@@ -128,9 +128,18 @@ pub struct SemConvSpecWithProvenance {
     pub provenance: String,
 }
 
+/// A group spec with its provenance (path or URL).
+#[derive(Debug, Clone)]
+pub struct GroupSpecWithProvenance {
+    /// The group spec.
+    pub spec: GroupSpec,
+    /// The provenance of the group spec (path or URL).
+    pub provenance: String,
+}
+
 /// An attribute definition with its provenance (path or URL).
 #[derive(Debug, Clone)]
-pub struct AttributeWithProvenance {
+pub struct AttributeSpecWithProvenance {
     /// The attribute definition.
     pub attribute: AttributeSpec,
     /// The provenance of the attribute (path or URL).
@@ -139,9 +148,9 @@ pub struct AttributeWithProvenance {
 
 /// A metric definition with its provenance (path or URL).
 #[derive(Debug, Clone)]
-pub struct MetricWithProvenance {
+pub struct MetricSpecWithProvenance {
     /// The metric definition.
-    pub metric: Metric,
+    pub metric: MetricSpec,
     /// The provenance of the metric (path or URL).
     pub provenance: String,
 }
@@ -161,12 +170,12 @@ pub struct SemConvSpecs {
     /// semantic convention group.
     ///
     /// This collection contains all the attributes defined in the semantic convention registry.
-    all_attributes: HashMap<String, AttributeWithProvenance>,
+    all_attributes: HashMap<String, AttributeSpecWithProvenance>,
 
     /// Metrics indexed by their respective id.
     ///
     /// This collection contains all the metrics defined in the semantic convention registry.
-    all_metrics: HashMap<String, MetricWithProvenance>,
+    all_metrics: HashMap<String, MetricSpecWithProvenance>,
 
     /// Collection of attribute ids index by group id and defined in a
     /// `resource` semantic convention group.
@@ -431,8 +440,8 @@ impl SemConvSpecs {
 
                         let prev_val = self.all_metrics.insert(
                             metric_name.clone(),
-                            MetricWithProvenance {
-                                metric: Metric {
+                            MetricSpecWithProvenance {
+                                metric: MetricSpec {
                                     name: metric_name.clone(),
                                     brief: group.brief.clone(),
                                     note: group.note.clone(),
@@ -557,7 +566,10 @@ impl SemConvSpecs {
 
     /// Returns an attribute definition and its provenance from its reference
     /// or `None` if the reference does not exist.
-    pub fn attribute_with_provenance(&self, attr_ref: &str) -> Option<&AttributeWithProvenance> {
+    pub fn attribute_with_provenance(
+        &self,
+        attr_ref: &str,
+    ) -> Option<&AttributeSpecWithProvenance> {
         self.all_attributes.get(attr_ref)
     }
 
@@ -601,26 +613,39 @@ impl SemConvSpecs {
             .flat_map(|SemConvSpecWithProvenance { spec, .. }| &spec.groups)
     }
 
+    /// Returns an iterator over all the groups defined in the semantic convention registry.
+    /// Each group is associated with its provenance (path or URL).
+    pub fn groups_with_provenance(&self) -> impl Iterator<Item = GroupSpecWithProvenance> + '_ {
+        self.specs
+            .iter()
+            .flat_map(|SemConvSpecWithProvenance { spec, provenance }| {
+                spec.groups.iter().map(|group| GroupSpecWithProvenance {
+                    spec: group.clone(),
+                    provenance: provenance.clone(),
+                })
+            })
+    }
+
     /// Returns an iterator over all the attributes defined in the semantic convention registry.
     pub fn attributes_iter(&self) -> impl Iterator<Item = &AttributeSpec> {
         self.all_attributes.values().map(|attr| &attr.attribute)
     }
 
     /// Returns an iterator over all the metrics defined in the semantic convention registry.
-    pub fn metrics_iter(&self) -> impl Iterator<Item = &Metric> {
+    pub fn metrics_iter(&self) -> impl Iterator<Item = &MetricSpec> {
         self.all_metrics.values().map(|metric| &metric.metric)
     }
 
     /// Returns a metric definition from its name or `None` if the
     /// name does not exist.
-    pub fn metric(&self, metric_name: &str) -> Option<&Metric> {
+    pub fn metric(&self, metric_name: &str) -> Option<&MetricSpec> {
         self.all_metrics
             .get(metric_name)
             .map(|metric| &metric.metric)
     }
 
     /// Returns a metric definition and its provenance from its name
-    pub fn metric_with_provenance(&self, metric_name: &str) -> Option<&MetricWithProvenance> {
+    pub fn metric_with_provenance(&self, metric_name: &str) -> Option<&MetricSpecWithProvenance> {
         self.all_metrics.get(metric_name)
     }
 
@@ -670,7 +695,7 @@ impl SemConvSpecs {
                     }
                     let prev_val = self.all_attributes.insert(
                         fq_attr_id.clone(),
-                        AttributeWithProvenance {
+                        AttributeSpecWithProvenance {
                             attribute: attr,
                             provenance: path_or_url.clone(),
                         },

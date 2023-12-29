@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::attribute::Attribute;
 use crate::tags::Tags;
-use weaver_semconv::group::Instrument;
+use weaver_semconv::group::InstrumentSpec;
 
 /// The specification of a metric group.
 #[derive(Serialize, Deserialize, Debug)]
@@ -56,7 +56,7 @@ pub enum Metric {
         #[serde(default)]
         attributes: Vec<Attribute>,
         /// Type of the metric (e.g. gauge, histogram, ...).
-        instrument: Instrument,
+        instrument: InstrumentSpec,
         /// Unit of the metric.
         unit: Option<String>,
         /// A set of tags for the metric.

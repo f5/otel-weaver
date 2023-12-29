@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use validator::{Validate, ValidationError};
 
-use crate::attribute::{AttributeSpec, AttributeTypeSpec, PrimitiveOrArrayType};
-use crate::group::Instrument::{Counter, Gauge, Histogram, UpDownCounter};
-use crate::stability::Stability;
+use crate::attribute::{AttributeSpec, AttributeTypeSpec, PrimitiveOrArrayTypeSpec};
+use crate::group::InstrumentSpec::{Counter, Gauge, Histogram, UpDownCounter};
+use crate::stability::StabilitySpec;
 
 /// Group Spec contain the list of semantic conventions and it is the root node
 /// of each yaml file.
@@ -43,7 +43,7 @@ pub struct GroupSpec {
     /// present and stability differs from deprecated, this will result in an
     /// error.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub stability: Option<Stability>,
+    pub stability: Option<StabilitySpec>,
     /// Specifies if the semantic convention is deprecated. The string
     /// provided as <description> MUST specify why it's deprecated and/or what
     /// to use instead. See also stability.
@@ -56,10 +56,10 @@ pub struct GroupSpec {
     /// Allow to define additional requirements on the semantic convention.
     /// It defaults to an empty list.
     #[serde(default)]
-    pub constraints: Vec<Constraint>,
+    pub constraints: Vec<ConstraintSpec>,
     /// Specifies the kind of the span.
     /// Note: only valid if type is span (the default)
-    pub span_kind: Option<SpanKind>,
+    pub span_kind: Option<SpanKindSpec>,
     /// List of strings that specify the ids of event semantic conventions
     /// associated with this span semantic convention.
     /// Note: only valid if type is span (the default)
@@ -74,7 +74,7 @@ pub struct GroupSpec {
     /// histogram).
     /// For more details: [Metrics semantic conventions - Instrument types](https://github.com/open-telemetry/opentelemetry-specification/tree/main/specification/metrics/semantic_conventions#instrument-types).
     /// Note: This field is required if type is metric.
-    pub instrument: Option<Instrument>,
+    pub instrument: Option<InstrumentSpec>,
     /// The unit in which the metric is measured, which should adhere to the
     /// [guidelines](https://github.com/open-telemetry/opentelemetry-specification/tree/main/specification/metrics/semantic_conventions#instrument-units).
     /// Note: This field is required if type is metric.
@@ -90,7 +90,7 @@ fn validate_group(group: &GroupSpec) -> Result<(), ValidationError> {
     // will result in an error.
     if group.deprecated.is_some()
         && group.stability.is_some()
-        && group.stability != Some(Stability::Deprecated)
+        && group.stability != Some(StabilitySpec::Deprecated)
     {
         return Err(ValidationError::new(
             "This group contains a deprecated field but the stability is not set to deprecated.",
@@ -154,7 +154,7 @@ fn validate_group(group: &GroupSpec) -> Result<(), ValidationError> {
             } => {
                 if deprecated.is_some()
                     && stability.is_some()
-                    && *stability != Some(Stability::Deprecated)
+                    && *stability != Some(StabilitySpec::Deprecated)
                 {
                     return Err(ValidationError::new("This attribute contains a deprecated field but the stability is not set to deprecated."));
                 }
@@ -170,12 +170,12 @@ fn validate_group(group: &GroupSpec) -> Result<(), ValidationError> {
                 continue;
             }
 
-            if *r#type == AttributeTypeSpec::PrimitiveOrArray(PrimitiveOrArrayType::String) {
+            if *r#type == AttributeTypeSpec::PrimitiveOrArray(PrimitiveOrArrayTypeSpec::String) {
                 return Err(ValidationError::new(
                     "This attribute is a string but it does not contain any examples.",
                 ));
             }
-            if *r#type == AttributeTypeSpec::PrimitiveOrArray(PrimitiveOrArrayType::Strings) {
+            if *r#type == AttributeTypeSpec::PrimitiveOrArray(PrimitiveOrArrayTypeSpec::Strings) {
                 return Err(ValidationError::new(
                     "This attribute is a string array but it does not contain any examples.",
                 ));
@@ -221,7 +221,7 @@ impl Default for ConvTypeSpec {
 /// The span kind.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
-pub enum SpanKind {
+pub enum SpanKindSpec {
     /// An internal span.
     Internal,
     /// A client span.
@@ -237,7 +237,7 @@ pub enum SpanKind {
 /// Allow to define additional requirements on the semantic convention.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct Constraint {
+pub struct ConstraintSpec {
     /// any_of accepts a list of sequences. Each sequence contains a list of
     /// attribute ids that are required. any_of enforces that all attributes
     /// of at least one of the sequences are set.
@@ -252,7 +252,7 @@ pub struct Constraint {
 /// The type of the metric.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
-pub enum Instrument {
+pub enum InstrumentSpec {
     /// An up-down counter metric.
     #[serde(rename = "updowncounter")]
     UpDownCounter,
@@ -265,7 +265,7 @@ pub enum Instrument {
 }
 
 /// Implements a human readable display for the instrument.
-impl Display for Instrument {
+impl Display for InstrumentSpec {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             UpDownCounter => write!(f, "updowncounter"),

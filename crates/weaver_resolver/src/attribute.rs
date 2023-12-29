@@ -10,8 +10,8 @@ use weaver_resolved_schema::attribute::AttributeRef;
 use weaver_schema::attribute::Attribute;
 use weaver_schema::tags::Tags;
 use weaver_semconv::attribute::{
-    AttributeSpec, AttributeTypeSpec, BasicRequirementLevel, Examples, PrimitiveOrArrayType,
-    RequirementLevelSpec, TemplateType, Value,
+    AttributeSpec, AttributeTypeSpec, BasicRequirementLevelSpec, ExamplesSpec,
+    PrimitiveOrArrayTypeSpec, RequirementLevelSpec, TemplateTypeSpec, ValueSpec,
 };
 use weaver_semconv::group::ConvTypeSpec;
 use weaver_semconv::SemConvSpecs;
@@ -372,46 +372,50 @@ fn semconv_to_resolved_attr_type(
 ) -> weaver_resolved_schema::attribute::AttributeType {
     match attr_type {
         AttributeTypeSpec::PrimitiveOrArray(poa) => match poa {
-            PrimitiveOrArrayType::Boolean => {
+            PrimitiveOrArrayTypeSpec::Boolean => {
                 weaver_resolved_schema::attribute::AttributeType::Boolean
             }
-            PrimitiveOrArrayType::Int => weaver_resolved_schema::attribute::AttributeType::Int,
-            PrimitiveOrArrayType::Double => {
+            PrimitiveOrArrayTypeSpec::Int => weaver_resolved_schema::attribute::AttributeType::Int,
+            PrimitiveOrArrayTypeSpec::Double => {
                 weaver_resolved_schema::attribute::AttributeType::Double
             }
-            PrimitiveOrArrayType::String => {
+            PrimitiveOrArrayTypeSpec::String => {
                 weaver_resolved_schema::attribute::AttributeType::String
             }
-            PrimitiveOrArrayType::Strings => {
+            PrimitiveOrArrayTypeSpec::Strings => {
                 weaver_resolved_schema::attribute::AttributeType::Strings
             }
-            PrimitiveOrArrayType::Ints => weaver_resolved_schema::attribute::AttributeType::Ints,
-            PrimitiveOrArrayType::Doubles => {
+            PrimitiveOrArrayTypeSpec::Ints => {
+                weaver_resolved_schema::attribute::AttributeType::Ints
+            }
+            PrimitiveOrArrayTypeSpec::Doubles => {
                 weaver_resolved_schema::attribute::AttributeType::Doubles
             }
-            PrimitiveOrArrayType::Booleans => {
+            PrimitiveOrArrayTypeSpec::Booleans => {
                 weaver_resolved_schema::attribute::AttributeType::Booleans
             }
         },
         AttributeTypeSpec::Template(template) => match template {
-            TemplateType::Boolean => {
+            TemplateTypeSpec::Boolean => {
                 weaver_resolved_schema::attribute::AttributeType::TemplateBoolean
             }
-            TemplateType::Int => weaver_resolved_schema::attribute::AttributeType::TemplateInt,
-            TemplateType::Double => {
+            TemplateTypeSpec::Int => weaver_resolved_schema::attribute::AttributeType::TemplateInt,
+            TemplateTypeSpec::Double => {
                 weaver_resolved_schema::attribute::AttributeType::TemplateDouble
             }
-            TemplateType::String => {
+            TemplateTypeSpec::String => {
                 weaver_resolved_schema::attribute::AttributeType::TemplateString
             }
-            TemplateType::Strings => {
+            TemplateTypeSpec::Strings => {
                 weaver_resolved_schema::attribute::AttributeType::TemplateStrings
             }
-            TemplateType::Ints => weaver_resolved_schema::attribute::AttributeType::TemplateInts,
-            TemplateType::Doubles => {
+            TemplateTypeSpec::Ints => {
+                weaver_resolved_schema::attribute::AttributeType::TemplateInts
+            }
+            TemplateTypeSpec::Doubles => {
                 weaver_resolved_schema::attribute::AttributeType::TemplateDoubles
             }
-            TemplateType::Booleans => {
+            TemplateTypeSpec::Booleans => {
                 weaver_resolved_schema::attribute::AttributeType::TemplateBooleans
             }
         },
@@ -425,11 +429,13 @@ fn semconv_to_resolved_attr_type(
                 .map(|member| weaver_resolved_schema::attribute::EnumEntries {
                     id: member.id.clone(),
                     value: match &member.value {
-                        Value::String(s) => {
+                        ValueSpec::String(s) => {
                             weaver_resolved_schema::value::Value::String { value: s.clone() }
                         }
-                        Value::Int(i) => weaver_resolved_schema::value::Value::Int { value: *i },
-                        Value::Double(d) => {
+                        ValueSpec::Int(i) => {
+                            weaver_resolved_schema::value::Value::Int { value: *i }
+                        }
+                        ValueSpec::Double(d) => {
                             weaver_resolved_schema::value::Value::Double { value: *d }
                         }
                     },
@@ -441,16 +447,18 @@ fn semconv_to_resolved_attr_type(
     }
 }
 
-fn semconv_to_resolved_examples(examples: &Option<Examples>) -> Option<attribute::Example> {
+fn semconv_to_resolved_examples(examples: &Option<ExamplesSpec>) -> Option<attribute::Example> {
     examples.as_ref().map(|examples| match examples {
-        Examples::Bool(v) => attribute::Example::Bool { value: *v },
-        Examples::Int(v) => attribute::Example::Int { value: *v },
-        Examples::Double(v) => attribute::Example::Double { value: *v },
-        Examples::String(v) => attribute::Example::String { value: v.clone() },
-        Examples::Ints(v) => weaver_resolved_schema::attribute::Example::Ints { values: v.clone() },
-        Examples::Doubles(v) => attribute::Example::Doubles { values: v.clone() },
-        Examples::Bools(v) => attribute::Example::Bools { values: v.clone() },
-        Examples::Strings(v) => attribute::Example::Strings { values: v.clone() },
+        ExamplesSpec::Bool(v) => attribute::Example::Bool { value: *v },
+        ExamplesSpec::Int(v) => attribute::Example::Int { value: *v },
+        ExamplesSpec::Double(v) => attribute::Example::Double { value: *v },
+        ExamplesSpec::String(v) => attribute::Example::String { value: v.clone() },
+        ExamplesSpec::Ints(v) => {
+            weaver_resolved_schema::attribute::Example::Ints { values: v.clone() }
+        }
+        ExamplesSpec::Doubles(v) => attribute::Example::Doubles { values: v.clone() },
+        ExamplesSpec::Bools(v) => attribute::Example::Bools { values: v.clone() },
+        ExamplesSpec::Strings(v) => attribute::Example::Strings { values: v.clone() },
     })
 }
 
@@ -459,13 +467,13 @@ fn semconv_to_resolved_req_level(
 ) -> weaver_resolved_schema::attribute::RequirementLevel {
     match req_level {
         RequirementLevelSpec::Basic(level) => match level {
-            BasicRequirementLevel::Required => {
+            BasicRequirementLevelSpec::Required => {
                 weaver_resolved_schema::attribute::RequirementLevel::Required
             }
-            BasicRequirementLevel::Recommended => {
+            BasicRequirementLevelSpec::Recommended => {
                 weaver_resolved_schema::attribute::RequirementLevel::Recommended { text: None }
             }
-            BasicRequirementLevel::OptIn => {
+            BasicRequirementLevelSpec::OptIn => {
                 weaver_resolved_schema::attribute::RequirementLevel::OptIn
             }
         },
@@ -484,11 +492,11 @@ fn semconv_to_resolved_req_level(
 
 #[allow(dead_code)] // ToDo Remove this once we have values in the resolved schema
 fn semconv_to_resolved_value(
-    value: &Option<Value>,
+    value: &Option<ValueSpec>,
 ) -> Option<weaver_resolved_schema::value::Value> {
     value.as_ref().map(|value| match value {
-        Value::String(s) => weaver_resolved_schema::value::Value::String { value: s.clone() },
-        Value::Int(i) => weaver_resolved_schema::value::Value::Int { value: *i },
-        Value::Double(d) => weaver_resolved_schema::value::Value::Double { value: *d },
+        ValueSpec::String(s) => weaver_resolved_schema::value::Value::String { value: s.clone() },
+        ValueSpec::Int(i) => weaver_resolved_schema::value::Value::Int { value: *i },
+        ValueSpec::Double(d) => weaver_resolved_schema::value::Value::Double { value: *d },
     })
 }

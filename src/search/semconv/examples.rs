@@ -4,35 +4,35 @@
 
 use crate::search::theme::ThemeConfig;
 use ratatui::prelude::{Line, Span, Style};
-use weaver_semconv::attribute::Examples;
+use weaver_semconv::attribute::ExamplesSpec;
 
 /// Append examples to the text.
-pub fn append_lines(examples: &Examples, text: &mut Vec<Line>, theme: &ThemeConfig) {
+pub fn append_lines(examples: &ExamplesSpec, text: &mut Vec<Line>, theme: &ThemeConfig) {
     text.push(Line::from(Span::styled(
         "Examples: ",
         Style::default().fg(theme.label),
     )));
     match examples {
-        Examples::Int(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),
-        Examples::Double(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),
-        Examples::Bool(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),
-        Examples::String(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),
-        Examples::Ints(vals) => {
+        ExamplesSpec::Int(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),
+        ExamplesSpec::Double(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),
+        ExamplesSpec::Bool(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),
+        ExamplesSpec::String(v) => text.push(Line::from(Span::raw(format!("- {}", v)))),
+        ExamplesSpec::Ints(vals) => {
             for v in vals.iter() {
                 text.push(Line::from(Span::raw(format!("- {}", v))));
             }
         }
-        Examples::Doubles(vals) => {
+        ExamplesSpec::Doubles(vals) => {
             for v in vals.iter() {
                 text.push(Line::from(Span::raw(format!("- {}", v))));
             }
         }
-        Examples::Bools(vals) => {
+        ExamplesSpec::Bools(vals) => {
             for v in vals.iter() {
                 text.push(Line::from(Span::raw(format!("- {}", v))));
             }
         }
-        Examples::Strings(vals) => {
+        ExamplesSpec::Strings(vals) => {
             for v in vals.iter() {
                 text.push(Line::from(Span::raw(format!("- {}", v))));
             }

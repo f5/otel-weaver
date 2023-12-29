@@ -7,7 +7,7 @@ use crate::span_event::SpanEvent;
 use crate::span_link::SpanLink;
 use crate::tags::Tags;
 use serde::{Deserialize, Serialize};
-use weaver_semconv::group::SpanKind;
+use weaver_semconv::group::SpanKindSpec;
 
 /// A span specification.
 #[derive(Serialize, Deserialize, Debug)]
@@ -18,7 +18,7 @@ pub struct Span {
     pub span_name: String,
     /// The kind of the span.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub kind: Option<SpanKind>,
+    pub kind: Option<SpanKindSpec>,
     /// The attributes of the span.
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]

@@ -16,7 +16,7 @@ use crate::search::DocFields;
 
 /// Build index for semantic convention metrics.
 pub fn index_semconv_metrics<'a>(
-    metrics: impl Iterator<Item = &'a weaver_semconv::metric::Metric>,
+    metrics: impl Iterator<Item = &'a weaver_semconv::metric::MetricSpec>,
     path: &str,
     fields: &DocFields,
     index_writer: &mut IndexWriter,

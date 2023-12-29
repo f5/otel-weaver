@@ -5,7 +5,7 @@
 use crate::attribute::Attribute;
 use crate::tags::Tags;
 use serde::{Deserialize, Serialize};
-use weaver_semconv::group::Instrument;
+use weaver_semconv::group::InstrumentSpec;
 
 /// A univariate metric specification.
 #[derive(Serialize, Deserialize, Debug)]
@@ -37,7 +37,7 @@ pub enum UnivariateMetric {
         #[serde(default)]
         attributes: Vec<Attribute>,
         /// Type of the metric (e.g. gauge, histogram, ...).
-        instrument: Instrument,
+        instrument: InstrumentSpec,
         /// Unit of the metric.
         unit: Option<String>,
         /// A set of tags for the metric.

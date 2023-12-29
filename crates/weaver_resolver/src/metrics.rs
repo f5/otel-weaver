@@ -9,7 +9,7 @@ use weaver_schema::attribute::to_schema_attributes;
 use weaver_schema::metric_group::Metric;
 use weaver_schema::schema_spec::SchemaSpec;
 use weaver_schema::univariate_metric::UnivariateMetric;
-use weaver_semconv::group::Instrument;
+use weaver_semconv::group::InstrumentSpec;
 use weaver_semconv::SemConvSpecs;
 use weaver_version::VersionChanges;
 
@@ -163,7 +163,7 @@ pub fn resolve_metrics(
 /// metrics but are part of the schema specification in the instrumentation
 /// library section.
 pub fn semconv_to_resolved_metric(
-    metric: &weaver_semconv::metric::Metric,
+    metric: &weaver_semconv::metric::MetricSpec,
 ) -> weaver_resolved_schema::metric::Metric {
     weaver_resolved_schema::metric::Metric {
         name: metric.name.clone(),
@@ -176,11 +176,13 @@ pub fn semconv_to_resolved_metric(
 }
 
 /// Resolve a metric instrument.
-pub fn resolve_instrument(instrument: &Instrument) -> weaver_resolved_schema::metric::Instrument {
+pub fn resolve_instrument(
+    instrument: &InstrumentSpec,
+) -> weaver_resolved_schema::metric::Instrument {
     match instrument {
-        Instrument::Counter => weaver_resolved_schema::metric::Instrument::Counter,
-        Instrument::UpDownCounter => weaver_resolved_schema::metric::Instrument::UpDownCounter,
-        Instrument::Gauge => weaver_resolved_schema::metric::Instrument::Gauge,
-        Instrument::Histogram => weaver_resolved_schema::metric::Instrument::Histogram,
+        InstrumentSpec::Counter => weaver_resolved_schema::metric::Instrument::Counter,
+        InstrumentSpec::UpDownCounter => weaver_resolved_schema::metric::Instrument::UpDownCounter,
+        InstrumentSpec::Gauge => weaver_resolved_schema::metric::Instrument::Gauge,
+        InstrumentSpec::Histogram => weaver_resolved_schema::metric::Instrument::Histogram,
     }
 }

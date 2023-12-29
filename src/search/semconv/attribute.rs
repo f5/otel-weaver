@@ -7,16 +7,16 @@ use ratatui::widgets::Paragraph;
 
 use crate::search::theme::ThemeConfig;
 use weaver_semconv::attribute::AttributeSpec;
-use weaver_semconv::AttributeWithProvenance;
+use weaver_semconv::AttributeSpecWithProvenance;
 
 use crate::search::semconv::examples;
 
 pub fn widget<'a>(
-    attribute: Option<&'a AttributeWithProvenance>,
+    attribute: Option<&'a AttributeSpecWithProvenance>,
     theme: &'a ThemeConfig,
 ) -> Paragraph<'a> {
     match attribute.as_ref() {
-        Some(AttributeWithProvenance {
+        Some(AttributeSpecWithProvenance {
             attribute:
                 AttributeSpec::Id {
                     id,

@@ -6,16 +6,16 @@ use ratatui::prelude::{Line, Span, Style};
 use ratatui::widgets::Paragraph;
 
 use crate::search::theme::ThemeConfig;
-use weaver_semconv::MetricWithProvenance;
+use weaver_semconv::MetricSpecWithProvenance;
 
 use crate::search::semconv::attributes;
 
 pub fn widget<'a>(
-    metric: Option<&'a MetricWithProvenance>,
+    metric: Option<&'a MetricSpecWithProvenance>,
     theme: &'a ThemeConfig,
 ) -> Paragraph<'a> {
     match metric {
-        Some(MetricWithProvenance { metric, provenance }) => {
+        Some(MetricSpecWithProvenance { metric, provenance }) => {
             let mut text = vec![
                 Line::from(vec![
                     Span::styled("Name      : ", Style::default().fg(theme.label)),

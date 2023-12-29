@@ -6,8 +6,8 @@
 
 use serde::{Deserialize, Serialize};
 
-use weaver_semconv::attribute::{AttributeTypeSpec, Examples, RequirementLevelSpec, Value};
-use weaver_semconv::stability::Stability;
+use weaver_semconv::attribute::{AttributeTypeSpec, ExamplesSpec, RequirementLevelSpec, ValueSpec};
+use weaver_semconv::stability::StabilitySpec;
 
 use crate::tags::Tags;
 use crate::Error;
@@ -38,7 +38,7 @@ pub enum Attribute {
         /// attribute. If only a single example is provided, it can directly
         /// be reported without encapsulating it into a sequence/dictionary.
         #[serde(skip_serializing_if = "Option::is_none")]
-        examples: Option<Examples>,
+        examples: Option<ExamplesSpec>,
         /// Associates a tag ("sub-group") to the attribute. It carries no
         /// particular semantic meaning but can be used e.g. for filtering
         /// in the markdown generator.
@@ -67,7 +67,7 @@ pub enum Attribute {
         /// present and stability differs from deprecated, this will result in an
         /// error.
         #[serde(skip_serializing_if = "Option::is_none")]
-        stability: Option<Stability>,
+        stability: Option<StabilitySpec>,
         /// Specifies if the attribute is deprecated. The string
         /// provided as <description> MUST specify why it's deprecated and/or what
         /// to use instead. See also stability.
@@ -80,7 +80,7 @@ pub enum Attribute {
         /// The value of the attribute.
         /// Note: This is only used in a telemetry schema specification.
         #[serde(skip_serializing_if = "Option::is_none")]
-        value: Option<Value>,
+        value: Option<ValueSpec>,
     },
     /// Reference to an attribute group.
     ///
@@ -140,7 +140,7 @@ pub enum Attribute {
         /// attribute. If only a single example is provided, it can directly
         /// be reported without encapsulating it into a sequence/dictionary.
         // #[serde(skip_serializing_if = "Option::is_none")]
-        examples: Option<Examples>,
+        examples: Option<ExamplesSpec>,
         /// Associates a tag ("sub-group") to the attribute. It carries no
         /// particular semantic meaning but can be used e.g. for filtering
         /// in the markdown generator.
@@ -168,7 +168,7 @@ pub enum Attribute {
         /// present and stability differs from deprecated, this will result in an
         /// error.
         #[serde(skip_serializing_if = "Option::is_none")]
-        stability: Option<Stability>,
+        stability: Option<StabilitySpec>,
         /// Specifies if the attribute is deprecated. The string
         /// provided as <description> MUST specify why it's deprecated and/or what
         /// to use instead. See also stability.
@@ -181,7 +181,7 @@ pub enum Attribute {
         /// The value of the attribute.
         /// Note: This is only used in a telemetry schema specification.
         #[serde(skip_serializing_if = "Option::is_none")]
-        value: Option<Value>,
+        value: Option<ValueSpec>,
     },
 }
 
