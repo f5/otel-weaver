@@ -2,12 +2,13 @@
 
 //! Functions to resolve a semantic convention registry.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use weaver_logger::Logger;
 use weaver_resolved_schema::attribute::{AttributeRef, UnresolvedAttribute};
 use weaver_resolved_schema::registry::{
     Group, Registry, TypedGroup, UnresolvedGroup, UnresolvedRegistry,
 };
+use weaver_semconv::attribute::AttributeSpec;
 use weaver_semconv::group::{ConvTypeSpec, GroupSpec};
 use weaver_semconv::SemConvSpecs;
 
@@ -16,7 +17,7 @@ use crate::constraint::resolve_constraints;
 use crate::metrics::resolve_instrument;
 use crate::spans::resolve_span_kind;
 use crate::stability::resolve_stability;
-use crate::Error;
+use crate::{Error, UnresolvedReference};
 
 /// Creates a registry from a set of semantic convention specifications.
 /// Note: this function does not resolve references.
@@ -141,26 +142,19 @@ fn semconv_to_resolved_group(
     })
 }
 
-/// Resolves the registry by resolving all groups and attributes.
-/// The resolution process consists of the following steps:
-/// - Resolve all attribute references and apply the overrides when needed.
-/// - Resolve all the `extends` references.
-#[allow(dead_code)] // ToDo remove this once this function is called from the CLI.
-pub fn resolve_registry(
-    mut ureg: UnresolvedRegistry,
+/// Resolves attribute references in the given registry.
+/// The resolution process is iterative. The process stops when all the
+/// attribute references are resolved or when no attribute reference could
+/// be resolved in an iteration.
+///
+/// The resolve method of the attribute catalog is used to resolve the
+/// attribute references.
+///
+/// Returns true if all the attribute references could be resolved.
+pub fn resolve_attribute_references(
+    ureg: &mut UnresolvedRegistry,
     attr_catalog: &mut AttributeCatalog,
-) -> Result<Registry, Error> {
-    // Create a map group id -> attribute specs.
-    let mut attrs_by_group = HashMap::new();
-    for unresolved_group in ureg.groups.iter() {
-        let attrs: Vec<_> = unresolved_group
-            .attributes
-            .iter()
-            .map(|attr| attr.spec.clone()).collect();
-        attrs_by_group.insert(unresolved_group.group.id.clone(), attrs);
-    }
-
-    // Resolve all the attributes.
+) -> bool {
     loop {
         let mut unresolved_attr_count = 0;
         let mut resolved_attr_count = 0;
@@ -168,21 +162,6 @@ pub fn resolve_registry(
         // Iterate over all groups and resolve the attributes.
         for unresolved_group in ureg.groups.iter_mut() {
             let mut resolved_attr = vec![];
-
-            if let Some(extends) = unresolved_group.group.extends.take() {
-                if let Some(attr_specs) = attrs_by_group.get_mut(&extends) {
-                    let local_attrs : HashSet<String> = unresolved_group.attributes.iter().map(|attr| attr.spec.id()).collect();
-                    for attr_spec in attr_specs.iter() {
-                        if local_attrs.contains(&attr_spec.id()) {
-                            // Skip attributes that are already defined locally.
-                            continue;
-                        }
-                        unresolved_group.attributes.push(UnresolvedAttribute {
-                            spec: attr_spec.clone()
-                        });
-                    }
-                }
-            }
 
             unresolved_group.attributes = unresolved_group
                 .attributes
@@ -212,14 +191,96 @@ pub fn resolve_registry(
         // It means that we have an issue with the semantic convention
         // specifications.
         if resolved_attr_count == 0 {
-            return Err(Error::FailToResolveAttributes {
-                ids: ureg
-                    .groups
-                    .iter()
-                    .flat_map(|g| g.attributes.iter().map(|attr| attr.spec.id()))
-                    .collect(),
-                error: "".to_string(),
-            });
+            return false
+        }
+    }
+    true
+}
+
+/// Resolves the `extends` references in the given registry.
+/// The resolution process is iterative. The process stops when all the
+/// `extends` references are resolved or when no `extends` reference could
+/// be resolved in an iteration.
+///
+/// Returns true if all the `extends` references could be resolved.
+pub fn resolve_extends_references(
+    ureg: &mut UnresolvedRegistry,
+) -> bool {
+    loop {
+        let mut unresolved_extends_count = 0;
+        let mut resolved_extends_count = 0;
+
+        // Create a map group_id -> vector of attribute ref for groups
+        // that don't have an `extends` clause.
+        let mut group_index = HashMap::new();
+        for group in ureg.groups.iter() {
+            if group.group.extends.is_none() {
+                group_index.insert(group.group.id.clone(), group.group.attributes.clone());
+            }
+        }
+
+        // Iterate over all groups and resolve the `extends` clauses.
+        for unresolved_group in ureg.groups.iter_mut() {
+            if let Some(extends) = unresolved_group.group.extends.as_ref() {
+                if let Some(attr_refs) = group_index.get(extends) {
+                    unresolved_group.group.attributes.extend(attr_refs.clone());
+                    unresolved_group.group.extends.take();
+                    resolved_extends_count += 1;
+                } else {
+                    unresolved_extends_count += 1;
+                }
+            }
+        }
+
+        if unresolved_extends_count == 0 {
+            break;
+        }
+        // If we still have unresolved `extends` but we did not resolve any
+        // `extends` in the last iteration, we are stuck in an infinite loop.
+        // It means that we have an issue with the semantic convention
+        // specifications.
+        if resolved_extends_count == 0 {
+            return false
+        }
+    }
+    true
+}
+
+/// Resolves the registry by resolving all groups and attributes.
+/// The resolution process consists of the following steps:
+/// - Resolve all attribute references and apply the overrides when needed.
+/// - Resolve all the `extends` references.
+#[allow(dead_code)] // ToDo remove this once this function is called from the CLI.
+pub fn resolve_registry(
+    mut ureg: UnresolvedRegistry,
+    attr_catalog: &mut AttributeCatalog,
+) -> Result<Registry, Error> {
+    let mut all_refs_resolved = true;
+
+    all_refs_resolved &= resolve_attribute_references(&mut ureg, attr_catalog);
+    all_refs_resolved &= resolve_extends_references(&mut ureg);
+
+    if !all_refs_resolved {
+        // Build a list of unresolved references.
+        let mut unresolved_refs = vec![];
+        for group in ureg.groups.iter() {
+            if let Some(extends) = group.group.extends.as_ref() {
+                unresolved_refs.push(UnresolvedReference::ExtendsRef {
+                    group_id: group.group.id.clone(),
+                    extends_ref: extends.clone(),
+                });
+            }
+            for attr in group.attributes.iter() {
+                if let AttributeSpec::Ref { r#ref, .. } = &attr.spec {
+                    unresolved_refs.push(UnresolvedReference::AttributeRef {
+                        group_id: group.group.id.clone(),
+                        attribute_ref: r#ref.clone()
+                    });
+                }
+            }
+        }
+        if !unresolved_refs.is_empty() {
+            return Err(Error::UnresolvedReferences{refs: unresolved_refs});
         }
     }
 
@@ -227,6 +288,7 @@ pub fn resolve_registry(
         g.group.attributes.sort();
         g.group
     }).collect();
+
     Ok(ureg.registry)
 }
 

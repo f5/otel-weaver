@@ -46,6 +46,25 @@ mod tags;
 /// All references to semantic conventions will be resolved.
 pub struct SchemaResolver {}
 
+/// Different types of unresolved references.
+#[derive(Debug)]
+pub enum UnresolvedReference {
+    /// An unresolved attribute reference.
+    AttributeRef {
+        /// The id of the group containing the attribute reference.
+        group_id: String,
+        /// The unresolved attribute reference.
+        attribute_ref: String,
+    },
+    /// An unresolved `extends` clause reference.
+    ExtendsRef {
+        /// The id of the group containing the `extends` clause reference.
+        group_id: String,
+        /// The unresolved `extends` clause reference.
+        extends_ref: String,
+    },
+}
+
 /// An error that can occur while resolving a telemetry schema.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -80,6 +99,13 @@ pub enum Error {
         ids: Vec<String>,
         /// The error that occurred.
         error: String,
+    },
+
+    /// Failed to resolve a set of references.
+    #[error("Failed to resolve the following references {refs:?}")]
+    UnresolvedReferences {
+        /// The list of unresolved references.
+        refs: Vec<UnresolvedReference>,
     },
 
     /// Failed to resolve a metric.

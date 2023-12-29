@@ -44,6 +44,112 @@
       },
       "brief": "Measures the duration of publish operation.",
       "attributes": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54
+      ]
+    },
+    {
+      "id": "metric.messaging.receive.duration",
+      "typed_group": {
+        "type": "Metric",
+        "metric_name": "messaging.receive.duration",
+        "instrument": "Histogram",
+        "unit": "s"
+      },
+      "brief": "Measures the duration of receive operation.",
+      "attributes": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54
+      ]
+    },
+    {
+      "id": "metric.messaging.deliver.duration",
+      "typed_group": {
+        "type": "Metric",
+        "metric_name": "messaging.deliver.duration",
+        "instrument": "Histogram",
+        "unit": "s"
+      },
+      "brief": "Measures the duration of deliver operation.",
+      "attributes": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54
+      ]
+    },
+    {
+      "id": "metric.messaging.publish.messages",
+      "typed_group": {
+        "type": "Metric",
+        "metric_name": "messaging.publish.messages",
+        "instrument": "Counter",
+        "unit": "{message}"
+      },
+      "brief": "Measures the number of published messages.",
+      "attributes": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54
+      ]
+    },
+    {
+      "id": "metric.messaging.receive.messages",
+      "typed_group": {
+        "type": "Metric",
+        "metric_name": "messaging.receive.messages",
+        "instrument": "Counter",
+        "unit": "{message}"
+      },
+      "brief": "Measures the number of received messages.",
+      "attributes": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54
+      ]
+    },
+    {
+      "id": "metric.messaging.deliver.messages",
+      "typed_group": {
+        "type": "Metric",
+        "metric_name": "messaging.deliver.messages",
+        "instrument": "Counter",
+        "unit": "{message}"
+      },
+      "brief": "Measures the number of delivered messages.",
+      "attributes": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
         53,
         54
       ]
