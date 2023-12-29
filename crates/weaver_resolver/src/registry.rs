@@ -2,7 +2,7 @@
 
 //! Functions to resolve a semantic convention registry.
 
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use weaver_logger::Logger;
 use weaver_resolved_schema::attribute::{AttributeRef, UnresolvedAttribute};
 use weaver_resolved_schema::registry::{
@@ -191,7 +191,7 @@ pub fn resolve_attribute_references(
         // It means that we have an issue with the semantic convention
         // specifications.
         if resolved_attr_count == 0 {
-            return false
+            return false;
         }
     }
     true
@@ -203,9 +203,7 @@ pub fn resolve_attribute_references(
 /// be resolved in an iteration.
 ///
 /// Returns true if all the `extends` references could be resolved.
-pub fn resolve_extends_references(
-    ureg: &mut UnresolvedRegistry,
-) -> bool {
+pub fn resolve_extends_references(ureg: &mut UnresolvedRegistry) -> bool {
     loop {
         let mut unresolved_extends_count = 0;
         let mut resolved_extends_count = 0;
@@ -240,7 +238,7 @@ pub fn resolve_extends_references(
         // It means that we have an issue with the semantic convention
         // specifications.
         if resolved_extends_count == 0 {
-            return false
+            return false;
         }
     }
     true
@@ -274,20 +272,26 @@ pub fn resolve_registry(
                 if let AttributeSpec::Ref { r#ref, .. } = &attr.spec {
                     unresolved_refs.push(UnresolvedReference::AttributeRef {
                         group_id: group.group.id.clone(),
-                        attribute_ref: r#ref.clone()
+                        attribute_ref: r#ref.clone(),
                     });
                 }
             }
         }
         if !unresolved_refs.is_empty() {
-            return Err(Error::UnresolvedReferences{refs: unresolved_refs});
+            return Err(Error::UnresolvedReferences {
+                refs: unresolved_refs,
+            });
         }
     }
 
-    ureg.registry.groups = ureg.groups.into_iter().map(|mut g| {
-        g.group.attributes.sort();
-        g.group
-    }).collect();
+    ureg.registry.groups = ureg
+        .groups
+        .into_iter()
+        .map(|mut g| {
+            g.group.attributes.sort();
+            g.group
+        })
+        .collect();
 
     Ok(ureg.registry)
 }
