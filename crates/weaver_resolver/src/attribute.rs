@@ -65,12 +65,7 @@ impl AttributeCatalog {
                 stability,
                 deprecated,
             } => {
-                let root_attr_id = if prefix.is_empty() {
-                    r#ref.clone()
-                } else {
-                    format!("{}.{}", prefix, r#ref)
-                };
-                let root_attr = self.root_attributes.get(root_attr_id.as_str());
+                let root_attr = self.root_attributes.get(r#ref);
                 if let Some(root_attr) = root_attr {
                     // Create a fully resolved attribute from an attribute spec
                     // (ref) and override the root attribute with the new

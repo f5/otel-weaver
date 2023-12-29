@@ -12,14 +12,14 @@ groups:
           conditionally_required: if available.
 
   # durations
-#  - id: metric.messaging.publish.duration
-#    type: metric
-#    metric_name: messaging.publish.duration
-#    brief: "Measures the duration of publish operation."
-#    instrument: histogram
-#    unit: "s"
-#    extends: metric.messaging.attributes
-#
+  - id: metric.messaging.publish.duration
+    type: metric
+    metric_name: messaging.publish.duration
+    brief: "Measures the duration of publish operation."
+    instrument: histogram
+    unit: "s"
+    extends: metric.messaging.attributes
+
 #  - id: metric.messaging.receive.duration
 #    type: metric
 #    metric_name: messaging.receive.duration

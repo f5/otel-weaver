@@ -2,6 +2,7 @@
 
 //! Functions to resolve a semantic convention registry.
 
+use std::collections::{HashMap, HashSet};
 use weaver_logger::Logger;
 use weaver_resolved_schema::attribute::{AttributeRef, UnresolvedAttribute};
 use weaver_resolved_schema::registry::{
@@ -141,11 +142,25 @@ fn semconv_to_resolved_group(
 }
 
 /// Resolves the registry by resolving all groups and attributes.
+/// The resolution process consists of the following steps:
+/// - Resolve all attribute references and apply the overrides when needed.
+/// - Resolve all the `extends` references.
 #[allow(dead_code)] // ToDo remove this once this function is called from the CLI.
 pub fn resolve_registry(
     mut ureg: UnresolvedRegistry,
     attr_catalog: &mut AttributeCatalog,
 ) -> Result<Registry, Error> {
+    // Create a map group id -> attribute specs.
+    let mut attrs_by_group = HashMap::new();
+    for unresolved_group in ureg.groups.iter() {
+        let attrs: Vec<_> = unresolved_group
+            .attributes
+            .iter()
+            .map(|attr| attr.spec.clone()).collect();
+        attrs_by_group.insert(unresolved_group.group.id.clone(), attrs);
+    }
+
+    // Resolve all the attributes.
     loop {
         let mut unresolved_attr_count = 0;
         let mut resolved_attr_count = 0;
@@ -153,6 +168,21 @@ pub fn resolve_registry(
         // Iterate over all groups and resolve the attributes.
         for unresolved_group in ureg.groups.iter_mut() {
             let mut resolved_attr = vec![];
+
+            if let Some(extends) = unresolved_group.group.extends.take() {
+                if let Some(attr_specs) = attrs_by_group.get_mut(&extends) {
+                    let local_attrs : HashSet<String> = unresolved_group.attributes.iter().map(|attr| attr.spec.id()).collect();
+                    for attr_spec in attr_specs.iter() {
+                        if local_attrs.contains(&attr_spec.id()) {
+                            // Skip attributes that are already defined locally.
+                            continue;
+                        }
+                        unresolved_group.attributes.push(UnresolvedAttribute {
+                            spec: attr_spec.clone()
+                        });
+                    }
+                }
+            }
 
             unresolved_group.attributes = unresolved_group
                 .attributes
@@ -193,7 +223,10 @@ pub fn resolve_registry(
         }
     }
 
-    ureg.registry.groups = ureg.groups.into_iter().map(|g| g.group).collect();
+    ureg.registry.groups = ureg.groups.into_iter().map(|mut g| {
+        g.group.attributes.sort();
+        g.group
+    }).collect();
     Ok(ureg.registry)
 }
 
@@ -294,3 +327,4 @@ mod tests {
 // ToDo Remove #[allow(dead_code)] once the corresponding functions are called from the CLI.
 // ToDo Work on the metrics, spans, events, ... resolutions.
 // ToDo Keep track of the provenance for all the resolutions.
+// ToDo implement correctly extends of extends.

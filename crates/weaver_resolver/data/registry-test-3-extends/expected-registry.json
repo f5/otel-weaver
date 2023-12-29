@@ -2,15 +2,61 @@
   "registry_url": "https://semconv-registry.com",
   "groups": [
     {
+      "id": "messaging.attributes.common",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "Common messaging attributes.",
+      "prefix": "messaging",
+      "attributes": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52
+      ]
+    },
+    {
       "id": "metric.messaging.attributes",
       "typed_group": {
         "type": "AttributeGroup"
       },
       "brief": "Common messaging metrics attributes.",
-      "extends": "messaging.attributes.common",
       "attributes": [
-        30,
-        31
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54
+      ]
+    },
+    {
+      "id": "metric.messaging.publish.duration",
+      "typed_group": {
+        "type": "Metric",
+        "metric_name": "messaging.publish.duration",
+        "instrument": "Histogram",
+        "unit": "s"
+      },
+      "brief": "Measures the duration of publish operation.",
+      "attributes": [
+        53,
+        54
+      ]
+    },
+    {
+      "id": "registry.error",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "This document defines the shared attributes used to report an error.\n",
+      "prefix": "error",
+      "attributes": [
+        0
       ]
     },
     {
@@ -21,7 +67,6 @@
       "brief": "Attributes describing telemetry around messaging systems and messaging activities.",
       "prefix": "messaging",
       "attributes": [
-        0,
         1,
         2,
         3,
@@ -50,7 +95,45 @@
         26,
         27,
         28,
-        29
+        29,
+        30
+      ]
+    },
+    {
+      "id": "registry.network",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "These attributes may be used for any network related operation.\n",
+      "prefix": "network",
+      "attributes": [
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45
+      ]
+    },
+    {
+      "id": "server",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "These attributes may be used to describe the server in a connection-based network interaction where there is one side that initiates the connection (the client is the side that initiates the connection). This covers all TCP network interactions since TCP is connection-based and one side initiates the connection (an exception is made for peer-to-peer communication over TCP where the \"user-facing\" surface of the protocol / API doesn't expose a clear notion of client and server). This also covers UDP network interactions where one side initiates the interaction, e.g. QUIC (HTTP/3) and DNS.\n",
+      "prefix": "server",
+      "attributes": [
+        46,
+        47
       ]
     }
   ]

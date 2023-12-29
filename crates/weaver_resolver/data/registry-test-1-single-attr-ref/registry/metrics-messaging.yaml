@@ -2,7 +2,6 @@ groups:
   - id: metric.messaging.attributes
     type: attribute_group
     brief: "Common messaging metrics attributes."
-    extends: messaging.attributes.common
     attributes:
       - ref: messaging.destination.name
         requirement_level:

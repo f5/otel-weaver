@@ -238,5 +238,5 @@ pub enum RequirementLevel {
 }
 
 /// An internal reference to an attribute in the catalog.
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub struct AttributeRef(pub u32);
