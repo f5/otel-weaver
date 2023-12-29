@@ -1,0 +1,57 @@
+{
+  "registry_url": "https://semconv-registry.com",
+  "groups": [
+    {
+      "id": "log-feature_flag",
+      "typed_group": {
+        "type": "Event",
+        "name": null
+      },
+      "brief": "This document defines attributes for feature flag evaluations represented using Log Records.\n",
+      "prefix": "feature_flag",
+      "attributes": [
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "ios.lifecycle.events",
+      "typed_group": {
+        "type": "Event",
+        "name": "device.app.lifecycle"
+      },
+      "brief": "This event represents an occurrence of a lifecycle transition on the iOS platform.\n",
+      "prefix": "ios",
+      "attributes": [
+        0
+      ]
+    },
+    {
+      "id": "android.lifecycle.events",
+      "typed_group": {
+        "type": "Event",
+        "name": "device.app.lifecycle"
+      },
+      "brief": "This event represents an occurrence of a lifecycle transition on the Android platform.\n",
+      "prefix": "android",
+      "attributes": [
+        1
+      ]
+    },
+    {
+      "id": "feature_flag",
+      "typed_group": {
+        "type": "Event",
+        "name": null
+      },
+      "brief": "This semantic convention defines the attributes used to represent a feature flag evaluation as an event.\n",
+      "prefix": "feature_flag",
+      "attributes": [
+        2,
+        3,
+        4
+      ]
+    }
+  ]
+}

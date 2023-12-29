@@ -2,6 +2,55 @@
   "registry_url": "https://semconv-registry.com",
   "groups": [
     {
+      "id": "attributes.http.common",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "Describes HTTP attributes.",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66
+      ]
+    },
+    {
+      "id": "attributes.http.client",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "HTTP Client attributes",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69
+      ]
+    },
+    {
+      "id": "attributes.http.server",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "HTTP Server attributes",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        70,
+        71,
+        72,
+        73
+      ]
+    },
+    {
       "id": "messaging.attributes.common",
       "typed_group": {
         "type": "AttributeGroup"
@@ -9,12 +58,12 @@
       "brief": "Common messaging attributes.",
       "prefix": "messaging",
       "attributes": [
-        47,
-        48,
-        49,
-        50,
-        51,
-        52
+        56,
+        74,
+        75,
+        76,
+        77,
+        78
       ]
     },
     {
@@ -24,14 +73,14 @@
       },
       "brief": "Common messaging metrics attributes.",
       "attributes": [
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54
+        56,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80
       ]
     },
     {
@@ -44,14 +93,14 @@
       },
       "brief": "Measures the duration of publish operation.",
       "attributes": [
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54
+        56,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80
       ]
     },
     {
@@ -64,14 +113,14 @@
       },
       "brief": "Measures the duration of receive operation.",
       "attributes": [
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54
+        56,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80
       ]
     },
     {
@@ -84,14 +133,14 @@
       },
       "brief": "Measures the duration of deliver operation.",
       "attributes": [
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54
+        56,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80
       ]
     },
     {
@@ -104,14 +153,14 @@
       },
       "brief": "Measures the number of published messages.",
       "attributes": [
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54
+        56,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80
       ]
     },
     {
@@ -124,14 +173,14 @@
       },
       "brief": "Measures the number of received messages.",
       "attributes": [
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54
+        56,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80
       ]
     },
     {
@@ -144,14 +193,14 @@
       },
       "brief": "Measures the number of delivered messages.",
       "attributes": [
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54
+        56,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80
       ]
     },
     {
@@ -166,12 +215,12 @@
       ]
     },
     {
-      "id": "registry.messaging",
+      "id": "registry.http",
       "typed_group": {
         "type": "AttributeGroup"
       },
-      "brief": "Attributes describing telemetry around messaging systems and messaging activities.",
-      "prefix": "messaging",
+      "brief": "This document defines semantic convention attributes in the HTTP namespace.",
+      "prefix": "http",
       "attributes": [
         1,
         2,
@@ -181,7 +230,17 @@
         6,
         7,
         8,
-        9,
+        9
+      ]
+    },
+    {
+      "id": "registry.messaging",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "Attributes describing telemetry around messaging systems and messaging activities.",
+      "prefix": "messaging",
+      "attributes": [
         10,
         11,
         12,
@@ -202,7 +261,16 @@
         27,
         28,
         29,
-        30
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39
       ]
     },
     {
@@ -213,21 +281,21 @@
       "brief": "These attributes may be used for any network related operation.\n",
       "prefix": "network",
       "attributes": [
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
         40,
         41,
         42,
         43,
         44,
-        45
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54
       ]
     },
     {
@@ -238,8 +306,23 @@
       "brief": "These attributes may be used to describe the server in a connection-based network interaction where there is one side that initiates the connection (the client is the side that initiates the connection). This covers all TCP network interactions since TCP is connection-based and one side initiates the connection (an exception is made for peer-to-peer communication over TCP where the \"user-facing\" surface of the protocol / API doesn't expose a clear notion of client and server). This also covers UDP network interactions where one side initiates the interaction, e.g. QUIC (HTTP/3) and DNS.\n",
       "prefix": "server",
       "attributes": [
-        46,
-        47
+        55,
+        56
+      ]
+    },
+    {
+      "id": "registry.url",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "Attributes describing URL.",
+      "prefix": "url",
+      "attributes": [
+        57,
+        58,
+        59,
+        60,
+        61
       ]
     }
   ]

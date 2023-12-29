@@ -1,0 +1,443 @@
+{
+  "registry_url": "https://semconv-registry.com",
+  "groups": [
+    {
+      "id": "registry.db",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "This document defines the attributes used to describe telemetry in the context of databases.\n",
+      "prefix": "db",
+      "attributes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ]
+    },
+    {
+      "id": "registry.http",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "This document defines semantic convention attributes in the HTTP namespace.",
+      "prefix": "http",
+      "attributes": [
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ]
+    },
+    {
+      "id": "registry.network",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "These attributes may be used for any network related operation.\n",
+      "prefix": "network",
+      "attributes": [
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53
+      ]
+    },
+    {
+      "id": "server",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "These attributes may be used to describe the server in a connection-based network interaction where there is one side that initiates the connection (the client is the side that initiates the connection). This covers all TCP network interactions since TCP is connection-based and one side initiates the connection (an exception is made for peer-to-peer communication over TCP where the \"user-facing\" surface of the protocol / API doesn't expose a clear notion of client and server). This also covers UDP network interactions where one side initiates the interaction, e.g. QUIC (HTTP/3) and DNS.\n",
+      "prefix": "server",
+      "attributes": [
+        54,
+        55
+      ]
+    },
+    {
+      "id": "registry.url",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "Attributes describing URL.",
+      "prefix": "url",
+      "attributes": [
+        56,
+        57,
+        58,
+        59,
+        60
+      ]
+    },
+    {
+      "id": "registry.user_agent",
+      "typed_group": {
+        "type": "AttributeGroup"
+      },
+      "brief": "Describes user-agent attributes.",
+      "prefix": "user_agent",
+      "attributes": [
+        61
+      ]
+    },
+    {
+      "id": "db",
+      "typed_group": {
+        "type": "Span",
+        "span_kind": "Client",
+        "events": []
+      },
+      "brief": "This document defines the attributes used to perform database client calls.\n",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75
+      ]
+    },
+    {
+      "id": "db.mssql",
+      "typed_group": {
+        "type": "Span",
+        "span_kind": null,
+        "events": []
+      },
+      "brief": "Connection-level attributes for Microsoft SQL Server\n",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76
+      ]
+    },
+    {
+      "id": "db.cassandra",
+      "typed_group": {
+        "type": "Span",
+        "span_kind": null,
+        "events": []
+      },
+      "brief": "Call-level attributes for Cassandra\n",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84
+      ]
+    },
+    {
+      "id": "db.hbase",
+      "typed_group": {
+        "type": "Span",
+        "span_kind": null,
+        "events": []
+      },
+      "brief": "Call-level attributes for HBase\n",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        85
+      ]
+    },
+    {
+      "id": "db.couchdb",
+      "typed_group": {
+        "type": "Span",
+        "span_kind": null,
+        "events": []
+      },
+      "brief": "Call-level attributes for CouchDB\n",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        86
+      ]
+    },
+    {
+      "id": "db.redis",
+      "typed_group": {
+        "type": "Span",
+        "span_kind": null,
+        "events": []
+      },
+      "brief": "Call-level attributes for Redis\n",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        87,
+        88
+      ]
+    },
+    {
+      "id": "db.mongodb",
+      "typed_group": {
+        "type": "Span",
+        "span_kind": null,
+        "events": []
+      },
+      "brief": "Call-level attributes for MongoDB\n",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        89
+      ]
+    },
+    {
+      "id": "db.elasticsearch",
+      "typed_group": {
+        "type": "Span",
+        "span_kind": null,
+        "events": []
+      },
+      "brief": "Call-level attributes for Elasticsearch\n",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98
+      ]
+    },
+    {
+      "id": "db.sql",
+      "typed_group": {
+        "type": "Span",
+        "span_kind": null,
+        "events": []
+      },
+      "brief": "Call-level attributes for SQL databases\n",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        99
+      ]
+    },
+    {
+      "id": "db.cosmosdb",
+      "typed_group": {
+        "type": "Span",
+        "span_kind": null,
+        "events": []
+      },
+      "brief": "Call-level attributes for Cosmos DB.\n",
+      "prefix": "db.cosmosdb",
+      "attributes": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108
+      ]
+    },
+    {
+      "id": "db.tech",
+      "typed_group": {
+        "type": "Span",
+        "span_kind": null,
+        "events": []
+      },
+      "brief": "Semantic convention group for specific technologies",
+      "constraints": [
+        {
+          "any_of": [],
+          "include": "db.cassandra"
+        },
+        {
+          "any_of": [],
+          "include": "db.redis"
+        },
+        {
+          "any_of": [],
+          "include": "db.mongodb"
+        },
+        {
+          "any_of": [],
+          "include": "db.sql"
+        },
+        {
+          "any_of": [],
+          "include": "db.cosmosdb"
+        }
+      ],
+      "attributes": []
+    }
+  ]
+}

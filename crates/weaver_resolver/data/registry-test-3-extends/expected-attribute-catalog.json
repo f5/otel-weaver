@@ -32,6 +32,248 @@
     "stability": "Stable"
   },
   {
+    "name": "http.request.body.size",
+    "type": {
+      "type": "Int"
+    },
+    "brief": "The size of the request payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the [Content-Length](https://www.rfc-editor.org/rfc/rfc9110.html#field.content-length) header. For requests using transport encoding, this should be the compressed size.\n",
+    "examples": {
+      "type": "Int",
+      "value": 3495
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "stability": "Experimental"
+  },
+  {
+    "name": "http.request.header",
+    "type": {
+      "type": "template[string[]]"
+    },
+    "brief": "HTTP request headers, `<key>` being the normalized HTTP Header name (lowercase), the value being the header values.\n",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "http.request.header.content-type=[\"application/json\"]",
+        "http.request.header.x-forwarded-for=[\"1.2.3.4\", \"1.2.3.5\"]"
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "note": "Instrumentations SHOULD require an explicit configuration of which headers are to be captured. Including all request headers can be a security risk - explicit configuration helps avoid leaking sensitive information.\nThe `User-Agent` header is already captured in the `user_agent.original` attribute. Users MAY explicitly configure instrumentations to capture them even though it is not recommended.\nThe attribute value MUST consist of either multiple header values as an array of strings or a single-item array containing a possibly comma-concatenated string, depending on the way the HTTP library provides access to headers.\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "http.request.method",
+    "type": {
+      "type": "Enum",
+      "allow_custom_values": true,
+      "members": [
+        {
+          "id": "connect",
+          "value": {
+            "type": "String",
+            "value": "CONNECT"
+          },
+          "brief": "CONNECT method."
+        },
+        {
+          "id": "delete",
+          "value": {
+            "type": "String",
+            "value": "DELETE"
+          },
+          "brief": "DELETE method."
+        },
+        {
+          "id": "get",
+          "value": {
+            "type": "String",
+            "value": "GET"
+          },
+          "brief": "GET method."
+        },
+        {
+          "id": "head",
+          "value": {
+            "type": "String",
+            "value": "HEAD"
+          },
+          "brief": "HEAD method."
+        },
+        {
+          "id": "options",
+          "value": {
+            "type": "String",
+            "value": "OPTIONS"
+          },
+          "brief": "OPTIONS method."
+        },
+        {
+          "id": "patch",
+          "value": {
+            "type": "String",
+            "value": "PATCH"
+          },
+          "brief": "PATCH method."
+        },
+        {
+          "id": "post",
+          "value": {
+            "type": "String",
+            "value": "POST"
+          },
+          "brief": "POST method."
+        },
+        {
+          "id": "put",
+          "value": {
+            "type": "String",
+            "value": "PUT"
+          },
+          "brief": "PUT method."
+        },
+        {
+          "id": "trace",
+          "value": {
+            "type": "String",
+            "value": "TRACE"
+          },
+          "brief": "TRACE method."
+        },
+        {
+          "id": "other",
+          "value": {
+            "type": "String",
+            "value": "_OTHER"
+          },
+          "brief": "Any HTTP method that the instrumentation has no prior knowledge of."
+        }
+      ]
+    },
+    "brief": "HTTP request method.",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "GET",
+        "POST",
+        "HEAD"
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "note": "HTTP request method value SHOULD be \"known\" to the instrumentation.\nBy default, this convention defines \"known\" methods as the ones listed in [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-methods)\nand the PATCH method defined in [RFC5789](https://www.rfc-editor.org/rfc/rfc5789.html).\n\nIf the HTTP request method is not known to instrumentation, it MUST set the `http.request.method` attribute to `_OTHER`.\n\nIf the HTTP instrumentation could end up converting valid HTTP request methods to `_OTHER`, then it MUST provide a way to override\nthe list of known HTTP methods. If this override is done via environment variable, then the environment variable MUST be named\nOTEL_INSTRUMENTATION_HTTP_KNOWN_METHODS and support a comma-separated list of case-sensitive known HTTP methods\n(this list MUST be a full override of the default known method, it is not a list of known methods in addition to the defaults).\n\nHTTP method names are case-sensitive and `http.request.method` attribute value MUST match a known HTTP method name exactly.\nInstrumentations for specific web frameworks that consider HTTP methods to be case insensitive, SHOULD populate a canonical equivalent.\nTracing instrumentations that do so, MUST also set `http.request.method_original` to the original value.\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "http.request.method_original",
+    "type": {
+      "type": "String"
+    },
+    "brief": "Original HTTP method sent by the client in the request line.",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "GeT",
+        "ACL",
+        "foo"
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "stability": "Stable"
+  },
+  {
+    "name": "http.request.resend_count",
+    "type": {
+      "type": "Int"
+    },
+    "brief": "The ordinal number of request resending attempt (for any reason, including redirects).\n",
+    "examples": {
+      "type": "Int",
+      "value": 3
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "note": "The resend count SHOULD be updated each time an HTTP request gets resent by the client, regardless of what was the cause of the resending (e.g. redirection, authorization failure, 503 Server Unavailable, network issues, or any other).\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "http.response.body.size",
+    "type": {
+      "type": "Int"
+    },
+    "brief": "The size of the response payload body in bytes. This is the number of bytes transferred excluding headers and is often, but not always, present as the [Content-Length](https://www.rfc-editor.org/rfc/rfc9110.html#field.content-length) header. For requests using transport encoding, this should be the compressed size.\n",
+    "examples": {
+      "type": "Int",
+      "value": 3495
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "stability": "Experimental"
+  },
+  {
+    "name": "http.response.header",
+    "type": {
+      "type": "template[string[]]"
+    },
+    "brief": "HTTP response headers, `<key>` being the normalized HTTP Header name (lowercase), the value being the header values.\n",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "http.response.header.content-type=[\"application/json\"]",
+        "http.response.header.my-custom-header=[\"abc\", \"def\"]"
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "note": "Instrumentations SHOULD require an explicit configuration of which headers are to be captured. Including all response headers can be a security risk - explicit configuration helps avoid leaking sensitive information.\nUsers MAY explicitly configure instrumentations to capture them even though it is not recommended.\nThe attribute value MUST consist of either multiple header values as an array of strings or a single-item array containing a possibly comma-concatenated string, depending on the way the HTTP library provides access to headers.\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "http.response.status_code",
+    "type": {
+      "type": "Int"
+    },
+    "brief": "[HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).",
+    "examples": {
+      "type": "Ints",
+      "values": [
+        200
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "stability": "Stable"
+  },
+  {
+    "name": "http.route",
+    "type": {
+      "type": "String"
+    },
+    "brief": "The matched route, that is, the path template in the format used by the respective server framework.\n",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "/users/:userID?",
+        "{controller}/{action}/{id?}"
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "note": "MUST NOT be populated when this is not supported by the HTTP server framework as the route attribute should have low-cardinality and the URI path can NOT substitute it.\nSHOULD include the [application root](/docs/http/http-spans.md#http-server-definitions) if there is one.",
+    "stability": "Stable"
+  },
+  {
     "name": "messaging.batch.message_count",
     "type": {
       "type": "Int"
@@ -1179,6 +1421,429 @@
       "type": "Recommended"
     },
     "note": "When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "url.scheme",
+    "type": {
+      "type": "String"
+    },
+    "brief": "The [URI scheme](https://www.rfc-editor.org/rfc/rfc3986#section-3.1) component identifying the used protocol.",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "https",
+        "ftp",
+        "telnet"
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "stability": "Stable"
+  },
+  {
+    "name": "url.full",
+    "type": {
+      "type": "String"
+    },
+    "brief": "Absolute URL describing a network resource according to [RFC3986](https://www.rfc-editor.org/rfc/rfc3986)",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "https://www.foo.bar/search?q=OpenTelemetry#SemConv",
+        "//localhost"
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "note": "For network calls, URL usually has `scheme://host[:port][path][?query][#fragment]` format, where the fragment is not transmitted over HTTP, but if it is known, it SHOULD be included nevertheless.\n`url.full` MUST NOT contain credentials passed via URL in form of `https://username:password@www.example.com/`. In such case username and password SHOULD be redacted and attribute's value SHOULD be `https://REDACTED:REDACTED@www.example.com/`.\n`url.full` SHOULD capture the absolute URL when it is available (or can be reconstructed) and SHOULD NOT be validated or modified except for sanitizing purposes.\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "url.path",
+    "type": {
+      "type": "String"
+    },
+    "brief": "The [URI path](https://www.rfc-editor.org/rfc/rfc3986#section-3.3) component",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "/search"
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "stability": "Stable"
+  },
+  {
+    "name": "url.query",
+    "type": {
+      "type": "String"
+    },
+    "brief": "The [URI query](https://www.rfc-editor.org/rfc/rfc3986#section-3.4) component",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "q=OpenTelemetry"
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "note": "Sensitive content provided in query string SHOULD be scrubbed when instrumentations can identify it.",
+    "stability": "Stable"
+  },
+  {
+    "name": "url.fragment",
+    "type": {
+      "type": "String"
+    },
+    "brief": "The [URI fragment](https://www.rfc-editor.org/rfc/rfc3986#section-3.5) component",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "SemConv"
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "stability": "Stable"
+  },
+  {
+    "name": "http.request.method",
+    "type": {
+      "type": "Enum",
+      "allow_custom_values": true,
+      "members": [
+        {
+          "id": "connect",
+          "value": {
+            "type": "String",
+            "value": "CONNECT"
+          },
+          "brief": "CONNECT method."
+        },
+        {
+          "id": "delete",
+          "value": {
+            "type": "String",
+            "value": "DELETE"
+          },
+          "brief": "DELETE method."
+        },
+        {
+          "id": "get",
+          "value": {
+            "type": "String",
+            "value": "GET"
+          },
+          "brief": "GET method."
+        },
+        {
+          "id": "head",
+          "value": {
+            "type": "String",
+            "value": "HEAD"
+          },
+          "brief": "HEAD method."
+        },
+        {
+          "id": "options",
+          "value": {
+            "type": "String",
+            "value": "OPTIONS"
+          },
+          "brief": "OPTIONS method."
+        },
+        {
+          "id": "patch",
+          "value": {
+            "type": "String",
+            "value": "PATCH"
+          },
+          "brief": "PATCH method."
+        },
+        {
+          "id": "post",
+          "value": {
+            "type": "String",
+            "value": "POST"
+          },
+          "brief": "POST method."
+        },
+        {
+          "id": "put",
+          "value": {
+            "type": "String",
+            "value": "PUT"
+          },
+          "brief": "PUT method."
+        },
+        {
+          "id": "trace",
+          "value": {
+            "type": "String",
+            "value": "TRACE"
+          },
+          "brief": "TRACE method."
+        },
+        {
+          "id": "other",
+          "value": {
+            "type": "String",
+            "value": "_OTHER"
+          },
+          "brief": "Any HTTP method that the instrumentation has no prior knowledge of."
+        }
+      ]
+    },
+    "brief": "HTTP request method.",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "GET",
+        "POST",
+        "HEAD"
+      ]
+    },
+    "requirement_level": {
+      "type": "Required"
+    },
+    "note": "HTTP request method value SHOULD be \"known\" to the instrumentation.\nBy default, this convention defines \"known\" methods as the ones listed in [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-methods)\nand the PATCH method defined in [RFC5789](https://www.rfc-editor.org/rfc/rfc5789.html).\n\nIf the HTTP request method is not known to instrumentation, it MUST set the `http.request.method` attribute to `_OTHER`.\n\nIf the HTTP instrumentation could end up converting valid HTTP request methods to `_OTHER`, then it MUST provide a way to override\nthe list of known HTTP methods. If this override is done via environment variable, then the environment variable MUST be named\nOTEL_INSTRUMENTATION_HTTP_KNOWN_METHODS and support a comma-separated list of case-sensitive known HTTP methods\n(this list MUST be a full override of the default known method, it is not a list of known methods in addition to the defaults).\n\nHTTP method names are case-sensitive and `http.request.method` attribute value MUST match a known HTTP method name exactly.\nInstrumentations for specific web frameworks that consider HTTP methods to be case insensitive, SHOULD populate a canonical equivalent.\nTracing instrumentations that do so, MUST also set `http.request.method_original` to the original value.\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "http.response.status_code",
+    "type": {
+      "type": "Int"
+    },
+    "brief": "[HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).",
+    "examples": {
+      "type": "Ints",
+      "values": [
+        200
+      ]
+    },
+    "requirement_level": {
+      "type": "ConditionallyRequired",
+      "text": "If and only if one was received/sent."
+    },
+    "stability": "Stable"
+  },
+  {
+    "name": "error.type",
+    "type": {
+      "type": "Enum",
+      "allow_custom_values": true,
+      "members": [
+        {
+          "id": "other",
+          "value": {
+            "type": "String",
+            "value": "_OTHER"
+          },
+          "brief": "A fallback error value to be used when the instrumentation doesn't define a custom value.\n"
+        }
+      ]
+    },
+    "brief": "Describes a class of error the operation ended with.\n",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "timeout",
+        "java.net.UnknownHostException",
+        "server_certificate_invalid",
+        "500"
+      ]
+    },
+    "requirement_level": {
+      "type": "ConditionallyRequired",
+      "text": "If request has ended with an error."
+    },
+    "note": "If the request fails with an error before response status code was sent or received,\n`error.type` SHOULD be set to exception type (its fully-qualified class name, if applicable)\nor a component-specific low cardinality error identifier.\n\nIf response status code was sent or received and status indicates an error according to [HTTP span status definition](/docs/http/http-spans.md),\n`error.type` SHOULD be set to the status code number (represented as a string), an exception type (if thrown) or a component-specific error identifier.\n\nThe `error.type` value SHOULD be predictable and SHOULD have low cardinality.\nInstrumentations SHOULD document the list of errors they report.\n\nThe cardinality of `error.type` within one instrumentation library SHOULD be low, but\ntelemetry consumers that aggregate data from multiple instrumentation libraries and applications\nshould be prepared for `error.type` to have high cardinality at query time, when no\nadditional filters are applied.\n\nIf the request has completed successfully, instrumentations SHOULD NOT set `error.type`.\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "network.protocol.name",
+    "type": {
+      "type": "String"
+    },
+    "brief": "[OSI application layer](https://osi-model.com/application-layer/) or non-OSI equivalent.",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "http",
+        "spdy"
+      ]
+    },
+    "requirement_level": {
+      "type": "ConditionallyRequired",
+      "text": "If not `http` and `network.protocol.version` is set."
+    },
+    "note": "The value SHOULD be normalized to lowercase.",
+    "stability": "Stable"
+  },
+  {
+    "name": "network.protocol.version",
+    "type": {
+      "type": "String"
+    },
+    "brief": "Version of the protocol specified in `network.protocol.name`.",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "1.0",
+        "1.1",
+        "2",
+        "3"
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "note": "`network.protocol.version` refers to the version of the protocol used and might be different from the protocol client's version. If the HTTP client has a version of `0.27.2`, but sends HTTP version `1.1`, this attribute should be set to `1.1`.\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "server.address",
+    "type": {
+      "type": "String"
+    },
+    "brief": "Host identifier of the [\"URI origin\"](https://www.rfc-editor.org/rfc/rfc9110.html#name-uri-origin) HTTP request is sent to.\n",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "example.com",
+        "10.1.2.80",
+        "/tmp/my.sock"
+      ]
+    },
+    "requirement_level": {
+      "type": "Required"
+    },
+    "note": "If an HTTP client request is explicitly made to an IP address, e.g. `http://x.x.x.x:8080`, then `server.address` SHOULD be the IP address `x.x.x.x`. A DNS lookup SHOULD NOT be used.\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "server.port",
+    "type": {
+      "type": "Int"
+    },
+    "brief": "Port identifier of the [\"URI origin\"](https://www.rfc-editor.org/rfc/rfc9110.html#name-uri-origin) HTTP request is sent to.\n",
+    "examples": {
+      "type": "Ints",
+      "values": [
+        80,
+        8080,
+        443
+      ]
+    },
+    "requirement_level": {
+      "type": "Required"
+    },
+    "note": "When observed from the client side, and when communicating through an intermediary, `server.port` SHOULD represent the server port behind any intermediaries, for example proxies, if it's available.\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "url.scheme",
+    "type": {
+      "type": "String"
+    },
+    "brief": "The [URI scheme](https://www.rfc-editor.org/rfc/rfc3986#section-3.1) component identifying the used protocol.",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "http",
+        "https"
+      ]
+    },
+    "requirement_level": {
+      "type": "OptIn"
+    },
+    "stability": "Stable"
+  },
+  {
+    "name": "http.route",
+    "type": {
+      "type": "String"
+    },
+    "brief": "The matched route, that is, the path template in the format used by the respective server framework.\n",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "/users/:userID?",
+        "{controller}/{action}/{id?}"
+      ]
+    },
+    "requirement_level": {
+      "type": "ConditionallyRequired",
+      "text": "If and only if it's available"
+    },
+    "note": "MUST NOT be populated when this is not supported by the HTTP server framework as the route attribute should have low-cardinality and the URI path can NOT substitute it.\nSHOULD include the [application root](/docs/http/http-spans.md#http-server-definitions) if there is one.",
+    "stability": "Stable"
+  },
+  {
+    "name": "server.address",
+    "type": {
+      "type": "String"
+    },
+    "brief": "Name of the local HTTP server that received the request.\n",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "example.com",
+        "10.1.2.80",
+        "/tmp/my.sock"
+      ]
+    },
+    "requirement_level": {
+      "type": "Recommended"
+    },
+    "note": "See [Setting `server.address` and `server.port` attributes](/docs/http/http-spans.md#setting-serveraddress-and-serverport-attributes).\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "server.port",
+    "type": {
+      "type": "Int"
+    },
+    "brief": "Port of the local HTTP server that received the request.\n",
+    "examples": {
+      "type": "Ints",
+      "values": [
+        80,
+        8080,
+        443
+      ]
+    },
+    "requirement_level": {
+      "type": "ConditionallyRequired",
+      "text": "If `server.address` is set."
+    },
+    "note": "See [Setting `server.address` and `server.port` attributes](/docs/http/http-spans.md#setting-serveraddress-and-serverport-attributes).\n",
+    "stability": "Stable"
+  },
+  {
+    "name": "url.scheme",
+    "type": {
+      "type": "String"
+    },
+    "brief": "The [URI scheme](https://www.rfc-editor.org/rfc/rfc3986#section-3.1) component identifying the used protocol.",
+    "examples": {
+      "type": "Strings",
+      "values": [
+        "http",
+        "https"
+      ]
+    },
+    "requirement_level": {
+      "type": "Required"
+    },
+    "note": "The scheme of the original client request, if known (e.g. from [Forwarded#proto](https://developer.mozilla.org/docs/Web/HTTP/Headers/Forwarded#proto), [X-Forwarded-Proto](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-Forwarded-Proto), or a similar header). Otherwise, the scheme of the immediate peer request.",
     "stability": "Stable"
   },
   {
