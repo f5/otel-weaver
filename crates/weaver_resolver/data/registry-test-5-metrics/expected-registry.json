@@ -13,7 +13,10 @@
         1,
         2,
         3
-      ]
+      ],
+      "lineage": {
+        "provenance": "data/registry-test-5-metrics/registry/faas-common.yaml"
+      }
     },
     {
       "id": "metric.faas.invoke_duration",
@@ -26,7 +29,46 @@
       "brief": "Measures the duration of the function's logic execution",
       "attributes": [
         0
-      ]
+      ],
+      "lineage": {
+        "provenance": "data/registry-test-5-metrics/registry/faas-metrics.yaml",
+        "attributes": {
+          "0": {
+            "AttributeBrief": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeExamples": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeTag": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeRequirementLevel": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeSamplingRelevant": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeNote": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeStability": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeDeprecated": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            }
+          }
+        }
+      }
     },
     {
       "id": "metric.faas.init_duration",
@@ -39,7 +81,46 @@
       "brief": "Measures the duration of the function's initialization, such as a cold start",
       "attributes": [
         0
-      ]
+      ],
+      "lineage": {
+        "provenance": "data/registry-test-5-metrics/registry/faas-metrics.yaml",
+        "attributes": {
+          "0": {
+            "AttributeBrief": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeExamples": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeTag": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeRequirementLevel": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeSamplingRelevant": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeNote": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeStability": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeDeprecated": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            }
+          }
+        }
+      }
     },
     {
       "id": "metric.faas.coldstarts",
@@ -52,7 +133,46 @@
       "brief": "Number of invocation cold starts",
       "attributes": [
         0
-      ]
+      ],
+      "lineage": {
+        "provenance": "data/registry-test-5-metrics/registry/faas-metrics.yaml",
+        "attributes": {
+          "0": {
+            "AttributeBrief": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeExamples": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeTag": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeRequirementLevel": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeSamplingRelevant": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeNote": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeStability": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeDeprecated": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            }
+          }
+        }
+      }
     },
     {
       "id": "metric.faas.errors",
@@ -65,7 +185,46 @@
       "brief": "Number of invocation errors",
       "attributes": [
         0
-      ]
+      ],
+      "lineage": {
+        "provenance": "data/registry-test-5-metrics/registry/faas-metrics.yaml",
+        "attributes": {
+          "0": {
+            "AttributeBrief": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeExamples": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeTag": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeRequirementLevel": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeSamplingRelevant": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeNote": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeStability": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeDeprecated": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            }
+          }
+        }
+      }
     },
     {
       "id": "metric.faas.invocations",
@@ -78,7 +237,46 @@
       "brief": "Number of successful invocations",
       "attributes": [
         0
-      ]
+      ],
+      "lineage": {
+        "provenance": "data/registry-test-5-metrics/registry/faas-metrics.yaml",
+        "attributes": {
+          "0": {
+            "AttributeBrief": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeExamples": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeTag": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeRequirementLevel": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeSamplingRelevant": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeNote": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeStability": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeDeprecated": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            }
+          }
+        }
+      }
     },
     {
       "id": "metric.faas.timeouts",
@@ -91,7 +289,46 @@
       "brief": "Number of invocation timeouts",
       "attributes": [
         0
-      ]
+      ],
+      "lineage": {
+        "provenance": "data/registry-test-5-metrics/registry/faas-metrics.yaml",
+        "attributes": {
+          "0": {
+            "AttributeBrief": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeExamples": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeTag": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeRequirementLevel": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeSamplingRelevant": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeNote": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeStability": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeDeprecated": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            }
+          }
+        }
+      }
     },
     {
       "id": "metric.faas.mem_usage",
@@ -104,7 +341,46 @@
       "brief": "Distribution of max memory usage per invocation",
       "attributes": [
         0
-      ]
+      ],
+      "lineage": {
+        "provenance": "data/registry-test-5-metrics/registry/faas-metrics.yaml",
+        "attributes": {
+          "0": {
+            "AttributeBrief": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeExamples": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeTag": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeRequirementLevel": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeSamplingRelevant": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeNote": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeStability": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeDeprecated": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            }
+          }
+        }
+      }
     },
     {
       "id": "metric.faas.cpu_usage",
@@ -117,7 +393,46 @@
       "brief": "Distribution of CPU usage per invocation",
       "attributes": [
         0
-      ]
+      ],
+      "lineage": {
+        "provenance": "data/registry-test-5-metrics/registry/faas-metrics.yaml",
+        "attributes": {
+          "0": {
+            "AttributeBrief": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeExamples": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeTag": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeRequirementLevel": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeSamplingRelevant": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeNote": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeStability": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeDeprecated": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            }
+          }
+        }
+      }
     },
     {
       "id": "metric.faas.net_io",
@@ -130,7 +445,46 @@
       "brief": "Distribution of net I/O usage per invocation",
       "attributes": [
         0
-      ]
+      ],
+      "lineage": {
+        "provenance": "data/registry-test-5-metrics/registry/faas-metrics.yaml",
+        "attributes": {
+          "0": {
+            "AttributeBrief": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeExamples": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeTag": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeRequirementLevel": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeSamplingRelevant": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeNote": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeStability": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            },
+            "AttributeDeprecated": {
+              "resolution_mode": "Reference",
+              "group_id": "attributes.faas.common"
+            }
+          }
+        }
+      }
     }
   ]
 }

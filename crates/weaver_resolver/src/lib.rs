@@ -55,6 +55,8 @@ pub enum UnresolvedReference {
         group_id: String,
         /// The unresolved attribute reference.
         attribute_ref: String,
+        /// The provenance of the reference (URL or path).
+        provenance: String,
     },
     /// An unresolved `extends` clause reference.
     ExtendsRef {
@@ -62,6 +64,8 @@ pub enum UnresolvedReference {
         group_id: String,
         /// The unresolved `extends` clause reference.
         extends_ref: String,
+        /// The provenance of the reference (URL or path).
+        provenance: String,
     },
 }
 

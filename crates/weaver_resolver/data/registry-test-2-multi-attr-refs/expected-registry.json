@@ -10,7 +10,72 @@
       "attributes": [
         30,
         31
-      ]
+      ],
+      "lineage": {
+        "provenance": "data/registry-test-2-multi-attr-refs/registry/metrics-messaging.yaml",
+        "attributes": {
+          "30": {
+            "AttributeBrief": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            },
+            "AttributeExamples": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            },
+            "AttributeTag": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            },
+            "AttributeSamplingRelevant": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            },
+            "AttributeNote": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            },
+            "AttributeStability": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            },
+            "AttributeDeprecated": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            }
+          },
+          "31": {
+            "AttributeBrief": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            },
+            "AttributeExamples": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            },
+            "AttributeTag": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            },
+            "AttributeSamplingRelevant": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            },
+            "AttributeNote": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            },
+            "AttributeStability": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            },
+            "AttributeDeprecated": {
+              "resolution_mode": "Reference",
+              "group_id": "registry.messaging"
+            }
+          }
+        }
+      }
     },
     {
       "id": "registry.messaging",
@@ -50,7 +115,10 @@
         27,
         28,
         29
-      ]
+      ],
+      "lineage": {
+        "provenance": "data/registry-test-2-multi-attr-refs/registry/registry-messaging.yaml"
+      }
     }
   ]
 }

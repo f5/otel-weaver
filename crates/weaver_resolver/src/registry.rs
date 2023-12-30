@@ -3,14 +3,16 @@
 //! Functions to resolve a semantic convention registry.
 
 use std::collections::HashMap;
+
 use weaver_logger::Logger;
 use weaver_resolved_schema::attribute::{AttributeRef, UnresolvedAttribute};
+use weaver_resolved_schema::lineage::{FieldId, FieldLineage, GroupLineage, ResolutionMode};
 use weaver_resolved_schema::registry::{
     Group, Registry, TypedGroup, UnresolvedGroup, UnresolvedRegistry,
 };
 use weaver_semconv::attribute::AttributeSpec;
 use weaver_semconv::group::{ConvTypeSpec, GroupSpec};
-use weaver_semconv::SemConvSpecs;
+use weaver_semconv::{GroupSpecWithProvenance, SemConvSpecs};
 
 use crate::attribute::{resolve_attribute, AttributeCatalog};
 use crate::constraint::resolve_constraints;
@@ -23,7 +25,10 @@ use crate::{Error, UnresolvedReference};
 /// Note: this function does not resolve references.
 #[allow(dead_code)] // ToDo remove this once this function is called from the CLI.
 pub fn unresolved_registry_from_specs(url: &str, specs: &SemConvSpecs) -> UnresolvedRegistry {
-    let groups = specs.groups().map(group_from_spec).collect();
+    let groups = specs
+        .groups_with_provenance()
+        .map(group_from_spec)
+        .collect();
 
     UnresolvedRegistry {
         registry: Registry {
@@ -36,44 +41,47 @@ pub fn unresolved_registry_from_specs(url: &str, specs: &SemConvSpecs) -> Unreso
 
 /// Creates a group from a semantic convention group specification.
 /// Note: this function does not resolve references.
-fn group_from_spec(group: &GroupSpec) -> UnresolvedGroup {
+fn group_from_spec(group: GroupSpecWithProvenance) -> UnresolvedGroup {
     let attrs = group
+        .spec
         .attributes
-        .iter()
-        .map(|attr| UnresolvedAttribute { spec: attr.clone() })
+        .into_iter()
+        .map(|attr| UnresolvedAttribute { spec: attr })
         .collect();
 
     UnresolvedGroup {
         group: Group {
-            id: group.id.clone(),
-            typed_group: match group.r#type {
+            id: group.spec.id,
+            typed_group: match group.spec.r#type {
                 ConvTypeSpec::AttributeGroup => TypedGroup::AttributeGroup {},
                 ConvTypeSpec::Span => TypedGroup::Span {
-                    span_kind: group.span_kind.as_ref().map(resolve_span_kind),
-                    events: group.events.clone(),
+                    span_kind: group.spec.span_kind.as_ref().map(resolve_span_kind),
+                    events: group.spec.events,
                 },
                 ConvTypeSpec::Event => TypedGroup::Event {
-                    name: group.name.clone(),
+                    name: group.spec.name,
                 },
                 ConvTypeSpec::Metric => TypedGroup::Metric {
-                    metric_name: group.metric_name.clone(),
-                    instrument: group.instrument.as_ref().map(resolve_instrument),
-                    unit: group.unit.clone(),
+                    metric_name: group.spec.metric_name,
+                    instrument: group.spec.instrument.as_ref().map(resolve_instrument),
+                    unit: group.spec.unit,
                 },
                 ConvTypeSpec::MetricGroup => TypedGroup::MetricGroup {},
                 ConvTypeSpec::Resource => TypedGroup::Resource {},
                 ConvTypeSpec::Scope => TypedGroup::Scope {},
             },
-            brief: group.brief.to_string(),
-            note: group.note.to_string(),
-            prefix: group.prefix.to_string(),
-            extends: group.extends.clone(),
-            stability: resolve_stability(&group.stability),
-            deprecated: group.deprecated.clone(),
-            constraints: resolve_constraints(&group.constraints),
+            brief: group.spec.brief,
+            note: group.spec.note,
+            prefix: group.spec.prefix,
+            extends: group.spec.extends,
+            stability: resolve_stability(&group.spec.stability),
+            deprecated: group.spec.deprecated,
+            constraints: resolve_constraints(&group.spec.constraints),
             attributes: vec![],
+            lineage: Some(GroupLineage::new(group.provenance.clone())),
         },
         attributes: attrs,
+        provenance: group.provenance,
     }
 }
 
@@ -100,14 +108,14 @@ fn semconv_to_resolved_group(
     registry: &SemConvSpecs,
     attr_catalog: &mut AttributeCatalog,
     group: &GroupSpec,
-) -> Result<weaver_resolved_schema::registry::Group, Error> {
+) -> Result<Group, Error> {
     let attr_refs: Result<Vec<AttributeRef>, Error> = group
         .attributes
         .iter()
         .map(|attr| Ok(attr_catalog.attribute_ref(resolve_attribute(registry, attr)?)))
         .collect();
 
-    Ok(weaver_resolved_schema::registry::Group {
+    Ok(Group {
         id: group.id.clone(),
         typed_group: match group.r#type {
             ConvTypeSpec::AttributeGroup => {
@@ -139,6 +147,7 @@ fn semconv_to_resolved_group(
         deprecated: group.deprecated.clone(),
         constraints: resolve_constraints(&group.constraints),
         attributes: attr_refs?,
+        lineage: None,
     })
 }
 
@@ -168,7 +177,12 @@ pub fn resolve_attribute_references(
                 .clone()
                 .into_iter()
                 .filter_map(|attr| {
-                    let attr_ref = attr_catalog.resolve(&unresolved_group.group.prefix, &attr.spec);
+                    let attr_ref = attr_catalog.resolve(
+                        &unresolved_group.group.id,
+                        &unresolved_group.group.prefix,
+                        &attr.spec,
+                        unresolved_group.group.lineage.as_mut(),
+                    );
                     if let Some(attr_ref) = attr_ref {
                         resolved_attr.push(attr_ref);
                         resolved_attr_count += 1;
@@ -221,7 +235,22 @@ pub fn resolve_extends_references(ureg: &mut UnresolvedRegistry) -> bool {
         for unresolved_group in ureg.groups.iter_mut() {
             if let Some(extends) = unresolved_group.group.extends.as_ref() {
                 if let Some(attr_refs) = group_index.get(extends) {
-                    unresolved_group.group.attributes.extend(attr_refs.clone());
+                    for attr_ref in attr_refs.iter() {
+                        unresolved_group.group.attributes.push(*attr_ref);
+
+                        // Update the lineage based on the inherited fields.
+                        // Note: the lineage is only updated if a group lineage is provided.
+                        if let Some(lineage) = unresolved_group.group.lineage.as_mut() {
+                            lineage.add_attribute_field_lineage(
+                                *attr_ref,
+                                FieldId::GroupAttributes,
+                                FieldLineage {
+                                    resolution_mode: ResolutionMode::Extends,
+                                    group_id: extends.clone(),
+                                },
+                            );
+                        }
+                    }
                     unresolved_group.group.extends.take();
                     resolved_extends_count += 1;
                 } else {
@@ -259,13 +288,15 @@ pub fn resolve_registry(
     all_refs_resolved &= resolve_extends_references(&mut ureg);
 
     if !all_refs_resolved {
-        // Build a list of unresolved references.
+        // Process all unresolved references.
+        // An Error::UnresolvedReferences is built and returned.
         let mut unresolved_refs = vec![];
         for group in ureg.groups.iter() {
             if let Some(extends) = group.group.extends.as_ref() {
                 unresolved_refs.push(UnresolvedReference::ExtendsRef {
                     group_id: group.group.id.clone(),
                     extends_ref: extends.clone(),
+                    provenance: group.provenance.clone(),
                 });
             }
             for attr in group.attributes.iter() {
@@ -273,6 +304,7 @@ pub fn resolve_registry(
                     unresolved_refs.push(UnresolvedReference::AttributeRef {
                         group_id: group.group.id.clone(),
                         attribute_ref: r#ref.clone(),
+                        provenance: group.provenance.clone(),
                     });
                 }
             }
@@ -284,6 +316,9 @@ pub fn resolve_registry(
         }
     }
 
+    // Sort the attribute internal references in each group.
+    // This is needed to ensure that the resolved registry is easy to compare
+    // in unit tests.
     ureg.registry.groups = ureg
         .groups
         .into_iter()

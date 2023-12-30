@@ -8,6 +8,7 @@ use crate::attribute::{AttributeRef, UnresolvedAttribute};
 use serde::{Deserialize, Serialize};
 
 use crate::catalog::Stability;
+use crate::lineage::GroupLineage;
 use crate::metric::Instrument;
 use crate::signal::SpanKind;
 
@@ -77,6 +78,9 @@ pub struct Group {
     /// List of attributes that belong to the semantic convention.
     #[serde(default)]
     pub attributes: Vec<AttributeRef>,
+    /// The lineage of the group.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lineage: Option<GroupLineage>,
 }
 
 /// A group containing unresolved attributes.
@@ -87,6 +91,8 @@ pub struct UnresolvedGroup {
     /// List of unresolved attributes that belong to the semantic convention
     /// group.
     pub attributes: Vec<UnresolvedAttribute>,
+    /// The provenance of the group (URL or path).
+    pub provenance: String,
 }
 
 /// An enum representing the type of the group including the specific fields

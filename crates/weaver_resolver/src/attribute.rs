@@ -7,6 +7,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use weaver_resolved_schema::attribute;
 use weaver_resolved_schema::attribute::AttributeRef;
+use weaver_resolved_schema::lineage::{FieldId, FieldLineage, GroupLineage, ResolutionMode};
 use weaver_schema::attribute::Attribute;
 use weaver_schema::tags::Tags;
 use weaver_semconv::attribute::{
@@ -27,7 +28,13 @@ pub struct AttributeCatalog {
     #[serde(skip)]
     /// A map of root attributes indexed by their name.
     /// Root attributes are attributes that doesn't inherit from another attribute.
-    root_attributes: HashMap<String, attribute::Attribute>,
+    root_attributes: HashMap<String, AttributeWithGroupId>,
+}
+
+#[derive(Debug, PartialEq)]
+struct AttributeWithGroupId {
+    pub attribute: attribute::Attribute,
+    pub group_id: String,
 }
 
 impl AttributeCatalog {
@@ -52,7 +59,13 @@ impl AttributeCatalog {
     /// Tries to resolve the given attribute spec (ref or id) from the catalog.
     /// Returns `None` if the attribute spec is a ref and it does not exist yet
     /// in the catalog.
-    pub fn resolve(&mut self, prefix: &str, attr: &AttributeSpec) -> Option<AttributeRef> {
+    pub fn resolve(
+        &mut self,
+        group_id: &str,
+        prefix: &str,
+        attr: &AttributeSpec,
+        lineage: Option<&mut GroupLineage>,
+    ) -> Option<AttributeRef> {
         match attr {
             AttributeSpec::Ref {
                 r#ref,
@@ -67,50 +80,95 @@ impl AttributeCatalog {
             } => {
                 let root_attr = self.root_attributes.get(r#ref);
                 if let Some(root_attr) = root_attr {
+                    let mut inherited_fields = vec![];
+
                     // Create a fully resolved attribute from an attribute spec
                     // (ref) and override the root attribute with the new
                     // values if they are present.
                     let resolved_attr = attribute::Attribute {
                         name: r#ref.clone(),
-                        r#type: root_attr.r#type.clone(),
+                        r#type: root_attr.attribute.r#type.clone(),
                         brief: match brief {
                             Some(brief) => brief.clone(),
-                            None => root_attr.brief.clone(),
+                            None => {
+                                inherited_fields.push(FieldId::AttributeBrief);
+                                root_attr.attribute.brief.clone()
+                            }
                         },
                         examples: match examples {
                             Some(_) => semconv_to_resolved_examples(examples),
-                            None => root_attr.examples.clone(),
+                            None => {
+                                inherited_fields.push(FieldId::AttributeExamples);
+                                root_attr.attribute.examples.clone()
+                            }
                         },
                         tag: match tag {
                             Some(_) => tag.clone(),
-                            None => root_attr.tag.clone(),
+                            None => {
+                                inherited_fields.push(FieldId::AttributeTag);
+                                root_attr.attribute.tag.clone()
+                            }
                         },
                         requirement_level: match requirement_level {
                             Some(requirement_level) => {
                                 semconv_to_resolved_req_level(requirement_level)
                             }
-                            None => root_attr.requirement_level.clone(),
+                            None => {
+                                inherited_fields.push(FieldId::AttributeRequirementLevel);
+                                root_attr.attribute.requirement_level.clone()
+                            }
                         },
                         sampling_relevant: match sampling_relevant {
                             Some(_) => *sampling_relevant,
-                            None => root_attr.sampling_relevant,
+                            None => {
+                                inherited_fields.push(FieldId::AttributeSamplingRelevant);
+                                root_attr.attribute.sampling_relevant
+                            }
                         },
                         note: match note {
                             Some(note) => note.clone(),
-                            None => root_attr.note.clone(),
+                            None => {
+                                inherited_fields.push(FieldId::AttributeNote);
+                                root_attr.attribute.note.clone()
+                            }
                         },
                         stability: match stability {
                             Some(_) => stability::resolve_stability(stability),
-                            None => root_attr.stability.clone(),
+                            None => {
+                                inherited_fields.push(FieldId::AttributeStability);
+                                root_attr.attribute.stability.clone()
+                            }
                         },
                         deprecated: match deprecated {
                             Some(_) => deprecated.clone(),
-                            None => root_attr.deprecated.clone(),
+                            None => {
+                                inherited_fields.push(FieldId::AttributeDeprecated);
+                                root_attr.attribute.deprecated.clone()
+                            }
                         },
-                        tags: root_attr.tags.clone(),
-                        value: root_attr.value.clone(),
+                        tags: root_attr.attribute.tags.clone(),
+                        value: root_attr.attribute.value.clone(),
                     };
-                    Some(self.attribute_ref(resolved_attr))
+
+                    let group_id = root_attr.group_id.clone();
+                    let attr_ref = self.attribute_ref(resolved_attr);
+
+                    // Update the lineage based on the inherited fields.
+                    // Note: the lineage is only updated if a group lineage is provided.
+                    if let Some(lineage) = lineage {
+                        for field_id in inherited_fields {
+                            lineage.add_attribute_field_lineage(
+                                attr_ref,
+                                field_id,
+                                FieldLineage {
+                                    resolution_mode: ResolutionMode::Reference,
+                                    group_id: group_id.clone(),
+                                },
+                            );
+                        }
+                    }
+
+                    Some(attr_ref)
                 } else {
                     None
                 }
@@ -152,7 +210,13 @@ impl AttributeCatalog {
                     value: None,
                 };
 
-                self.root_attributes.insert(root_attr_id, attr.clone());
+                self.root_attributes.insert(
+                    root_attr_id,
+                    AttributeWithGroupId {
+                        attribute: attr.clone(),
+                        group_id: group_id.to_string(),
+                    },
+                );
                 Some(self.attribute_ref(attr))
             }
         }

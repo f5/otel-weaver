@@ -18,6 +18,7 @@ use weaver_version::Versions;
 pub mod attribute;
 pub mod catalog;
 pub mod instrumentation_library;
+pub mod lineage;
 pub mod metric;
 pub mod registry;
 pub mod resource;
