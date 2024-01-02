@@ -25,7 +25,7 @@ license = "Apache-2.0"
 publish = false
 
 [workspace.dependencies]
-serde = { version = "1.0.193", features = ["derive"] }
+serde = { version = "1.0.194", features = ["derive"] }
 serde_yaml = "0.9.29"
 serde_json = "1.0.108"
 thiserror = "1.0.50"
