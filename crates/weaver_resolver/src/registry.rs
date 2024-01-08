@@ -413,6 +413,9 @@ mod tests {
                 test_dir, observed_attr_catalog_json
             );
 
+            let yaml = serde_yaml::to_string(&observed_attr_catalog).unwrap();
+            println!("{}", yaml);
+
             // Check that the resolved registry matches the expected registry.
             let observed_registry_json = serde_json::to_string_pretty(&observed_registry)
                 .expect("Failed to serialize observed registry");
@@ -427,4 +430,3 @@ mod tests {
 }
 
 // ToDo Remove #[allow(dead_code)] once the corresponding functions are called from the CLI.
-// ToDo Keep track of the provenance for all the resolutions.
