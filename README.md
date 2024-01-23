@@ -153,6 +153,8 @@ Below is a diagram detailing the primary components of the OTel Weaver tool.
 ## Links
 
 Internal links:
+- [Component Telemetry Schema](docs/component-telemetry-schema.md) (proposal)
+- [Resolved Telemetry Schema](docs/resolved-telemetry-schema.md) (proposal)
 - [Internal crates interdependencies](docs/dependencies.md)
 - [Change log](CHANGELOG.md)
 
