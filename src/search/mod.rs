@@ -6,24 +6,24 @@ use std::io;
 use std::path::PathBuf;
 
 use clap::{Args, Subcommand};
+use crossterm::event::DisableMouseCapture;
+use crossterm::event::EnableMouseCapture;
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use crossterm::event::DisableMouseCapture;
-use crossterm::event::EnableMouseCapture;
-use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{CrosstermBackend, Span, Terminal};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::Line;
-use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
 use ratatui::widgets::Cell;
-use tantivy::{Index, IndexWriter, ReloadPolicy};
+use ratatui::widgets::{Block, Borders, Paragraph, Row, Table, TableState, Wrap};
+use ratatui::Frame;
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{Field, Schema, STORED, TEXT};
+use tantivy::{Index, IndexWriter, ReloadPolicy};
 use tui_textarea::TextArea;
 
 use theme::ThemeConfig;
@@ -219,16 +219,17 @@ fn search_registry_command2(
         cache,
         log.clone(),
     )
-        .unwrap_or_else(|e| {
-            log.error(&format!("{}", e));
-            std::process::exit(1);
-        });
+    .unwrap_or_else(|e| {
+        log.error(&format!("{}", e));
+        std::process::exit(1);
+    });
 
     let mut attr_catalog = AttributeCatalog::default();
     let resolved_registry = resolve_registry(
         unresolved_registry_from_specs(&registry_args.registry, &semconv_specs),
         &mut attr_catalog,
-    ).unwrap_or_else(|e| {
+    )
+    .unwrap_or_else(|e| {
         log.error(&format!("{}", e));
         std::process::exit(1);
     });
@@ -272,10 +273,10 @@ fn search_registry_command(
         cache,
         log.clone(),
     )
-        .unwrap_or_else(|e| {
-            log.error(&format!("{}", e));
-            std::process::exit(1);
-        });
+    .unwrap_or_else(|e| {
+        log.error(&format!("{}", e));
+        std::process::exit(1);
+    });
 
     let schema = if let Some(schema) = &registry_args.schema {
         let mut schema =

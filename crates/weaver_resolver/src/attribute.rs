@@ -431,57 +431,27 @@ pub fn resolve_attribute(
     }
 }
 
-fn semconv_to_resolved_attr_type(
-    attr_type: &AttributeTypeSpec,
-) -> attribute::AttributeType {
+fn semconv_to_resolved_attr_type(attr_type: &AttributeTypeSpec) -> attribute::AttributeType {
     match attr_type {
         AttributeTypeSpec::PrimitiveOrArray(poa) => match poa {
-            PrimitiveOrArrayTypeSpec::Boolean => {
-                attribute::AttributeType::Boolean
-            }
+            PrimitiveOrArrayTypeSpec::Boolean => attribute::AttributeType::Boolean,
             PrimitiveOrArrayTypeSpec::Int => weaver_resolved_schema::attribute::AttributeType::Int,
-            PrimitiveOrArrayTypeSpec::Double => {
-                attribute::AttributeType::Double
-            }
-            PrimitiveOrArrayTypeSpec::String => {
-                attribute::AttributeType::String
-            }
-            PrimitiveOrArrayTypeSpec::Strings => {
-                attribute::AttributeType::Strings
-            }
-            PrimitiveOrArrayTypeSpec::Ints => {
-                attribute::AttributeType::Ints
-            }
-            PrimitiveOrArrayTypeSpec::Doubles => {
-                attribute::AttributeType::Doubles
-            }
-            PrimitiveOrArrayTypeSpec::Booleans => {
-                attribute::AttributeType::Booleans
-            }
+            PrimitiveOrArrayTypeSpec::Double => attribute::AttributeType::Double,
+            PrimitiveOrArrayTypeSpec::String => attribute::AttributeType::String,
+            PrimitiveOrArrayTypeSpec::Strings => attribute::AttributeType::Strings,
+            PrimitiveOrArrayTypeSpec::Ints => attribute::AttributeType::Ints,
+            PrimitiveOrArrayTypeSpec::Doubles => attribute::AttributeType::Doubles,
+            PrimitiveOrArrayTypeSpec::Booleans => attribute::AttributeType::Booleans,
         },
         AttributeTypeSpec::Template(template) => match template {
-            TemplateTypeSpec::Boolean => {
-                attribute::AttributeType::TemplateBoolean
-            }
+            TemplateTypeSpec::Boolean => attribute::AttributeType::TemplateBoolean,
             TemplateTypeSpec::Int => attribute::AttributeType::TemplateInt,
-            TemplateTypeSpec::Double => {
-                attribute::AttributeType::TemplateDouble
-            }
-            TemplateTypeSpec::String => {
-                attribute::AttributeType::TemplateString
-            }
-            TemplateTypeSpec::Strings => {
-                attribute::AttributeType::TemplateStrings
-            }
-            TemplateTypeSpec::Ints => {
-                attribute::AttributeType::TemplateInts
-            }
-            TemplateTypeSpec::Doubles => {
-                attribute::AttributeType::TemplateDoubles
-            }
-            TemplateTypeSpec::Booleans => {
-                attribute::AttributeType::TemplateBooleans
-            }
+            TemplateTypeSpec::Double => attribute::AttributeType::TemplateDouble,
+            TemplateTypeSpec::String => attribute::AttributeType::TemplateString,
+            TemplateTypeSpec::Strings => attribute::AttributeType::TemplateStrings,
+            TemplateTypeSpec::Ints => attribute::AttributeType::TemplateInts,
+            TemplateTypeSpec::Doubles => attribute::AttributeType::TemplateDoubles,
+            TemplateTypeSpec::Booleans => attribute::AttributeType::TemplateBooleans,
         },
         AttributeTypeSpec::Enum {
             allow_custom_values,
@@ -517,39 +487,27 @@ fn semconv_to_resolved_examples(examples: &Option<ExamplesSpec>) -> Option<attri
         ExamplesSpec::Int(v) => attribute::Example::Int { value: *v },
         ExamplesSpec::Double(v) => attribute::Example::Double { value: *v },
         ExamplesSpec::String(v) => attribute::Example::String { value: v.clone() },
-        ExamplesSpec::Ints(v) => {
-            attribute::Example::Ints { values: v.clone() }
-        }
+        ExamplesSpec::Ints(v) => attribute::Example::Ints { values: v.clone() },
         ExamplesSpec::Doubles(v) => attribute::Example::Doubles { values: v.clone() },
         ExamplesSpec::Bools(v) => attribute::Example::Bools { values: v.clone() },
         ExamplesSpec::Strings(v) => attribute::Example::Strings { values: v.clone() },
     })
 }
 
-fn semconv_to_resolved_req_level(
-    req_level: &RequirementLevelSpec,
-) -> attribute::RequirementLevel {
+fn semconv_to_resolved_req_level(req_level: &RequirementLevelSpec) -> attribute::RequirementLevel {
     match req_level {
         RequirementLevelSpec::Basic(level) => match level {
-            BasicRequirementLevelSpec::Required => {
-                attribute::RequirementLevel::Required
-            }
+            BasicRequirementLevelSpec::Required => attribute::RequirementLevel::Required,
             BasicRequirementLevelSpec::Recommended => {
                 attribute::RequirementLevel::Recommended { text: None }
             }
-            BasicRequirementLevelSpec::OptIn => {
-                attribute::RequirementLevel::OptIn
-            }
+            BasicRequirementLevelSpec::OptIn => attribute::RequirementLevel::OptIn,
         },
-        RequirementLevelSpec::Recommended { text } => {
-            attribute::RequirementLevel::Recommended {
-                text: Some(text.clone()),
-            }
-        }
+        RequirementLevelSpec::Recommended { text } => attribute::RequirementLevel::Recommended {
+            text: Some(text.clone()),
+        },
         RequirementLevelSpec::ConditionallyRequired { text } => {
-            attribute::RequirementLevel::ConditionallyRequired {
-                text: text.clone(),
-            }
+            attribute::RequirementLevel::ConditionallyRequired { text: text.clone() }
         }
     }
 }

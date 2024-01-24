@@ -118,9 +118,7 @@ fn semconv_to_resolved_group(
     Ok(Group {
         id: group.id.clone(),
         typed_group: match group.r#type {
-            ConvTypeSpec::AttributeGroup => {
-                TypedGroup::AttributeGroup {}
-            }
+            ConvTypeSpec::AttributeGroup => TypedGroup::AttributeGroup {},
             ConvTypeSpec::Span => TypedGroup::Span {
                 span_kind: group.span_kind.as_ref().map(resolve_span_kind),
                 events: group.events.clone(),
@@ -133,9 +131,7 @@ fn semconv_to_resolved_group(
                 instrument: group.instrument.as_ref().map(resolve_instrument),
                 unit: group.unit.clone(),
             },
-            ConvTypeSpec::MetricGroup => {
-                TypedGroup::MetricGroup {}
-            }
+            ConvTypeSpec::MetricGroup => TypedGroup::MetricGroup {},
             ConvTypeSpec::Resource => TypedGroup::Resource {},
             ConvTypeSpec::Scope => TypedGroup::Scope {},
         },

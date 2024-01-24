@@ -323,7 +323,7 @@ impl SchemaResolver {
         log: impl Logger + Clone + Sync,
     ) -> Result<SemConvSpecs, Error> {
         let start = Instant::now();
-        let mut registry = Self::create_semantic_convention_registry(imports, cache, log.clone())?;
+        let registry = Self::create_semantic_convention_registry(imports, cache, log.clone())?;
         log.success(&format!(
             "Loaded {} semantic convention files containing the definition of {} attributes and {} metrics ({:.2}s)",
             registry.asset_count(),
@@ -373,12 +373,8 @@ impl SchemaResolver {
         let start = Instant::now();
 
         let mut attr_catalog = AttributeCatalog::default();
-        let resolved_registry = resolve_semconv_registry(
-            &mut attr_catalog,
-            "",
-            registry,
-            log.clone(),
-        )?;
+        let resolved_registry =
+            resolve_semconv_registry(&mut attr_catalog, "", registry, log.clone())?;
 
         let metrics = registry
             .metrics_iter()
