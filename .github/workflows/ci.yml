@@ -127,7 +127,7 @@ jobs:
       - name: Install SARIF tools
         run: cargo install sarif-fmt --locked
       - name: Install protoc
-        run: apt-get install protobuf-compiler
+        uses: arduino/setup-protoc@v2
       - name: Check
         run: >
           cargo clippy --workspace --all-features --all-targets --message-format=json -- -D warnings --allow deprecated
