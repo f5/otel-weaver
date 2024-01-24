@@ -39,6 +39,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
+      - name: Install protoc
+        uses: arduino/setup-protoc@v2
       - uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo test --no-run --workspace --all-features
@@ -58,6 +60,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.70"  # MSRV
+      - name: Install protoc
+        uses: arduino/setup-protoc@v2
       - uses: Swatinem/rust-cache@v2
       - name: Default features
         run: cargo check --workspace --all-targets
