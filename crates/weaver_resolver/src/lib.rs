@@ -32,11 +32,11 @@ use crate::registry::resolve_semconv_registry;
 use crate::resource::resolve_resource;
 use crate::spans::resolve_spans;
 
-mod attribute;
+pub mod attribute;
 mod constraint;
 mod events;
 mod metrics;
-mod registry;
+pub mod registry;
 mod resource;
 mod spans;
 mod stability;
@@ -372,22 +372,23 @@ impl SchemaResolver {
     ) -> Result<ResolvedTelemetrySchema, Error> {
         let start = Instant::now();
 
+        let mut attr_catalog = AttributeCatalog::default();
+        let resolved_registry = resolve_semconv_registry(
+            &mut attr_catalog,
+            "",
+            registry,
+            log.clone(),
+        )?;
+
         let metrics = registry
             .metrics_iter()
             .map(semconv_to_resolved_metric)
             .collect();
 
-        let mut attr_catalog = AttributeCatalog::default();
-
         let resolved_schema = ResolvedTelemetrySchema {
             file_format: "1.0.0".to_string(),
             schema_url: "".to_string(),
-            registries: vec![resolve_semconv_registry(
-                &mut attr_catalog,
-                "",
-                registry,
-                log.clone(),
-            )?],
+            registries: vec![resolved_registry],
             catalog: Catalog {
                 attributes: attr_catalog.drain_attributes(),
                 metrics,

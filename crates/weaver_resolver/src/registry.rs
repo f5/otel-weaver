@@ -119,25 +119,25 @@ fn semconv_to_resolved_group(
         id: group.id.clone(),
         typed_group: match group.r#type {
             ConvTypeSpec::AttributeGroup => {
-                weaver_resolved_schema::registry::TypedGroup::AttributeGroup {}
+                TypedGroup::AttributeGroup {}
             }
-            ConvTypeSpec::Span => weaver_resolved_schema::registry::TypedGroup::Span {
+            ConvTypeSpec::Span => TypedGroup::Span {
                 span_kind: group.span_kind.as_ref().map(resolve_span_kind),
                 events: group.events.clone(),
             },
-            ConvTypeSpec::Event => weaver_resolved_schema::registry::TypedGroup::Event {
+            ConvTypeSpec::Event => TypedGroup::Event {
                 name: group.name.clone(),
             },
-            ConvTypeSpec::Metric => weaver_resolved_schema::registry::TypedGroup::Metric {
+            ConvTypeSpec::Metric => TypedGroup::Metric {
                 metric_name: group.metric_name.clone(),
                 instrument: group.instrument.as_ref().map(resolve_instrument),
                 unit: group.unit.clone(),
             },
             ConvTypeSpec::MetricGroup => {
-                weaver_resolved_schema::registry::TypedGroup::MetricGroup {}
+                TypedGroup::MetricGroup {}
             }
-            ConvTypeSpec::Resource => weaver_resolved_schema::registry::TypedGroup::Resource {},
-            ConvTypeSpec::Scope => weaver_resolved_schema::registry::TypedGroup::Scope {},
+            ConvTypeSpec::Resource => TypedGroup::Resource {},
+            ConvTypeSpec::Scope => TypedGroup::Scope {},
         },
         brief: group.brief.to_string(),
         note: group.note.to_string(),

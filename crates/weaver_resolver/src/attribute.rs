@@ -390,10 +390,10 @@ pub fn merge_attributes(main_attrs: &[Attribute], inherited_attrs: &[Attribute])
 /// Converts a semantic convention attribute to a resolved attribute.
 pub fn resolve_attribute(
     registry: &SemConvSpecs,
-    attr: &weaver_semconv::attribute::AttributeSpec,
-) -> Result<weaver_resolved_schema::attribute::Attribute, Error> {
+    attr: &AttributeSpec,
+) -> Result<attribute::Attribute, Error> {
     match attr {
-        weaver_semconv::attribute::AttributeSpec::Ref { r#ref, .. } => {
+        AttributeSpec::Ref { r#ref, .. } => {
             let sem_conv_attr =
                 registry
                     .attribute(r#ref)
@@ -403,7 +403,7 @@ pub fn resolve_attribute(
                     })?;
             resolve_attribute(registry, sem_conv_attr)
         }
-        weaver_semconv::attribute::AttributeSpec::Id {
+        AttributeSpec::Id {
             id,
             r#type,
             brief,
@@ -433,64 +433,64 @@ pub fn resolve_attribute(
 
 fn semconv_to_resolved_attr_type(
     attr_type: &AttributeTypeSpec,
-) -> weaver_resolved_schema::attribute::AttributeType {
+) -> attribute::AttributeType {
     match attr_type {
         AttributeTypeSpec::PrimitiveOrArray(poa) => match poa {
             PrimitiveOrArrayTypeSpec::Boolean => {
-                weaver_resolved_schema::attribute::AttributeType::Boolean
+                attribute::AttributeType::Boolean
             }
             PrimitiveOrArrayTypeSpec::Int => weaver_resolved_schema::attribute::AttributeType::Int,
             PrimitiveOrArrayTypeSpec::Double => {
-                weaver_resolved_schema::attribute::AttributeType::Double
+                attribute::AttributeType::Double
             }
             PrimitiveOrArrayTypeSpec::String => {
-                weaver_resolved_schema::attribute::AttributeType::String
+                attribute::AttributeType::String
             }
             PrimitiveOrArrayTypeSpec::Strings => {
-                weaver_resolved_schema::attribute::AttributeType::Strings
+                attribute::AttributeType::Strings
             }
             PrimitiveOrArrayTypeSpec::Ints => {
-                weaver_resolved_schema::attribute::AttributeType::Ints
+                attribute::AttributeType::Ints
             }
             PrimitiveOrArrayTypeSpec::Doubles => {
-                weaver_resolved_schema::attribute::AttributeType::Doubles
+                attribute::AttributeType::Doubles
             }
             PrimitiveOrArrayTypeSpec::Booleans => {
-                weaver_resolved_schema::attribute::AttributeType::Booleans
+                attribute::AttributeType::Booleans
             }
         },
         AttributeTypeSpec::Template(template) => match template {
             TemplateTypeSpec::Boolean => {
-                weaver_resolved_schema::attribute::AttributeType::TemplateBoolean
+                attribute::AttributeType::TemplateBoolean
             }
-            TemplateTypeSpec::Int => weaver_resolved_schema::attribute::AttributeType::TemplateInt,
+            TemplateTypeSpec::Int => attribute::AttributeType::TemplateInt,
             TemplateTypeSpec::Double => {
-                weaver_resolved_schema::attribute::AttributeType::TemplateDouble
+                attribute::AttributeType::TemplateDouble
             }
             TemplateTypeSpec::String => {
-                weaver_resolved_schema::attribute::AttributeType::TemplateString
+                attribute::AttributeType::TemplateString
             }
             TemplateTypeSpec::Strings => {
-                weaver_resolved_schema::attribute::AttributeType::TemplateStrings
+                attribute::AttributeType::TemplateStrings
             }
             TemplateTypeSpec::Ints => {
-                weaver_resolved_schema::attribute::AttributeType::TemplateInts
+                attribute::AttributeType::TemplateInts
             }
             TemplateTypeSpec::Doubles => {
-                weaver_resolved_schema::attribute::AttributeType::TemplateDoubles
+                attribute::AttributeType::TemplateDoubles
             }
             TemplateTypeSpec::Booleans => {
-                weaver_resolved_schema::attribute::AttributeType::TemplateBooleans
+                attribute::AttributeType::TemplateBooleans
             }
         },
         AttributeTypeSpec::Enum {
             allow_custom_values,
             members,
-        } => weaver_resolved_schema::attribute::AttributeType::Enum {
+        } => attribute::AttributeType::Enum {
             allow_custom_values: *allow_custom_values,
             members: members
                 .iter()
-                .map(|member| weaver_resolved_schema::attribute::EnumEntries {
+                .map(|member| attribute::EnumEntries {
                     id: member.id.clone(),
                     value: match &member.value {
                         ValueSpec::String(s) => {
@@ -518,7 +518,7 @@ fn semconv_to_resolved_examples(examples: &Option<ExamplesSpec>) -> Option<attri
         ExamplesSpec::Double(v) => attribute::Example::Double { value: *v },
         ExamplesSpec::String(v) => attribute::Example::String { value: v.clone() },
         ExamplesSpec::Ints(v) => {
-            weaver_resolved_schema::attribute::Example::Ints { values: v.clone() }
+            attribute::Example::Ints { values: v.clone() }
         }
         ExamplesSpec::Doubles(v) => attribute::Example::Doubles { values: v.clone() },
         ExamplesSpec::Bools(v) => attribute::Example::Bools { values: v.clone() },
@@ -528,26 +528,26 @@ fn semconv_to_resolved_examples(examples: &Option<ExamplesSpec>) -> Option<attri
 
 fn semconv_to_resolved_req_level(
     req_level: &RequirementLevelSpec,
-) -> weaver_resolved_schema::attribute::RequirementLevel {
+) -> attribute::RequirementLevel {
     match req_level {
         RequirementLevelSpec::Basic(level) => match level {
             BasicRequirementLevelSpec::Required => {
-                weaver_resolved_schema::attribute::RequirementLevel::Required
+                attribute::RequirementLevel::Required
             }
             BasicRequirementLevelSpec::Recommended => {
-                weaver_resolved_schema::attribute::RequirementLevel::Recommended { text: None }
+                attribute::RequirementLevel::Recommended { text: None }
             }
             BasicRequirementLevelSpec::OptIn => {
-                weaver_resolved_schema::attribute::RequirementLevel::OptIn
+                attribute::RequirementLevel::OptIn
             }
         },
         RequirementLevelSpec::Recommended { text } => {
-            weaver_resolved_schema::attribute::RequirementLevel::Recommended {
+            attribute::RequirementLevel::Recommended {
                 text: Some(text.clone()),
             }
         }
         RequirementLevelSpec::ConditionallyRequired { text } => {
-            weaver_resolved_schema::attribute::RequirementLevel::ConditionallyRequired {
+            attribute::RequirementLevel::ConditionallyRequired {
                 text: text.clone(),
             }
         }
