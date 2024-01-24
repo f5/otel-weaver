@@ -233,6 +233,23 @@ impl SchemaResolver {
         )
     }
 
+    /// Loads a semantic convention registry from the given Git URL.
+    pub fn load_semconv_registry(
+        registry_git_url: String,
+        path: Option<String>,
+        cache: &Cache,
+        log: impl Logger + Clone + Sync,
+    ) -> Result<SemConvSpecs, Error> {
+        Self::load_semconv_registry_from_imports(
+            &[SemConvImport::GitUrl {
+                git_url: registry_git_url,
+                path,
+            }],
+            cache,
+            log.clone(),
+        )
+    }
+
     /// Loads a telemetry schema from the given URL or path.
     pub fn load_schema(
         schema_url_or_path: &str,
@@ -297,6 +314,25 @@ impl SchemaResolver {
             cache,
             log.clone(),
         )
+    }
+
+    /// Loads a semantic convention registry from the given semantic convention imports.
+    pub fn load_semconv_registry_from_imports(
+        imports: &[SemConvImport],
+        cache: &Cache,
+        log: impl Logger + Clone + Sync,
+    ) -> Result<SemConvSpecs, Error> {
+        let start = Instant::now();
+        let mut registry = Self::create_semantic_convention_registry(imports, cache, log.clone())?;
+        log.success(&format!(
+            "Loaded {} semantic convention files containing the definition of {} attributes and {} metrics ({:.2}s)",
+            registry.asset_count(),
+            registry.attribute_count(),
+            registry.metric_count(),
+            start.elapsed().as_secs_f32()
+        ));
+
+        Ok(registry)
     }
 
     /// Loads a semantic convention registry from the given semantic convention imports.

@@ -2,7 +2,7 @@
 
 //! Command to generate a client SDK.
 
-use std::io;
+use std::{io};
 use std::path::PathBuf;
 
 use clap::{Args, Subcommand};
@@ -55,6 +55,8 @@ pub struct SearchCommand {
 pub enum SearchSubCommand {
     /// Search in a semantic convention registry
     Registry(SearchRegistry),
+    /// Search in a semantic convention registry [WIP, todo]
+    Registry2(SearchRegistry2),
     /// Search in a telemetry schema
     Schema(SearchSchema),
 }
@@ -62,6 +64,21 @@ pub enum SearchSubCommand {
 /// Parameters for the `search registry` sub-command
 #[derive(Debug, Args)]
 pub struct SearchRegistry {
+    /// Git URL of the semantic convention registry
+    pub registry: String,
+
+    /// Optional path in the git repository where the semantic convention
+    /// registry is located
+    pub path: Option<String>,
+
+    /// The telemetry schema containing the versions (url or file)
+    #[arg(short, long)]
+    schema: Option<String>,
+}
+
+/// Parameters for the `search registry` sub-command [WIP, todo]
+#[derive(Debug, Args)]
+pub struct SearchRegistry2 {
     /// Git URL of the semantic convention registry
     pub registry: String,
 
@@ -183,8 +200,58 @@ pub fn command_search(log: impl Logger + Sync + Clone, command: &SearchCommand) 
 
     match &command.command {
         SearchSubCommand::Registry(args) => search_registry_command(log, &cache, args),
+        SearchSubCommand::Registry2(args) => search_registry_command2(log, &cache, args),
         SearchSubCommand::Schema(args) => search_schema_command(log, &cache, args),
     }
+}
+
+/// Search semantic convention registry command [todo, WIP].
+fn search_registry_command2(
+    log: impl Logger + Sync + Clone + Sized,
+    cache: &Cache,
+    registry_args: &SearchRegistry2,
+) {
+    let mut registry = SchemaResolver::load_semconv_registry(
+        registry_args.registry.clone(),
+        registry_args.path.clone(),
+        cache,
+        log.clone(),
+    )
+        .unwrap_or_else(|e| {
+            log.error(&format!("{}", e));
+            std::process::exit(1);
+        });
+
+    let resolved_schema = SchemaResolver::resolve_semantic_convention_registry(&mut registry, log.clone())
+        .unwrap_or_else(|e| {
+            log.error(&format!("{}", e));
+            std::process::exit(1);
+        });
+
+    dbg!(resolved_schema);
+
+    // let schema = if let Some(schema) = &registry_args.schema {
+    //     let mut schema =
+    //         SchemaResolver::resolve_schema(schema, cache, log.clone()).unwrap_or_else(|e| {
+    //             log.error(&format!("{}", e));
+    //             std::process::exit(1);
+    //         });
+    //     schema.semantic_convention_registry = semconv_registry;
+    //     schema
+    // } else {
+    //     TelemetrySchema {
+    //         file_format: "".to_string(),
+    //         parent_schema_url: None,
+    //         schema_url: "".to_string(),
+    //         semantic_conventions: vec![],
+    //         schema: None,
+    //         versions: None,
+    //         parent_schema: None,
+    //         semantic_convention_registry: semconv_registry,
+    //     }
+    // };
+    //
+    // search_schema_tui(log, schema);
 }
 
 /// Search semantic convention registry command.
