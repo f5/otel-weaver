@@ -126,6 +126,8 @@ jobs:
         run: cargo install clippy-sarif --locked
       - name: Install SARIF tools
         run: cargo install sarif-fmt --locked
+      - name: Install protoc
+        run: apt-get install protobuf-compiler
       - name: Check
         run: >
           cargo clippy --workspace --all-features --all-targets --message-format=json -- -D warnings --allow deprecated
