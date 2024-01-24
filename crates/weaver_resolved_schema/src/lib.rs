@@ -118,7 +118,6 @@ mod test {
             dependencies: vec![],
         };
 
-        let json = serde_json::to_string_pretty(&schema).unwrap();
-        println!("{}", json);
+        let _ = serde_json::to_string_pretty(&schema).unwrap();
     }
 }
