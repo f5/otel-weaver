@@ -8,8 +8,8 @@ use crate::metric::Metric;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
-/// A catalog of attributes, metrics, and other telemetry items that are shared
-/// across multiple signals in the Resolved Telemetry Schema.
+/// A catalog of attributes, metrics, and other telemetry signals that are shared
+/// in the Resolved Telemetry Schema.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Catalog {

@@ -17,7 +17,7 @@ pub struct Metric {
     pub name: String,
     /// Brief description of the metric.
     pub brief: String,
-    /// Note on the metric.
+    /// Brief description of the metric.
     pub note: String,
     /// Type of the metric (e.g. gauge, histogram, ...).
     pub instrument: Instrument,

@@ -425,6 +425,9 @@ mod tests {
                 "Registry does not match for `{}`.\nObserved registry:\n{}",
                 test_dir, observed_registry_json
             );
+
+            let yaml = serde_yaml::to_string(&observed_registry).unwrap();
+            println!("{}", yaml);
         }
     }
 }

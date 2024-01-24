@@ -1,0 +1,308 @@
+syntax = "proto2";
+
+package weaver.resolved_schema;
+
+// A Resolved Telemetry Schema is self-contained and doesn't contain any
+// external references to other schemas or semantic conventions.
+message ResolvedTelemetrySchema {
+  // Version of the file structure.
+  required string file_format = 1;
+  // Schema URL that this file is published at.
+  required string schema_url = 2;
+  // Catalog of unique items that are shared across multiple registries
+  // and signals.
+  required Catalog catalog = 3;
+  // List of semantic convention registries that can be used in this schema
+  // and its descendants.
+  repeated Registry registries = 4;
+  // Resource definition (only for application).
+  optional Resource resource = 5;
+  // Definition of the instrumentation library for the instrumented application or library.
+  // Or none if the resolved telemetry schema represents a semantic convention registry.
+  optional InstrumentationLibrary instrumentation_library = 6;
+  // List of dependencies of the current instrumentation application or library.
+  repeated InstrumentationLibrary dependencies = 7;
+}
+
+/// A catalog of attributes, metrics, and other telemetry signals that are shared
+/// in the Resolved Telemetry Schema.
+message Catalog {
+  // Catalog of attributes used in the schema.
+  repeated Attribute attributes = 1;
+  // Catalog of metrics used in the schema.
+  repeated Metric metrics = 2;
+}
+
+// Attribute definition
+message Attribute {
+  // Attribute name.
+  required string name = 1;
+  // Either a string literal denoting the type as a primitive or an
+  // array type, a template type or an enum definition.
+  required AttributeType type = 2;
+  // A brief description of the attribute.
+  required string brief = 3;
+  // Sequence of example values for the attribute or single example
+  // value. They are required only for string and string array
+  // attributes. Example values must be of the same type of the
+  // attribute. If only a single example is provided, it can directly
+  // be reported without encapsulating it into a sequence/dictionary.
+  repeated Example examples = 4;
+  // Associates a tag ("sub-group") to the attribute. It carries no
+  // particular semantic meaning but can be used e.g. for filtering
+  // in the markdown generator.
+  optional string tag = 5;
+  // Specifies if the attribute is mandatory. Can be "required",
+  // "conditionally_required", "recommended" or "opt_in". When omitted,
+  // the attribute is "recommended". When set to
+  // "conditionally_required", the string provided as condition MUST
+  // specify the conditions under which the attribute is required.
+  optional RequirementLevel requirement_level = 6;
+  // Specifies if the attribute is (especially) relevant for sampling
+  // and thus should be set at span start. It defaults to false.
+  // Note: this field is experimental.
+  required bool sampling_relevant = 7;
+  // A more elaborate description of the attribute.
+  // It defaults to an empty string.
+  optional string note = 8;
+  // Specifies the stability of the attribute.
+  // Note that, if stability is missing but deprecated is present, it will
+  // automatically set the stability to deprecated. If deprecated is
+  // present and stability differs from deprecated, this will result in an
+  // error.
+  optional Stability stability = 9 [default = STABLE];
+  // Specifies if the attribute is deprecated. The string
+  // provided as description MUST specify why it's deprecated and/or what
+  // to use instead. See also stability.
+  optional string deprecated = 10 [default = ""];
+  // A set of tags for the attribute.
+  map<string, string> tags = 11;
+
+  // The value of the attribute.
+  // Note: This is only used in a telemetry schema specification.
+  optional Value value = 12;
+}
+
+// Metric definition.
+message Metric {
+  // Metric name.
+  required string name = 1;
+  // Brief description of the metric.
+  required string brief = 2;
+  // Brief description of the metric.
+  required string note = 3;
+  // Type of the metric (e.g. gauge, histogram, ...).
+  required Instrument instrument = 4;
+  // Unit of the metric.
+  optional string unit = 5;
+  // A set of tags for the attribute.
+  map<string, string> tags = 11;
+}
+
+// The type of the metric.
+enum Instrument {
+  /// An up-down counter metric.
+  UpDownCounter = 1;
+  /// A counter metric.
+  Counter = 2;
+  /// A gauge metric.
+  Gauge = 3;
+  /// A histogram metric.
+  Histogram = 4;
+}
+
+// The different types of attributes.
+message AttributeType {
+  // Definition of the various types of attributes.
+  oneof type {
+    // A boolean attribute.
+    BooleanAttribute boolean = 1;
+    // A integer attribute (signed 64 bit integer).
+    IntAttribute integer = 2;
+  }
+}
+
+// A boolean attribute.
+message BooleanAttribute {
+}
+
+// A integer attribute (signed 64 bit integer).
+message IntAttribute {
+}
+
+// The different types of examples.
+message Example {
+  // Definition of the various types of examples.
+  oneof type {
+    // A boolean example.
+    bool boolean = 1;
+    // A integer example (signed 64 bit integer).
+    int64 integer = 2;
+    // A double example.
+    double double = 3;
+    // A string example.
+    string string = 4;
+    // A array of integers example.
+    Ints ints = 5;
+  }
+}
+
+// A array of integers example.
+message Ints {
+  // A array of integers example.
+  repeated int64 values = 1;
+}
+
+// The different types of values.
+message Value {
+  // Definition of the various types of values.
+  oneof type {
+    // A boolean value.
+    BooleanValue boolean = 1;
+    // A integer value (signed 64 bit integer).
+    IntValue integer = 2;
+  }
+}
+
+// A boolean value.
+message BooleanValue {
+}
+
+// A integer value (signed 64 bit integer).
+message IntValue {
+}
+
+// The different requirement levels.
+message RequirementLevel {}
+
+// The level of stability for a definition.
+enum Stability {
+  // A deprecated definition.
+  DEPRECATED = 0;
+  // An experimental definition.
+  EXPERIMENTAL = 1;
+  // A stable definition.
+  STABLE = 2;
+}
+
+// Registry
+message Registry {
+  // The semantic convention registry url.
+  required string url = 1;
+  // A list of semantic convention groups.
+  repeated SemanticConventionGroup groups = 2;
+}
+
+// Semantic Convention Group
+message SemanticConventionGroup {
+  // The id of the group
+  required string id = 1;
+  // List of fields.
+  required GroupFields fields = 2;
+  // List of attributes that belong to the semantic convention.
+  repeated uint32 attributes = 3;
+}
+
+// Group type
+enum GroupType {
+  // Attribute group
+  ATTRIBUTE_GROUP = 0;
+  // Metric group
+  METRIC_GROUP = 1;
+  // Log group
+  LOG_GROUP = 2;
+  // Span group
+  SPAN_GROUP = 3;
+}
+
+// Group fields
+message GroupFields {
+  // The type of the group
+  required GroupType type = 1;
+  // List of fields.
+  oneof fields {
+    // Attribute group
+    AttributeGroup attribute_group = 2;
+    // Metric group
+    MetricGroup metric_group = 3;
+    // Log group
+    LogGroup log_group = 4;
+    // Span group
+    SpanGroup span_group = 5;
+  }
+}
+
+// Attribute Group
+message AttributeGroup {
+}
+
+// Metric Group
+message MetricGroup {
+}
+
+// Log Group
+message LogGroup {
+}
+
+// Span Group
+message SpanGroup {
+}
+
+// Definition of attributes associated with the resource.
+message Resource {
+  // List of references to attributes present in the shared catalog.
+  repeated uint32 attributes = 1;
+}
+
+// Instrumentation Library
+message InstrumentationLibrary {
+  // Name of the instrumentation library.
+  required string name = 1;
+  // Version of the instrumentation library.
+  required string version = 2;
+  // List of references to instrumentation libraries present in the shared catalog.
+  required Schema schema = 3;
+}
+
+// Schema
+message Schema {
+  // List of resource metrics.
+  repeated ResourceMetric resource_metrics = 1;
+  // List of resource logs.
+  repeated ResourceLog resource_logs = 2;
+  // List of resource spans.
+  repeated ResourceSpan resource_spans = 3;
+}
+
+// Resource Metric
+message ResourceMetric {
+  // Metric name.
+  required string metric_name = 1;
+  // List of references to attributes present in the shared catalog.
+  repeated uint32 attributes = 2;
+  // Map of tags.
+  map<string, string> tags = 3;
+  // versions
+}
+
+// Resource Log
+message ResourceLog {
+  // Log name.
+  required string log_name = 1;
+  // List of references to attributes present in the shared catalog.
+  repeated uint32 attributes = 2;
+  // Map of tags.
+  map<string, string> tags = 3;
+  // versions
+}
+
+// Resource Span
+message ResourceSpan {
+  // Span name.
+  required string span_name = 1;
+  // List of references to attributes present in the shared catalog.
+  repeated uint32 attributes = 2;
+  // Map of tags.
+  map<string, string> tags = 3;
+  // versions
+}
