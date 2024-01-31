@@ -54,7 +54,6 @@ resource:
     # file.
     - lref: <attribute-local-reference>
 
-
 # Section used to define the instrumentation library, its version, and the
 # schema of OpenTelemetry signals reported by an application, a service, a
 # device, or a library.
@@ -91,10 +90,6 @@ instrumentation_library:
         tags:
           <tag-key>: <tag-value>
         versions: # optional versioning for the metric.
-
-# Reuse the same versioning mechanism already defined in the telemetry schema v1.1.0
-# ToDo this section doesn't exist if the current schema is a resolved schema.
-versions: # see telemetry schema v1.1.0.
 
 catalog:
   # The attribute catalog is the place where the fields of attributes are defined
@@ -174,4 +169,11 @@ dependencies:
     # The schema details all the metrics, logs, and spans specifically generated
     # by that instrumentation library (i.e. a dependency in this context).
     schema: # same structure as the instrumentation_library section (see above)
+
+# Optional section used to define a list of transformations to apply between
+# versions.
+# Presence: This section doesn't exist when the current schema is a resolved
+# schema.
+versions:
+  # Same structure as in telemetry schema v1.1.0.
 ```
