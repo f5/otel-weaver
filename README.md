@@ -3,8 +3,8 @@
 ## Overview
 
 > At this stage, the project is being used as a **Proof of Concept** to explore and
-> refine the 'Application Telemetry Schema: Vision and Roadmap' OTEP ([PR](https://github.com/open-telemetry/oteps/pull/243)),
-> which has not yet been approved.
+> refine the 'Application Telemetry Schema: Vision and Roadmap' [OTEP](https://github.com/open-telemetry/oteps/blob/main/text/0243-app-telemetry-schema-vision-roadmap.md),
+> which has been approved and merged.
 >
 > This project is a **work in progress and is not ready for production use**.
 
