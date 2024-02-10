@@ -1,4 +1,6 @@
-# OTel Weaver (status: Proof of Concept)
+> Important Note: This project has been moved to the [OpenTelemetry Weaver project](https://github.com/open-telemetry/weaver).
+
+# OTel Weaver (status: Archived)
 
 ## Overview
 
