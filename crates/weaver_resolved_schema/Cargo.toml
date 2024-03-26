@@ -17,7 +17,7 @@ ordered-float.workspace = true
 prost = "0.12.3"
 
 [dev-dependencies]
-serde_json = "1.0.64"
+serde_json = "1.0.115"
 
 [build-dependencies]
 prost-build = { version = "0.12", features = ["cleanup-markdown"] }
